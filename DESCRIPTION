@@ -1,0 +1,30 @@
+Package: RISEkbmRasch
+Title: Psychometric Analysis with Rasch Measurement Theory
+Version: 0.0.0.9000
+Authors@R:
+    person("Magnus", "Johansson", , "magnus.p.johansson@ri.se", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0003-1669-592X"))
+Description: Multiple functions to simplify the Rasch analysis workflow. From
+    descriptive statistics to fit statistics, response category analysis,
+    DIF analysis, targeting, reliability, etc. Makes heavy use of existing
+    packages for Rasch, such as eRm, mirt, psychotree.
+Imports:
+    car,
+    formattable,
+    kableExtra,
+    readxl,
+    tidyverse,
+    eRm,
+    mokken,
+    mirt,
+    psych,
+    ggplot2,
+    psychotree,
+    matrixStats,
+    reshape,
+    knitr,
+    cowplot
+License: `use_ccby_license()`
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.0
