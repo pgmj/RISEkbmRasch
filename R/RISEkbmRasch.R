@@ -1062,9 +1062,8 @@ RIdifTable <- function(dfin, dif.var) {
   # and DIF variables:
   df.tree$dif.var<-dif.var
   pctree.out<-pctree(difdata ~ dif.var, data = df.tree)
-  nnodes <- nrow(itempar(pctree.out))
   
-  if(nnodes > 1) {
+  if(nrow(itempar(pctree.out)) < 2) {
     plot(pctree.out)
     
     itempar(pctree.out) %>% # identify the nodes to compare (see plot above)
