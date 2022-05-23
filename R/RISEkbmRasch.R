@@ -299,7 +299,7 @@ RIrawdist <- function(dfin) {
   if (rawMinX > 0) {
     rawMinN <- 0
   } else { # if lowest participant score is 0, how many participants have scored 0?
-    rawminN <- df.omit.na %>%
+    rawMinN <- df.omit.na %>%
       mutate(rowsums = rowSums(.)) %>%
       count(rowsums) %>% 
       arrange(rowsums) %>% 
