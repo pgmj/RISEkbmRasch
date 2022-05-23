@@ -82,6 +82,30 @@ RIlistitems <- function(dfin, pdf.out) {
   }
 }
 
+#' Create table for demographic variables
+#' 
+#' Input should be a vector with a demographic variable such as gender or age.
+#' @param dif.var A vector with a demographic variable
+#' @param label What the variable represents (sex/age/etc)
+#' @export
+RIdemographics <- function(dif.var, label) {
+  dif.var %>% 
+    table() %>% 
+    as_tibble() %>% 
+    mutate('Percent' = (round((100 * n / sum(n)),1))) %>% 
+    dplyr::rename(label = '.') %>% 
+    kbl(booktabs = T, escape = F, table.attr = "style='width:20%;'") %>%
+    # options for HTML output
+    kable_styling(bootstrap_options = c("striped", "hover"), 
+                  position = "center",
+                  full_width = T,
+                  font_size = r.fontsize,
+                  fixed_thead = T) %>% 
+    column_spec(1, bold = T) %>% 
+    kable_classic(html_font = "Lato") %>% 
+    # latex_options are for PDF output
+    kable_styling(latex_options = c("striped","scale_down"))
+}
 
 #' Running the Rasch PCM model using eRm, and 
 #' conducting a PCA of residuals to get eigenvalues.
@@ -1038,8 +1062,9 @@ RIdifTable <- function(dfin, dif.var) {
   # and DIF variables:
   df.tree$dif.var<-dif.var
   pctree.out<-pctree(difdata ~ dif.var, data = df.tree)
+  nnodes <- nrow(itempar(pctree.out))
   
-  if(nrow(itempar(pctree.out)) > 1) {
+  if(nnodes > 1) {
     plot(pctree.out)
     
     itempar(pctree.out) %>% # identify the nodes to compare (see plot above)
