@@ -4,12 +4,6 @@
 ### Creative Commons Attribution 4.0 International Public License
 ### https://creativecommons.org/licenses/by/4.0/ 
 
-### some commands exist in multiple packages, here we define preferred ones that are frequently used
-select <- dplyr::select
-count <- dplyr::count
-recode <- car::recode
-rename <- dplyr::rename
-
 ### set up color palette based on RISE guidelines
 RISEprimGreen <- "#009ca6"
 RISEprimRed <- "#e83c63"
