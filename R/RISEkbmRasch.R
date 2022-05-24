@@ -459,10 +459,16 @@ RIitemfitPCM <- function(dfin, jz, yz) {
 #' @param cutoff Relative value above the average of all item residual correlations
 #' @export
 RIresidcorr <- function(dfin, cutoff) {
+  
+  sink(nullfile()) # suppress output from the rows below
+  
   mirt.rasch <- mirt(dfin, model=1, itemtype='Rasch') # unidimensional Rasch model
-  resid=residuals(mirt.rasch, type="Q3", digits=2)
+  resid=residuals(mirt.rasch, type="Q3", digits=2) # get residuals
+  
+  sink() # disable suppress output
+  
   diag(resid) <- NA # make the diagonal of correlation matrix NA instead of 1
-  dyn.cutoff<-mean(resid, na.rm=T) + cutoff # create variable indicating dynamic cutoff at 0.3 above average
+  dyn.cutoff<-mean(resid, na.rm=T) + cutoff # create variable indicating dynamic cutoff above average correlation
   resid<-as.data.frame(resid)
   
   # table
