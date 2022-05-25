@@ -65,7 +65,7 @@ RIlistitems <- function(dfin, pdf.out) {
           table.attr = "style='width:60%;'") %>%
       # options for HTML output
       kable_styling(bootstrap_options = c("striped", "hover"), 
-                    position = "center",
+                    position = "left",
                     full_width = T,
                     font_size = r.fontsize,
                     fixed_thead = T) %>% 
@@ -91,7 +91,7 @@ RIdemographics <- function(dif.var, label) {
     kbl(booktabs = T, escape = F, table.attr = "style='width:20%;'") %>%
     # options for HTML output
     kable_styling(bootstrap_options = c("striped", "hover"), 
-                  position = "center",
+                  position = "left",
                   full_width = T,
                   font_size = r.fontsize,
                   fixed_thead = T) %>% 
@@ -129,7 +129,7 @@ RIpcm <- function(dfin, no.table) {
     kbl(booktabs = T, escape = F, table.attr = "style='width:25%;'") %>%
     # options for HTML output
     kable_styling(bootstrap_options = c("striped", "hover"), 
-                  position = "center",
+                  position = "left",
                   full_width = T,
                   font_size = r.fontsize,
                   fixed_thead = F) %>% 
@@ -221,7 +221,7 @@ RIallresp <- function(dfin, pdf.out) {
       kbl(booktabs = T, escape = F, table.attr = "style='width:40%;'") %>%
       # options for HTML output
       kable_styling(bootstrap_options = c("striped", "hover"), 
-                    position = "center",
+                    position = "left",
                     full_width = F,
                     font_size = r.fontsize,
                     fixed_thead = T) %>% 
