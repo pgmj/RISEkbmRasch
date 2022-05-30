@@ -738,8 +738,8 @@ RItargeting <- function(dfin, dich) {
       theme_bw() + 
       theme(legend.position = 'none') + 
       coord_flip() +
-      labs(caption = paste0("Person location average: ", pi.locations[3,2], " (SD ", pi.locations[3,3],"), Item threshold location average: ",
-                            pi.locations[2,2], " (SD ", pi.locations[2,3], ").")) +
+      labs(caption = paste0("Person location average: ", pi.locations[2,2], " (SD ", pi.locations[2,3],"), Item location average: ",
+                            pi.locations[1,2], " (SD ", pi.locations[1,3], ").")) +
       theme(plot.caption = element_text(hjust = 0, face = "italic"))
     
     # Person location histogram
