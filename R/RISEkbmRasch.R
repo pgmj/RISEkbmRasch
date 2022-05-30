@@ -671,7 +671,7 @@ RItargeting <- function(dfin, dich) {
   # combine plots together to create Wright map, and let the individual item threshold plot have some more space
   plot_grid(p2,p3,p1, labels=NULL, nrow = 3, align ="hv", rel_heights = c(1,1,1.3))
   } else {
-    df.erm<-RM(df.omit.na) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+    df.erm<-RM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
     person.locations.estimate <- person.parameter(df.erm)
     item.estimates <- coef(df.erm, "eta") # item coefficients
