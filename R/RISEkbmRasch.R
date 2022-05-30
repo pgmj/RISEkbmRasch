@@ -47,32 +47,29 @@ yz = 10 # number of random samples
 #' 
 #' Requires a dataframe with two columns, labeled "itemnr" and "item",
 #' containing information on the item numbers (qN) and item content.
+#' This dataframe has to be labeled "itemlabels".
+#' 
+#' Default behavior is to only list items that are in the dataframe.
+#' If all items in the original dataset are to be shown, use option
+#' "all.items = TRUE".
 #' 
 #' @param dfin Dataframe with item data only
-#' @param pdf.out Set to TRUE to get PDF-compatible table (kableExtra)
+#' @param all.items Set to TRUE to list all items
 #' @return A table with items used in dataframe
 #' @export
-RIlistitems <- function(dfin, pdf.out) {
-  if(missing(pdf.out)) {
+RIlistitems <- function(dfin, all.items) {
+  if(missing(all.items)) {
     itemlabels %>% 
       filter(itemnr %in% names(dfin)) %>% 
     formattable(align=c("c","l"), list(
       `itemnr` = formatter("span", style = ~ style(color = "grey",font.weight = "bold"))),
-      table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 60%"')
+      table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 75%"')
   } else {
     itemlabels %>% 
-      kbl(booktabs = T, escape = F,
-          table.attr = "style='width:60%;'") %>%
-      # options for HTML output
-      kable_styling(bootstrap_options = c("striped", "hover"), 
-                    position = "left",
-                    full_width = T,
-                    font_size = r.fontsize,
-                    fixed_thead = T) %>% 
-      column_spec(1, bold = T) %>% 
-      kable_classic(html_font = "Lato") %>% 
-      # latex_options are for PDF output
-      kable_styling(latex_options = c("striped","scale_down"))
+      #filter(itemnr %in% names(dfin)) %>% 
+      formattable(align=c("c","l"), list(
+        `itemnr` = formatter("span", style = ~ style(color = "grey",font.weight = "bold"))),
+        table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 75%"')
   }
 }
 
@@ -107,7 +104,7 @@ RIdemographics <- function(dif.var, label) {
 #' @param dfin Dataframe with item data only
 #' @param no.table Set to TRUE to avoid output of table
 #' @export
-RIpcm <- function(dfin, no.table) {
+RIpcmPCA <- function(dfin, no.table) {
   if(missing(no.table)) {
   df.erm<-PCM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
   # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
@@ -156,6 +153,63 @@ RIpcm <- function(dfin, no.table) {
   }
 }
 
+#' Running the Rasch model for dichotomous using eRm, and 
+#' conducting a PCA of residuals to get eigenvalues.
+#' 
+#' @param dfin Dataframe with item data only
+#' @param no.table Set to TRUE to avoid output of table
+#' @export
+RIrmPCA <- function(dfin, no.table) {
+  if(missing(no.table)) {
+    df.erm<-RM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+    person.locations.estimate <- person.parameter(df.erm)
+    item.estimates <- coef(df.erm, "eta") # item coefficients
+    item.fit <- eRm::itemfit(person.locations.estimate)
+    # item parameter CI's
+    item.confint<-confint(df.erm, "eta") # difficulty (not easiness)
+    # person parameter CI's
+    pp.confint<-confint(person.locations.estimate)
+    std.resids <- item.fit$st.res
+    # PCA of Rasch residuals
+    pca <- pca(std.resids, nfactors = ncol(dfin), rotate = "oblimin")
+    # create table with top 5 eigenvalues
+    pca$values %>%
+      round(2) %>%
+      head(5) %>% 
+      as_tibble() %>% 
+      rename('Eigenvalues' = 'value') %>% 
+      kbl(booktabs = T, escape = F, table.attr = "style='width:25%;'") %>%
+      # options for HTML output
+      kable_styling(bootstrap_options = c("striped", "hover"), 
+                    position = "left",
+                    full_width = T,
+                    font_size = r.fontsize,
+                    fixed_thead = F) %>% 
+      column_spec(1, bold = T) %>% 
+      kable_classic(html_font = "Lato") %>% 
+      # latex_options are for PDF output
+      kable_styling(latex_options = c("striped","scale_down"))
+  } else {
+    df.erm<-RM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+    person.locations.estimate <- person.parameter(df.erm)
+    item.estimates <- coef(df.erm, "eta") # item coefficients
+    item.fit <- eRm::itemfit(person.locations.estimate)
+    # item parameter CI's
+    item.confint<-confint(df.erm, "eta") # difficulty (not easiness)
+    # person parameter CI's
+    pp.confint<-confint(person.locations.estimate)
+    std.resids <- item.fit$st.res
+    std.resids <- item.fit$st.res
+    # PCA of Rasch residuals
+    pca <- pca(std.resids, nfactors = ncol(dfin), rotate = "oblimin")
+    # create vector with top 5 eigenvalues
+    eigenv <- pca$values %>%
+      round(2) %>%
+      head(5)
+  }
+}
 
 #' Create tile plot for all items, also showing the count of
 #' responses in each response category for each item
