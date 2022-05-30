@@ -4,10 +4,12 @@
 \alias{RItargeting}
 \title{Targeting, Wright map derivative.}
 \usage{
-RItargeting(dfin)
+RItargeting(dfin, dich)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
+
+\item{dich}{Set to TRUE if your data is dichotomous}
 }
 \description{
 Outputs a figure consisting of three figures with the
