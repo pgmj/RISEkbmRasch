@@ -683,17 +683,6 @@ RItargeting <- function(dfin, dich) {
       rownames_to_column() %>% 
       dplyr::rename(names = 'rowname') 
     
-    # make plot with each items thresholds shown as dots
-    p1=ggplot(itemloc.long, aes(x = names, y = item.estimates, label = names, color = names)) +
-      geom_point() + 
-      geom_text(hjust = 1.1, vjust = 1) + 
-      ylab('Location (logit scale)') + 
-      xlab('Items') + 
-      scale_y_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) + 
-      theme_bw() + 
-      theme(legend.position = 'none') + 
-      coord_flip()
-    
     ### create df for ggplot histograms
     # person locations
     thetas<-as.data.frame(person.locations.estimate$theta.table)
@@ -720,7 +709,7 @@ RItargeting <- function(dfin, dich) {
     df.locations$type<-as.factor(df.locations$type)
     
     # get mean/SD for item/person locations
-    pi.locations <- data.frame(matrix(ncol = 2, nrow = 3))
+    pi.locations <- data.frame(matrix(ncol = 3, nrow = 3))
     item_difficulty <- as.data.frame(item.estimates) %>% 
       rownames_to_column() %>% 
       dplyr::rename(Item = 'rowname', Location = 'item.estimates')
@@ -738,6 +727,20 @@ RItargeting <- function(dfin, dich) {
     pi.locations[2,1] <- "Persons"
     pi.locations[2,2] <- round(mean(pthetas),2)
     pi.locations[2,3] <- round(sd(pthetas),2)
+  
+    # make plot with each items thresholds shown as dots
+    p1=ggplot(itemloc.long, aes(x = names, y = item.estimates, label = names, color = names)) +
+      geom_point() + 
+      geom_text(hjust = 1.1, vjust = 1) + 
+      ylab('Location (logit scale)') + 
+      xlab('Items') + 
+      scale_y_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) + 
+      theme_bw() + 
+      theme(legend.position = 'none') + 
+      coord_flip() +
+      labs(caption = paste0("Person location average: ", pi.locations[3,2], " (SD ", pi.locations[3,3],"), Item threshold location average: ",
+                            pi.locations[2,2], " (SD ", pi.locations[2,3], ").")) +
+      theme(plot.caption = element_text(hjust = 0, face = "italic"))
     
     # Person location histogram
     p2<-ggplot() + 
