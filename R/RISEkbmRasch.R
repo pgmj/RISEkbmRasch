@@ -553,8 +553,10 @@ RIresidcorr <- function(dfin, cutoff) {
 #' item thresholds as dots.
 #' 
 #' @param dfin Dataframe with item data only
+#' @param dich Set to TRUE if your data is dichotomous
 #' @export
-RItargeting <- function(dfin) {
+RItargeting <- function(dfin, dich) {
+  if(missing(dich)) {
   df.erm<-PCM(dfin) # run PCM model
   # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
   item.estimates <- eRm::thresholds(df.erm)
@@ -668,7 +670,107 @@ RItargeting <- function(dfin) {
   
   # combine plots together to create Wright map, and let the individual item threshold plot have some more space
   plot_grid(p2,p3,p1, labels=NULL, nrow = 3, align ="hv", rel_heights = c(1,1,1.3))
-
+  } else {
+    df.erm<-RM(df.omit.na) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+    person.locations.estimate <- person.parameter(df.erm)
+    item.estimates <- coef(df.erm, "eta") # item coefficients
+    item.fit <- eRm::itemfit(person.locations.estimate)
+    
+    item.locations<-as.data.frame(item.estimates)
+    #names(item.locations) <- paste0("T", c(1:ncol(item.locations))) #re-number items
+    itemloc.long <- item.locations %>%
+      rownames_to_column() %>% 
+      dplyr::rename(names = 'rowname') 
+    
+    # make plot with each items thresholds shown as dots
+    p1=ggplot(itemloc.long, aes(x = names, y = item.estimates, label = names, color = names)) +
+      geom_point() + 
+      geom_text(hjust = 1.1, vjust = 1) + 
+      ylab('Location (logit scale)') + 
+      xlab('Items') + 
+      scale_y_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) + 
+      theme_bw() + 
+      theme(legend.position = 'none') + 
+      coord_flip()
+    
+    ### create df for ggplot histograms
+    # person locations
+    thetas<-as.data.frame(person.locations.estimate$theta.table)
+    pthetas<-thetas$`Person Parameter`
+    # item locations
+    thresholds<-itemloc.long$item.estimates
+    ### items and persons in the same variable
+    #create data frame with 0 rows and 3 columns
+    df.locations <- data.frame(matrix(ncol = 2, nrow = 0))
+    #provide column names
+    colnames(df.locations) <- c('type', 'locations')
+    # change type of data
+    df.locations$type<-as.character(df.locations$type)
+    df.locations$locations<-as.numeric(df.locations$locations)
+    # insert labels in accurate amounts (N+items)
+    nper<-nrow(df.omit.na)
+    nperp<-nper+1
+    nthr<-length(thresholds)+nper
+    df.locations[1:nper,1]<-paste0("Persons")
+    df.locations[nperp:nthr,1]<-paste0("Item thresholds")
+    # insert data from vectors with thetas and thresholds
+    df.locations$locations<-c(pthetas,thresholds)
+    # change type to class factor
+    df.locations$type<-as.factor(df.locations$type)
+    
+    # get mean/SD for item/person locations
+    pi.locations <- data.frame(matrix(ncol = 2, nrow = 3))
+    item_difficulty <- as.data.frame(item.estimates) %>% 
+      rownames_to_column() %>% 
+      dplyr::rename(Item = 'rowname', Location = 'item.estimates')
+    
+    #
+    item.mean <- round(mean(item_difficulty$Location),2)
+    item.sd <- round(sd(item_difficulty$Location),2)
+    person.mean <- round(mean(pthetas),2)
+    person.sd <- round(sd(pthetas),2)
+    #provide column names
+    colnames(pi.locations) <- c('','Mean', 'SD')
+    pi.locations[1,1] <- "Items"
+    pi.locations[1,2] <- round(mean(item_difficulty$Location),2)
+    pi.locations[1,3] <- round(sd(item_difficulty$Location),2)
+    pi.locations[2,1] <- "Persons"
+    pi.locations[2,2] <- round(mean(pthetas),2)
+    pi.locations[2,3] <- round(sd(pthetas),2)
+    
+    # Person location histogram
+    p2<-ggplot() + 
+      geom_histogram(data=subset(df.locations, type=="Persons"), 
+                     aes(locations, fill="Persons", y= ..count..)) +
+      xlab('') +
+      ylab('Persons') +
+      scale_x_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) + 
+      geom_vline(xintercept = person.mean, color = RISEcompGreenDark, linetype = 2) +
+      annotate("rect", ymin = 0, ymax = Inf, xmin = (person.mean-person.sd), xmax = (person.mean+person.sd), alpha = .2) +
+      geom_text(hjust = 1.1, vjust = 1) +
+      theme_bw() +
+      theme(legend.position = 'none',
+            text=element_text(family = "sans"))
+    
+    # Item Threshold location histogram
+    p3 <- ggplot() +
+      geom_histogram(data=subset(df.locations, type=="Item thresholds"), 
+                     aes(locations, y= ..count..)) + 
+      xlab('') +
+      ylab('Items aggregated') +
+      scale_x_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) + 
+      scale_y_reverse() +
+      geom_vline(xintercept = item.mean, color = RISEprimRed, linetype = 2) +
+      annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean-item.sd), xmax = (item.mean+item.sd), alpha = .2) +
+      geom_text(hjust = 1.1, vjust = 1) +
+      theme_bw() +
+      theme(legend.position = 'none')
+    
+    # combine plots together to create Wright map, and let the individual item threshold plot have some more space
+    plot_grid(p2,p3,p1, labels=NULL, nrow = 3, align ="hv", rel_heights = c(1,1,1.3))
+    
+  }
 }
 
 
