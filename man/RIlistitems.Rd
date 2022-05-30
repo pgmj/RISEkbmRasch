@@ -4,12 +4,12 @@
 \alias{RIlistitems}
 \title{Show items based on itemlabels file}
 \usage{
-RIlistitems(dfin, pdf.out)
+RIlistitems(dfin, all.items)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
-\item{pdf.out}{Set to TRUE to get PDF-compatible table (kableExtra)}
+\item{all.items}{Set to TRUE to list all items}
 }
 \value{
 A table with items used in dataframe
@@ -17,4 +17,10 @@ A table with items used in dataframe
 \description{
 Requires a dataframe with two columns, labeled "itemnr" and "item",
 containing information on the item numbers (qN) and item content.
+This dataframe has to be labeled "itemlabels".
+}
+\details{
+Default behavior is to only list items that are in the dataframe.
+If all items in the original dataset are to be shown, use option
+"all.items = TRUE".
 }
