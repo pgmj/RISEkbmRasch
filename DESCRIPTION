@@ -1,6 +1,6 @@
 Package: RISEkbmRasch
 Title: Psychometric Analysis with Rasch Measurement Theory
-Version: 0.0.0.951
+Version: 0.0.0.953
 Authors@R:
     person("Magnus", "Johansson", , "magnus.p.johansson@ri.se", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-1669-592X"))
