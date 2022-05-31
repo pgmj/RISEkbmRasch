@@ -2,8 +2,9 @@
 % Please edit documentation in R/RISEkbmRasch.R
 \name{RIinfitLoc}
 \alias{RIinfitLoc}
-\title{Infit ZSTD and item location
-ZSTD is sample size sensitive, see "RIitemfitPCM"}
+\title{Plot with infit ZSTD and item location
+ZSTD is sample size sensitive, see "RIitemfitPCM"
+for options}
 \usage{
 RIinfitLoc(dfin, jz, yz)
 }
@@ -15,6 +16,7 @@ RIinfitLoc(dfin, jz, yz)
 \item{yz}{Desired number of samples (recommended range 10-50)}
 }
 \description{
-Infit ZSTD and item location
+Plot with infit ZSTD and item location
 ZSTD is sample size sensitive, see "RIitemfitPCM"
+for options
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/RISEkbmRasch.R
 \name{RIoutfitLoc}
 \alias{RIoutfitLoc}
-\title{Outfit ZSTD and item location
+\title{Plot with outfit ZSTD and item location
 ZSTD is sample size sensitive, see "RIitemfitPCM"}
 \usage{
 RIoutfitLoc(dfin, jz, yz)
@@ -15,6 +15,6 @@ RIoutfitLoc(dfin, jz, yz)
 \item{yz}{Desired number of samples (recommended range 10-50)}
 }
 \description{
-Outfit ZSTD and item location
+Plot with outfit ZSTD and item location
 ZSTD is sample size sensitive, see "RIitemfitPCM"
 }

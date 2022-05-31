@@ -2,7 +2,7 @@
 % Please edit documentation in R/RISEkbmRasch.R
 \name{RIloadLoc}
 \alias{RIloadLoc}
-\title{First residual contrast loadings vs item locations}
+\title{Plot with first residual contrast loadings vs item locations}
 \usage{
 RIloadLoc(dfin)
 }
@@ -10,5 +10,5 @@ RIloadLoc(dfin)
 \item{dfin}{Dataframe with item data only}
 }
 \description{
-First residual contrast loadings vs item locations
+Plot with first residual contrast loadings vs item locations
 }
