@@ -980,8 +980,9 @@ RIitemparams <- function(dfin) {
 
 ##### Construct alley plots
 
-#' Infit ZSTD and item location
+#' Plot with infit ZSTD and item location
 #' ZSTD is sample size sensitive, see "RIitemfitPCM"
+#' for options
 #' 
 #' @param dfin Dataframe with item data only
 #' @param jz Desired sample size in multisampling
@@ -1002,15 +1003,25 @@ RIinfitLoc <- function(dfin, jz, yz) {
                                         item.fit$i.outfitZ, item.fit$i.infitZ))
     colnames(item.fit.table)<-c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
     item.fit.table$Location <- item_difficulty$Location
-  
+    
+    # find limits of ZSTD and location
+    xlims <- c(floor(min(item.fit.table$InfitZSTD)),ceiling(max(item.fit.table$InfitZSTD)))
+    ylims <- c(floor(min(item.fit.table$Location)),ceiling(max(item.fit.table$Location)))
+    # how many steps between min/max
+    xbreaks <- seq(floor(min(item.fit.table$InfitZSTD)),ceiling(max(item.fit.table$InfitZSTD)), 1)
+    ybreaks <- seq(floor(min(item.fit.table$Location)),ceiling(max(item.fit.table$Location)), 0.5)
+    xdiff <- diff(c(floor(min(item.fit.table$InfitZSTD)),ceiling(max(item.fit.table$InfitZSTD))))
+    ydiff <- diff(c(floor(min(item.fit.table$Location)),ceiling(max(item.fit.table$Location))))
+    
     item.fit.table %>% 
       rownames_to_column() %>% 
       ggplot(aes(x=InfitZSTD, y=Location, label = rowname)) +
       geom_point(size = 3, color = dot_color) +
       geom_vline(xintercept = -2, color = cutoff_line, linetype = 2) +
       geom_vline(xintercept = 2, color = cutoff_line, linetype = 2) + 
-      scale_y_continuous(limits = c(-2,2), breaks = seq(-2,2, by = 0.5)) +
-      scale_x_continuous(limits = c(-5,5), breaks = seq(-5,5, by = 1)) +
+      scale_y_continuous(limits = ylims, breaks = ybreaks, 
+                         minor_breaks = waiver(), n.breaks = ydiff) +
+      scale_x_continuous(limits = xlims, breaks = xbreaks) +
       geom_text(hjust=1.5) + 
       theme(
         panel.background = element_rect(fill = backg_color,
@@ -1048,14 +1059,24 @@ RIinfitLoc <- function(dfin, jz, yz) {
     
     item.fit.table$Location <- item_difficulty$Location
     
+    # find limits of ZSTD and location
+    xlims <- c(floor(min(item.fit.table$InfitZSTD)),ceiling(max(item.fit.table$InfitZSTD)))
+    ylims <- c(floor(min(item.fit.table$Location)),ceiling(max(item.fit.table$Location)))
+    # how many steps between min/max
+    xbreaks <- seq(floor(min(item.fit.table$InfitZSTD)),ceiling(max(item.fit.table$InfitZSTD)), 1)
+    ybreaks <- seq(floor(min(item.fit.table$Location)),ceiling(max(item.fit.table$Location)), 0.5)
+    xdiff <- diff(c(floor(min(item.fit.table$InfitZSTD)),ceiling(max(item.fit.table$InfitZSTD))))
+    ydiff <- diff(c(floor(min(item.fit.table$Location)),ceiling(max(item.fit.table$Location))))
+    
     item.fit.table %>% 
       rownames_to_column() %>% 
       ggplot(aes(x=InfitZSTD, y=Location, label = rowname)) +
       geom_point(size = 3, color = dot_color) +
       geom_vline(xintercept = -2, color = cutoff_line, linetype = 2) +
       geom_vline(xintercept = 2, color = cutoff_line, linetype = 2) + 
-      scale_y_continuous(limits = c(-2,2), breaks = seq(-2,2, by = 0.5)) +
-      scale_x_continuous(limits = c(-5,5), breaks = seq(-5,5, by = 1)) +
+      scale_y_continuous(limits = ylims, breaks = ybreaks, 
+                         minor_breaks = waiver(), n.breaks = ydiff) +
+      scale_x_continuous(limits = xlims, breaks = xbreaks) +
       geom_text(hjust=1.5) + 
       theme(
         panel.background = element_rect(fill = backg_color,
@@ -1070,7 +1091,7 @@ RIinfitLoc <- function(dfin, jz, yz) {
 }
 
 
-#' Outfit ZSTD and item location
+#' Plot with outfit ZSTD and item location
 #' ZSTD is sample size sensitive, see "RIitemfitPCM"
 #' 
 #' @param dfin Dataframe with item data only
@@ -1093,14 +1114,24 @@ RIoutfitLoc <- function(dfin, jz, yz) {
     colnames(item.fit.table)<-c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
     item.fit.table$Location <- item_difficulty$Location
     
+    # find limits of ZSTD and location
+    xlims <- c(floor(min(item.fit.table$OutfitZSTD)),ceiling(max(item.fit.table$OutfitZSTD)))
+    ylims <- c(floor(min(item.fit.table$Location)),ceiling(max(item.fit.table$Location)))
+    # how many steps between min/max
+    xbreaks <- seq(floor(min(item.fit.table$OutfitZSTD)),ceiling(max(item.fit.table$OutfitZSTD)), 1)
+    ybreaks <- seq(floor(min(item.fit.table$Location)),ceiling(max(item.fit.table$Location)), 0.5)
+    xdiff <- diff(c(floor(min(item.fit.table$OutfitZSTD)),ceiling(max(item.fit.table$OutfitZSTD))))
+    ydiff <- diff(c(floor(min(item.fit.table$Location)),ceiling(max(item.fit.table$Location))))
+    
     item.fit.table %>% 
       rownames_to_column() %>% 
       ggplot(aes(x=OutfitZSTD, y=Location, label = rowname)) +
       geom_point(size = 3, color = dot_color) +
       geom_vline(xintercept = -2, color = cutoff_line, linetype = 2) +
       geom_vline(xintercept = 2, color = cutoff_line, linetype = 2) + 
-      scale_y_continuous(limits = c(-2,2), breaks = seq(-2,2, by = 0.5)) +
-      scale_x_continuous(limits = c(-5,5), breaks = seq(-5,5, by = 1)) +
+      scale_y_continuous(limits = ylims, breaks = ybreaks, 
+                         minor_breaks = waiver(), n.breaks = ydiff) +
+      scale_x_continuous(limits = xlims, breaks = xbreaks) +
       geom_text(hjust=1.5) + 
       theme(
         panel.background = element_rect(fill = backg_color,
@@ -1138,14 +1169,24 @@ RIoutfitLoc <- function(dfin, jz, yz) {
     
     item.fit.table$Location <- item_difficulty$Location
     
+    # find limits of ZSTD and location
+    xlims <- c(floor(min(item.fit.table$OutfitZSTD)),ceiling(max(item.fit.table$OutfitZSTD)))
+    ylims <- c(floor(min(item.fit.table$Location)),ceiling(max(item.fit.table$Location)))
+    # how many steps between min/max
+    xbreaks <- seq(floor(min(item.fit.table$OutfitZSTD)),ceiling(max(item.fit.table$OutfitZSTD)), 1)
+    ybreaks <- seq(floor(min(item.fit.table$Location)),ceiling(max(item.fit.table$Location)), 0.5)
+    xdiff <- diff(c(floor(min(item.fit.table$OutfitZSTD)),ceiling(max(item.fit.table$OutfitZSTD))))
+    ydiff <- diff(c(floor(min(item.fit.table$Location)),ceiling(max(item.fit.table$Location))))
+    
     item.fit.table %>% 
       rownames_to_column() %>% 
       ggplot(aes(x=OutfitZSTD, y=Location, label = rowname)) +
       geom_point(size = 3, color = dot_color) +
       geom_vline(xintercept = -2, color = cutoff_line, linetype = 2) +
       geom_vline(xintercept = 2, color = cutoff_line, linetype = 2) + 
-      scale_y_continuous(limits = c(-2,2), breaks = seq(-2,2, by = 0.5)) +
-      scale_x_continuous(limits = c(-5,5), breaks = seq(-5,5, by = 1)) +
+      scale_y_continuous(limits = ylims, breaks = ybreaks, 
+                         minor_breaks = waiver(), n.breaks = ydiff) +
+      scale_x_continuous(limits = xlims, breaks = xbreaks) +
       geom_text(hjust=1.5) + 
       theme(
         panel.background = element_rect(fill = backg_color,
@@ -1160,7 +1201,7 @@ RIoutfitLoc <- function(dfin, jz, yz) {
 }
 
 
-#' First residual contrast loadings vs item locations 
+#' Plot with first residual contrast loadings vs item locations 
 #' 
 #' @param dfin Dataframe with item data only
 #' @export
@@ -1179,16 +1220,25 @@ RIloadLoc <- function(dfin) {
   pcaloadings <- as.data.frame(pca2$rotation)
   pcaloadings$Location <- item_difficulty$Location
   
+  # find limits of contrast 1 loadings and location
+  xlims <- c(floor(min(pcaloadings$PC1)),ceiling(max(pcaloadings$PC1)))
+  ylims <- c(floor(min(pcaloadings$Location)),ceiling(max(pcaloadings$Location)))
+  # how many steps between min/max
+  xbreaks <- seq(floor(min(pcaloadings$PC1)),ceiling(max(pcaloadings$PC1)), 1)
+  ybreaks <- seq(floor(min(pcaloadings$Location)),ceiling(max(pcaloadings$Location)), 0.5)
+  xdiff <- diff(c(floor(min(pcaloadings$PC1)),ceiling(max(pcaloadings$PC1))))
+  ydiff <- diff(c(floor(min(pcaloadings$Location)),ceiling(max(pcaloadings$Location))))
+  
   pcaloadings %>% 
     rownames_to_column() %>% 
-    ggplot(aes(x=Location, y=PC1, label = rowname)) +
+    ggplot(aes(x=PC1, y=Location, label = rowname)) +
     geom_point(size = 3, color = dot_color) +
-    ylab("Loadings on first residual contrast") +
-    xlab("Item location") +
+    xlab("Loadings on first residual contrast") +
+    ylab("Item location") +
     geom_vline(xintercept = 0, color = cutoff_line, linetype = 2) +
     geom_hline(yintercept = 0, color = cutoff_line, linetype = 2) + 
-    scale_y_continuous(limits = c(-1,1), breaks = seq(-1,1, by = 0.25)) +
-    scale_x_continuous(limits = c(-2,2), breaks = seq(-2,2, by = 0.5)) +
+    scale_x_continuous(limits = c(-1,1), breaks = seq(-1,1, by = 0.25)) +
+    scale_y_continuous(limits = ylims, breaks = ybreaks) +
     geom_text(hjust=1.4, vjust=0.6) +
     theme(
       panel.background = element_rect(fill = backg_color,
