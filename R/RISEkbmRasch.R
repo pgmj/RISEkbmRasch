@@ -50,11 +50,13 @@ yz = 10 # number of random samples
 #' This dataframe has to be labeled "itemlabels".
 #' 
 #' Default behavior is to only list items that are in the dataframe.
+#' Any items eliminated during analysis process will not be included.
+#' 
 #' If all items in the original dataset are to be shown, use option
 #' "all.items = TRUE".
 #' 
 #' @param dfin Dataframe with item data only
-#' @param all.items Set to TRUE to list all items
+#' @param all.items Set to TRUE to list all items in 'itemlabels' df
 #' @return A table with items used in dataframe
 #' @export
 RIlistitems <- function(dfin, all.items) {
@@ -72,6 +74,34 @@ RIlistitems <- function(dfin, all.items) {
         table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 75%"')
   }
 }
+
+#' Show items based on itemlabels file, with coloring options
+#' 
+#' Requires a dataframe with two columns, labeled "itemnr" and "item",
+#' containing information on the item numbers (qN) and item content.
+#' This dataframe has to be labeled "itemlabels".
+#' 
+#' Input a vector of item rows, i.e c(1,3,5) to colorize items 1, 3 and 5.
+#' Optionally choose which background color will be used. "Lightblue" is the
+#' default. Text will be black, so choose a light color which gives good
+#' contrast for readability.
+#' 
+#' @param items vector of row numbers for items to colorize background
+#' @param color color of background ("lightblue" is default)
+#' @return A table with items used in dataframe
+#' @export
+RIcolorlistitems <- function(items, color) {
+  if(missing(color)) {
+    formattable(itemlabels, align=c("r","l"), list(
+      formattable::area(row = items) ~ color_tile("lightblue", "lightpink")),
+      table.attr = 'style="font-size: 15px; font-family: Lato"')
+  } else {
+    formattable(itemlabels, align=c("r","l"), list(
+      formattable::area(row = items) ~ color_tile(color, "lightpink")),
+      table.attr = 'style="font-size: 15px; font-family: Lato"')
+  }
+}
+
 
 #' Create table for demographic variables
 #' 
@@ -96,119 +126,6 @@ RIdemographics <- function(dif.var, label) {
     kable_classic(html_font = "Lato") %>% 
     # latex_options are for PDF output
     kable_styling(latex_options = c("striped","scale_down"))
-}
-
-#' Running the Rasch PCM model using eRm, and 
-#' conducting a PCA of residuals to get eigenvalues.
-#' 
-#' @param dfin Dataframe with item data only
-#' @param no.table Set to TRUE to avoid output of table
-#' @export
-RIpcmPCA <- function(dfin, no.table) {
-  if(missing(no.table)) {
-  df.erm<-PCM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
-  # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-  item.estimates <- eRm::thresholds(df.erm)
-  item_difficulty <- item.estimates[["threshtable"]][["1"]]
-  item_difficulty<-as.data.frame(item_difficulty)
-  item.se <- item.estimates$se.thresh
-  person.locations.estimate <- person.parameter(df.erm)
-  item.fit <- eRm::itemfit(person.locations.estimate)
-  std.resids <- item.fit$st.res
-  # PCA of Rasch residuals
-  pca <- pca(std.resids, nfactors = ncol(dfin), rotate = "oblimin")
-  # create table with top 5 eigenvalues
-  pca$values %>%
-    round(2) %>%
-    head(5) %>% 
-    as_tibble() %>% 
-    rename('Eigenvalues' = 'value') %>% 
-    kbl(booktabs = T, escape = F, table.attr = "style='width:25%;'") %>%
-    # options for HTML output
-    kable_styling(bootstrap_options = c("striped", "hover"), 
-                  position = "left",
-                  full_width = T,
-                  font_size = r.fontsize,
-                  fixed_thead = F) %>% 
-    column_spec(1, bold = T) %>% 
-    kable_classic(html_font = "Lato") %>% 
-    # latex_options are for PDF output
-    kable_styling(latex_options = c("striped","scale_down"))
-  } else {
-    df.erm<-PCM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
-    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-    item.estimates <- eRm::thresholds(df.erm)
-    item_difficulty <- item.estimates[["threshtable"]][["1"]]
-    item_difficulty<-as.data.frame(item_difficulty)
-    item.se <- item.estimates$se.thresh
-    person.locations.estimate <- person.parameter(df.erm)
-    item.fit <- eRm::itemfit(person.locations.estimate)
-    std.resids <- item.fit$st.res
-    # PCA of Rasch residuals
-    pca <- pca(std.resids, nfactors = ncol(dfin), rotate = "oblimin")
-    # create vector with top 5 eigenvalues
-    eigenv <- pca$values %>%
-      round(2) %>%
-      head(5)
-  }
-}
-
-#' Running the Rasch model for dichotomous using eRm, and 
-#' conducting a PCA of residuals to get eigenvalues.
-#' 
-#' @param dfin Dataframe with item data only
-#' @param no.table Set to TRUE to avoid output of table
-#' @export
-RIrmPCA <- function(dfin, no.table) {
-  if(missing(no.table)) {
-    df.erm<-RM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
-    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-    person.locations.estimate <- person.parameter(df.erm)
-    item.estimates <- coef(df.erm, "eta") # item coefficients
-    item.fit <- eRm::itemfit(person.locations.estimate)
-    # item parameter CI's
-    item.confint<-confint(df.erm, "eta") # difficulty (not easiness)
-    # person parameter CI's
-    pp.confint<-confint(person.locations.estimate)
-    std.resids <- item.fit$st.res
-    # PCA of Rasch residuals
-    pca <- pca(std.resids, nfactors = ncol(dfin), rotate = "oblimin")
-    # create table with top 5 eigenvalues
-    pca$values %>%
-      round(2) %>%
-      head(5) %>% 
-      as_tibble() %>% 
-      rename('Eigenvalues' = 'value') %>% 
-      kbl(booktabs = T, escape = F, table.attr = "style='width:25%;'") %>%
-      # options for HTML output
-      kable_styling(bootstrap_options = c("striped", "hover"), 
-                    position = "left",
-                    full_width = T,
-                    font_size = r.fontsize,
-                    fixed_thead = F) %>% 
-      column_spec(1, bold = T) %>% 
-      kable_classic(html_font = "Lato") %>% 
-      # latex_options are for PDF output
-      kable_styling(latex_options = c("striped","scale_down"))
-  } else {
-    df.erm<-RM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
-    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-    person.locations.estimate <- person.parameter(df.erm)
-    item.estimates <- coef(df.erm, "eta") # item coefficients
-    item.fit <- eRm::itemfit(person.locations.estimate)
-    # item parameter CI's
-    item.confint<-confint(df.erm, "eta") # difficulty (not easiness)
-    # person parameter CI's
-    pp.confint<-confint(person.locations.estimate)
-    std.resids <- item.fit$st.res
-    std.resids <- item.fit$st.res
-    # PCA of Rasch residuals
-    pca <- pca(std.resids, nfactors = ncol(dfin), rotate = "oblimin")
-    # create vector with top 5 eigenvalues
-    eigenv <- pca$values %>%
-      round(2) %>%
-      head(5)
-  }
 }
 
 #' Create tile plot for all items, also showing the count of
@@ -286,8 +203,120 @@ RIallresp <- function(dfin, pdf.out) {
   }
 }
 
+#' Running the Rasch PCM model using eRm, and 
+#' conducting a PCA of residuals to get eigenvalues.
+#' 
+#' @param dfin Dataframe with item data only
+#' @param no.table Set to TRUE to avoid output of table
+#' @export
+RIpcmPCA <- function(dfin, no.table) {
+  if(missing(no.table)) {
+    df.erm<-PCM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+    item.estimates <- eRm::thresholds(df.erm)
+    item_difficulty <- item.estimates[["threshtable"]][["1"]]
+    item_difficulty<-as.data.frame(item_difficulty)
+    item.se <- item.estimates$se.thresh
+    person.locations.estimate <- person.parameter(df.erm)
+    item.fit <- eRm::itemfit(person.locations.estimate)
+    std.resids <- item.fit$st.res
+    # PCA of Rasch residuals
+    pca <- pca(std.resids, nfactors = ncol(dfin), rotate = "oblimin")
+    # create table with top 5 eigenvalues
+    pca$values %>%
+      round(2) %>%
+      head(5) %>% 
+      as_tibble() %>% 
+      rename('Eigenvalues' = 'value') %>% 
+      kbl(booktabs = T, escape = F, table.attr = "style='width:25%;'") %>%
+      # options for HTML output
+      kable_styling(bootstrap_options = c("striped", "hover"), 
+                    position = "left",
+                    full_width = T,
+                    font_size = r.fontsize,
+                    fixed_thead = F) %>% 
+      column_spec(1, bold = T) %>% 
+      kable_classic(html_font = "Lato") %>% 
+      # latex_options are for PDF output
+      kable_styling(latex_options = c("striped","scale_down"))
+  } else {
+    df.erm<-PCM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+    item.estimates <- eRm::thresholds(df.erm)
+    item_difficulty <- item.estimates[["threshtable"]][["1"]]
+    item_difficulty<-as.data.frame(item_difficulty)
+    item.se <- item.estimates$se.thresh
+    person.locations.estimate <- person.parameter(df.erm)
+    item.fit <- eRm::itemfit(person.locations.estimate)
+    std.resids <- item.fit$st.res
+    # PCA of Rasch residuals
+    pca <- pca(std.resids, nfactors = ncol(dfin), rotate = "oblimin")
+    # create vector with top 5 eigenvalues
+    eigenv <- pca$values %>%
+      round(2) %>%
+      head(5)
+  }
+}
 
-#' Create a figure with ICC plots for all items
+#' Running the Rasch model for dichotomous using eRm, and 
+#' conducting a PCA of residuals to get eigenvalues.
+#' 
+#' @param dfin Dataframe with item data only
+#' @param no.table Set to TRUE to avoid output of table
+#' @export
+RIrmPCA <- function(dfin, no.table) {
+  if(missing(no.table)) {
+    df.erm<-RM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+    person.locations.estimate <- person.parameter(df.erm)
+    item.estimates <- coef(df.erm, "eta") # item coefficients
+    item.fit <- eRm::itemfit(person.locations.estimate)
+    # item parameter CI's
+    item.confint<-confint(df.erm, "eta") # difficulty (not easiness)
+    # person parameter CI's
+    pp.confint<-confint(person.locations.estimate)
+    std.resids <- item.fit$st.res
+    # PCA of Rasch residuals
+    pca <- pca(std.resids, nfactors = ncol(dfin), rotate = "oblimin")
+    # create table with top 5 eigenvalues
+    pca$values %>%
+      round(2) %>%
+      head(5) %>% 
+      as_tibble() %>% 
+      rename('Eigenvalues' = 'value') %>% 
+      kbl(booktabs = T, escape = F, table.attr = "style='width:25%;'") %>%
+      # options for HTML output
+      kable_styling(bootstrap_options = c("striped", "hover"), 
+                    position = "left",
+                    full_width = T,
+                    font_size = r.fontsize,
+                    fixed_thead = F) %>% 
+      column_spec(1, bold = T) %>% 
+      kable_classic(html_font = "Lato") %>% 
+      # latex_options are for PDF output
+      kable_styling(latex_options = c("striped","scale_down"))
+  } else {
+    df.erm<-RM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+    person.locations.estimate <- person.parameter(df.erm)
+    item.estimates <- coef(df.erm, "eta") # item coefficients
+    item.fit <- eRm::itemfit(person.locations.estimate)
+    # item parameter CI's
+    item.confint<-confint(df.erm, "eta") # difficulty (not easiness)
+    # person parameter CI's
+    pp.confint<-confint(person.locations.estimate)
+    std.resids <- item.fit$st.res
+    std.resids <- item.fit$st.res
+    # PCA of Rasch residuals
+    pca <- pca(std.resids, nfactors = ncol(dfin), rotate = "oblimin")
+    # create vector with top 5 eigenvalues
+    eigenv <- pca$values %>%
+      round(2) %>%
+      head(5)
+  }
+}
+
+#' Create a figure with ICC plots for all items (not working yet)
 #' 
 #' @param dfin Dataframe with item data only
 #' @export
@@ -394,7 +423,7 @@ RIrawdist <- function(dfin) {
 }
 
 
-#' Create table with Rasch item fit values for each item.
+#' Create table with Rasch PCM model item fit values for each item.
 #' 
 #' ZSTD is inflated with large samples (N > 500). Optional function to reduce 
 #' sample size to jz and run analysis using yz random samples to get average ZSTD
@@ -490,6 +519,101 @@ RIitemfitPCM <- function(dfin, jz, yz) {
                     fixed_thead = T) %>% # when there is a long list in the table
       #  column_spec(c(2:3), color = "red") %>% 
       #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>% 
+      column_spec(1, bold = T) %>% 
+      kable_classic(html_font = "Lato") %>% 
+      # latex_options are for PDF output
+      kable_styling(latex_options = c("striped","scale_down"))
+  }
+}
+
+#' Create table with Rasch dichotomous model item fit values for each item.
+#' 
+#' ZSTD is inflated with large samples (N > 500). Optional function to reduce 
+#' sample size to jz and run analysis using yz random samples to get average ZSTD
+#' If you are using Quarto/Rmarkdown, "cache: yes" will be a useful chunk option to 
+#' speed things up. 50 samples seems to give stable output, but 10 is probably
+#' sufficient for a quick look at the approximate ZSTD statistics. It is recommended
+#' to use sample size 250-500, based on Hagell & Westergren, 2016.
+#' 
+#' @param dfin Dataframe with item data only
+#' @param jz Desired sample size in multisampling
+#' @param yz Desired number of samples (recommended range 10-50)
+#' @export
+RIitemfitRM <- function(dfin, jz, yz) {
+  if(missing(jz)) {
+    df.erm<-RM(dfin) # run Rasch model
+    # get estimates
+    item.estimates <- coef(df.erm, "eta") # item coefficients
+    person.locations.estimate <- person.parameter(df.erm)
+    item.fit <- eRm::itemfit(person.locations.estimate)
+    # collect data to df
+    item.fit.table<-as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, item.fit$i.outfitZ, item.fit$i.infitZ))
+    colnames(item.fit.table)<-c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+    
+    # create table that highlights cutoff values in red
+    item.fit.table %>% 
+      mutate(across(where(is.numeric), round, 3)) %>% 
+      mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
+                                                               ifelse(OutfitZSTD > zstd_max, "red", "black")))) %>%
+      mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
+                                                             ifelse(InfitZSTD > zstd_max, "red", "black")))) %>%
+      mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
+                                                             ifelse(OutfitMSQ > msq_max, "red", "black")))) %>%
+      mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
+                                                           ifelse(InfitMSQ > msq_max, "red", "black")))) %>%
+      kbl(booktabs = T, escape = F) %>%
+      # bootstrap options are for HTML output
+      kable_styling(bootstrap_options = c("striped", "hover"), 
+                    position = "left",
+                    full_width = F,
+                    font_size = r.fontsize,
+                    fixed_thead = T) %>% # when there is a long list in the table
+      #  column_spec(c(2:3), color = "red") %>% 
+      #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>% 
+      column_spec(1, bold = T) %>% 
+      kable_classic(html_font = "Lato") %>% 
+      # latex_options are for PDF output
+      kable_styling(latex_options = c("striped","scale_down"))
+  } else {
+    df.erm<-RM(dfin) # run Rasch model
+    # get estimates
+    item.estimates <- coef(df.erm, "eta") # item coefficients
+    person.locations.estimate <- person.parameter(df.erm)
+    item.fit <- eRm::itemfit(person.locations.estimate)
+    
+    # ZSTD multisample
+    outfitZ<-c()
+    infitZ<-c()
+    for (i in 1:yz) {
+      df.new <- dfin[sample(1:nrow(dfin), jz), ]
+      df.new <- na.omit(df.new)
+      df.z <- RM(df.new)
+      ple <- person.parameter(df.z)
+      item.fit.z <- eRm::itemfit(ple)
+      outfitZ<-cbind(outfitZ,item.fit.z$i.outfitZ)
+      infitZ<-cbind(infitZ,item.fit.z$i.infitZ)
+    }
+    item.fit.table<-as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, rowMeans(outfitZ), rowMeans(infitZ)))
+    colnames(item.fit.table)<-c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+    
+    # create table that highlights cutoff values in red
+    item.fit.table %>% 
+      mutate(across(where(is.numeric), round, 3)) %>% 
+      mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
+                                                               ifelse(OutfitZSTD > zstd_max, "red", "black")))) %>%
+      mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
+                                                             ifelse(InfitZSTD > zstd_max, "red", "black")))) %>%
+      mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
+                                                             ifelse(OutfitMSQ > msq_max, "red", "black")))) %>%
+      mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
+                                                           ifelse(InfitMSQ > msq_max, "red", "black")))) %>%
+      kbl(booktabs = T, escape = F) %>%
+      # bootstrap options are for HTML output
+      kable_styling(bootstrap_options = c("striped", "hover"), 
+                    position = "left",
+                    full_width = F,
+                    font_size = r.fontsize,
+                    fixed_thead = T) %>% # when there is a long list in the table
       column_spec(1, bold = T) %>% 
       kable_classic(html_font = "Lato") %>% 
       # latex_options are for PDF output
@@ -1252,7 +1376,7 @@ RIloadLoc <- function(dfin) {
 }
 
 
-#' DIF analysis - requires having set up dif.variables previously
+#' DIF PCM analysis - requires having set up dif.variables previously
 #' 
 #' Makes use of the psychotree package, which also allows for interactions
 #' between DIF variables, which is not implemented in this function (yet).
@@ -1272,7 +1396,7 @@ RIdifTable <- function(dfin, dif.var) {
   df.tree$dif.var<-dif.var
   pctree.out<-pctree(difdata ~ dif.var, data = df.tree)
   
-  if(nrow(itempar(pctree.out)) < 2) {
+  if(nrow(itempar(pctree.out) %>% as.data.frame() %>% t()) > 1) {
     plot(pctree.out)
     
     itempar(pctree.out) %>% # identify the nodes to compare (see plot above)
@@ -1282,7 +1406,7 @@ RIdifTable <- function(dfin, dif.var) {
       #dplyr::rename('Age 18-29' = '2', # rename numerical node names to interpretable text
       #              'Age 30+' = '3') %>%
       rownames_to_column(var = "Item") %>%
-      mutate(Item = names(df.omit.na)) %>% 
+      mutate(Item = names(dfin)) %>% 
       rowwise() %>% 
       mutate(MaxDiff = (max(c_across(c(2:ncol(.))))) - min(c_across(c(2:ncol(.))))) %>% 
       ungroup() %>% 
@@ -1291,31 +1415,20 @@ RIdifTable <- function(dfin, dif.var) {
       #mutate(Difference = .data[['Age 18-29']] - .data[['Age 30+']]) %>%
       mutate(across(where(is.numeric), round, 3)) %>%
       #arrange(desc(Skillnad)) %>%
-      mutate(MaxDiff = cell_spec(MaxDiff, color = ifelse(MaxDiff < -0.5, "red",
-                                                         ifelse(MaxDiff > 0.5, "red", "black")))) %>%
       relocate(MaxDiff, .after = last_col()) %>% 
-      kbl(booktabs = T, escape = F) %>%
-      # bootstrap options are for HTML output
-      kable_styling(bootstrap_options = c("striped", "hover"), 
-                    position = "left",
-                    full_width = F,
-                    font_size = r.fontsize,
-                    fixed_thead = T) %>% # when there is a long list in the table
-      #  column_spec(c(2:3), color = "red") %>% 
-      #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>% 
-      column_spec(1, bold = T) %>% 
-      kable_classic(html_font = "Lato") %>% 
-      # latex_options are for PDF output
-      kable_styling(latex_options = c("striped"))
+      formattable(list(
+        'MaxDiff' = 
+          formatter("span", style = ~ style(color = ifelse(MaxDiff < -0.5, "red",
+                                                           ifelse(MaxDiff > 0.5, "red",  "black"))))),
+        table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato"')
 
-    
   } else {
     print("No significant DIF found.")
   }
 }
 
 
-#' Create a DIF line graph, showing groups' item locations
+#' Create a DIF line graph, showing groups' PCM item locations
 #' 
 #' @param dfin Dataframe with item data only
 #' @param dif.var DIF variable
@@ -1327,21 +1440,106 @@ RIdifFigure <- function(dfin, dif.var) {
   df.tree$dif.var<-dif.var
   pctree.out<-pctree(difdata ~ dif.var, data = df.tree)
   
-  if(nrow(itempar(pctree.out)) > 1) {
-  # make a line graph to visualize differences
-  pctree.par<- itempar(pctree.out) %>%
+  if(nrow(itempar(pctree.out) %>% as.data.frame() %>% t()) > 1) {
+  # create dataframe for ggplot
+  pctree.par <- itempar(pctree.out) %>%
     as.data.frame() %>%
     t() %>%
     as.data.frame()
-  pctree.par$Item<-names(df.omit.na)
+  pctree.par$Item<-names(dfin)
   pctree.par$item <- NULL
   rownames(pctree.par)<-NULL
-  #names(pctree.par)<-c("Åk 9","Gy 2","Item")
   pctree.par <- melt(pctree.par, id.vars = "Item")
   names(pctree.par)<-c("Item", "Group", "Logits")
-  #pctree.par$Item<-str_remove_all(pctree.par$Item, "[difdata]") # remove IF from item labels
+  # make plot
   ggplot(pctree.par, aes(x=Item, y=Logits, color=Group, group = Group)) +
     geom_line(size = 1.5) +
     geom_point(size = 2, color = "black")
+  } else {
+    print("No significant DIF found.")
+  }
+}
+
+#' DIF analysis dichotomous - requires having set up dif.variables
+#' 
+#' Makes use of the psychotree package, which also allows for interactions
+#' between DIF variables, which is not implemented in this function (yet).
+#' 
+#' DIF variables need to be vectors with the same length as the number of rows
+#' in the dataset.
+#' 
+#' sample usage: RIdifTable(df.omit.na, dif.age)
+#' 
+#' @param dfin Dataframe with item data only
+#' @param dif.var DIF variable
+#' @export
+RIdifTableRM <- function(dfin, dif.var) {
+  df.tree <- data.frame(matrix(ncol = 0, nrow = nrow(dfin))) # we need to make a new dataframe
+  df.tree$difdata <- as.matrix(dfin) # containing item data in a nested dataframe
+  # and DIF variables:
+  df.tree$dif.var<-dif.var
+  pctree.out<-raschtree(difdata ~ dif.var, data = df.tree)
+  
+  if(nrow(itempar(pctree.out) %>% as.data.frame() %>% t()) > 1) {
+    plot(pctree.out)
+    
+    itempar(pctree.out) %>% # identify the nodes to compare (see plot above)
+      as.data.frame() %>%
+      t() %>%
+      as.data.frame() %>%
+      #dplyr::rename('Age 18-29' = '2', # rename numerical node names to interpretable text
+      #              'Age 30+' = '3') %>%
+      rownames_to_column(var = "Item") %>%
+      mutate(Item = names(dfin)) %>% 
+      rowwise() %>% 
+      mutate(MaxDiff = (max(c_across(c(2:ncol(.))))) - min(c_across(c(2:ncol(.))))) %>% 
+      ungroup() %>% 
+      mutate('Mean location' = rowMeans(.[2:ncol(.)]), StDev = rowSds(as.matrix(.[2:ncol(.)]))) %>%
+      #mutate(Medel = rowMeans(.[2:3]), Stdev = rowSds(as.matrix(.[2:3]))) %>%
+      #mutate(Difference = .data[['Age 18-29']] - .data[['Age 30+']]) %>%
+      mutate(across(where(is.numeric), round, 3)) %>%
+      #arrange(desc(Skillnad)) %>%
+      relocate(MaxDiff, .after = last_col()) %>%
+      formattable(list(
+        'MaxDiff' = 
+          formatter("span", style = ~ style(color = ifelse(MaxDiff < -0.5, "red",
+                                                           ifelse(MaxDiff > 0.5, "red",  "black"))))),
+        table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato"')
+    
+  } else {
+    print("No significant DIF found.")
+  }
+}
+
+
+#' Create a DIF line graph, showing groups' RM item locations
+#' 
+#' @param dfin Dataframe with item data only
+#' @param dif.var DIF variable
+#' @export
+RIdifFigureRM <- function(dfin, dif.var) {
+  df.tree <- data.frame(matrix(ncol = 0, nrow = nrow(dfin))) # we need to make a new dataframe
+  df.tree$difdata <- as.matrix(dfin) # containing item data in a nested dataframe
+  # and DIF variables:
+  df.tree$dif.var<-dif.var
+  pctree.out<-raschtree(difdata ~ dif.var, data = df.tree)
+  if(nrow(itempar(pctree.out) %>% as.data.frame() %>% t()) > 1) {
+    # make a line graph to visualize differences
+    pctree.par<- itempar(pctree.out) %>%
+      as.data.frame() %>%
+      t() %>%
+      as.data.frame()
+    pctree.par$Item<-names(df.omit.na)
+    pctree.par$item <- NULL
+    rownames(pctree.par)<-NULL
+    #names(pctree.par)<-c("Åk 9","Gy 2","Item")
+    pctree.par <- melt(pctree.par, id.vars = "Item")
+    names(pctree.par)<-c("Item", "Group", "Logits")
+    #pctree.par$Item<-str_remove_all(pctree.par$Item, "[difdata]") # remove IF from item labels
+    ggplot(pctree.par, aes(x=Item, y=Logits, color=Group, group = Group)) +
+      geom_line(size = 1.5) +
+      geom_point(size = 2, color = "black")
+  } else {
+    print("No significant DIF found.")
   }
 }
