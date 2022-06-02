@@ -2,7 +2,7 @@
 % Please edit documentation in R/RISEkbmRasch.R
 \name{RIrespcats}
 \alias{RIrespcats}
-\title{Create a figure with ICC plots for all items}
+\title{Create a figure with ICC plots for all items (not working yet)}
 \usage{
 RIrespcats(dfin)
 }
@@ -10,5 +10,5 @@ RIrespcats(dfin)
 \item{dfin}{Dataframe with item data only}
 }
 \description{
-Create a figure with ICC plots for all items
+Create a figure with ICC plots for all items (not working yet)
 }

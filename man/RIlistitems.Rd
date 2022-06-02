@@ -9,7 +9,7 @@ RIlistitems(dfin, all.items)
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
-\item{all.items}{Set to TRUE to list all items}
+\item{all.items}{Set to TRUE to list all items in 'itemlabels' df}
 }
 \value{
 A table with items used in dataframe
@@ -21,6 +21,8 @@ This dataframe has to be labeled "itemlabels".
 }
 \details{
 Default behavior is to only list items that are in the dataframe.
+Any items eliminated during analysis process will not be included.
+
 If all items in the original dataset are to be shown, use option
 "all.items = TRUE".
 }
