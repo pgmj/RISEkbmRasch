@@ -137,16 +137,52 @@ RItileplot <- function(dfin) {
   dfin %>% 
     pivot_longer(everything()) %>% 
     dplyr::count(name, value) %>% 
+    mutate(name = factor(name, levels = rev(names(dfin)))) %>%
     ggplot(aes(x = value, y = name, fill = n)) +
     geom_tile() +
     scale_fill_viridis_c(expression(italic(n)), limits = c(0, NA)) +
-    scale_x_continuous("Response", expand = c(0, 0), breaks = 0:7) + # change breaks to fit number of response categories
+    scale_x_continuous("Response category", expand = c(0, 0), breaks = 0:7) + # change breaks to fit number of response categories
     ggtitle("Items") +
     ylab("") +
     theme(axis.text.x = element_text(size = 8)) +
     geom_text(aes(label=n), colour = "orange") 
 }
 
+#' Create a stacked bar graph to show response distribution
+#' 
+#' @param dfin Dataframe with item data only
+#' @export
+RIbarstack <- function(dfin) {
+  dfin %>% 
+    pivot_longer(everything()) %>% 
+    dplyr::count(name, value) %>% 
+    mutate(name = factor(name, levels = rev(names(dfin)))) %>%
+    ggplot(aes(x = n, y = name, fill = value)) +
+    geom_col() +
+    scale_fill_viridis_c(expression(italic(n)), limits = c(0, NA)) +
+    ggtitle("Item responses") +
+    xlab("Number of responses")
+}
+
+#' Create a stacked diverging bar graph to show response distribution
+#' 
+#' @param dfin Dataframe with item data only
+#' @export
+RIbardiv <- function(dfin) {
+  dfin %>% 
+    pivot_longer(everything()) %>% 
+    rename(Item = name,
+           Response = value) %>% 
+    dplyr::count(Item, Response) %>% 
+    group_by(Item) %>% 
+    mutate(Percent = (100 * n / sum(n)) %>% round(digits = 1)) %>% 
+    pivot_wider(id_cols = Item, names_from = Response, values_from = Percent) %>% 
+    relocate('0', .after = Item) %>% 
+    likert(horizontal = TRUE, aspect=1.5,
+           main="Distribution of responses",
+           auto.key=list(space="right", columns=1,
+                         reverse=FALSE, padding.text=2))
+}
 
 #' Create individual bar plots for all items.
 #' 
@@ -695,6 +731,7 @@ RItargeting <- function(dfin, dich) {
   itemloc.long <- item.locations %>%
     rownames_to_column() %>% 
     dplyr::rename(names = 'rowname') %>%
+    mutate(names = factor(names, levels = rev(names(dfin)))) %>%
     pivot_longer(cols=starts_with('T'), 
                  names_to ='thresholds', 
                  values_to = 'par_values' )
@@ -1411,10 +1448,8 @@ RIdifTable <- function(dfin, dif.var) {
       mutate(MaxDiff = (max(c_across(c(2:ncol(.))))) - min(c_across(c(2:ncol(.))))) %>% 
       ungroup() %>% 
       mutate('Mean location' = rowMeans(.[2:ncol(.)]), StDev = rowSds(as.matrix(.[2:ncol(.)]))) %>%
-      #mutate(Medel = rowMeans(.[2:3]), Stdev = rowSds(as.matrix(.[2:3]))) %>%
-      #mutate(Difference = .data[['Age 18-29']] - .data[['Age 30+']]) %>%
       mutate(across(where(is.numeric), round, 3)) %>%
-      #arrange(desc(Skillnad)) %>%
+      #arrange(desc(MaxDiff)) %>%
       relocate(MaxDiff, .after = last_col()) %>% 
       formattable(list(
         'MaxDiff' = 
