@@ -680,8 +680,8 @@ RIresidcorr <- function(dfin, cutoff) {
   resid<-as.data.frame(resid)
   
   # table
-  resid[upper.tri(resid)]<-NA # remove duplicate values in upper triangle
-  #ldcut<-round(dyn.cutoff,3)
+  resid[upper.tri(resid)] <- "" # remove values in upper right triangle to clean up table
+  diag(resid) <- "" # same for diagonal
   
   resid %>% 
     mutate(across(where(is.numeric), round, 2)) %>%
@@ -830,7 +830,7 @@ RItargeting <- function(dfin, dich) {
     theme(plot.caption = element_text(hjust = 0, face = "italic"))
   
   # combine plots together to create Wright map, and let the individual item threshold plot have some more space
-  plot_grid(p2,p3,p1, labels=NULL, nrow = 3, align ="hv", rel_heights = c(1,1,1.3))
+  plot_grid(p2,p3,p1, labels=NULL, nrow = 3, align ="hv", rel_heights = c(1,1,1.4))
   } else {
     df.erm<-RM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
@@ -932,7 +932,7 @@ RItargeting <- function(dfin, dich) {
       theme(legend.position = 'none')
     
     # combine plots together to create Wright map, and let the individual item threshold plot have some more space
-    plot_grid(p2,p3,p1, labels=NULL, nrow = 3, align ="hv", rel_heights = c(1,1,1.3))
+    plot_grid(p2,p3,p1, labels=NULL, nrow = 3, align ="hv", rel_heights = c(1,1,1.4))
     
   }
 }
@@ -944,8 +944,11 @@ RItargeting <- function(dfin, dich) {
 #' plotINFO(df.erm, type = "item", legpos = "topleft")
 #' 
 #' @param dfin Dataframe with item data only
+#' @param lo Lower limit of x axis (default = -6)
+#' @param hi Upper limit of x axis (default = 6)
 #' @export
-RItif <- function(dfin) {
+RItif <- function(dfin, lo, hi) {
+  if(missing(lo)) {
   df.erm <- PCM(dfin)
   item.estimates <- eRm::thresholds(df.erm)
   item_difficulty <- item.estimates[["threshtable"]][["1"]]
@@ -1047,6 +1050,109 @@ RItif <- function(dfin) {
       panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
                                       colour = "white")
     )
+  } else {
+    df.erm <- PCM(dfin)
+    item.estimates <- eRm::thresholds(df.erm)
+    item_difficulty <- item.estimates[["threshtable"]][["1"]]
+    item_difficulty<-as.data.frame(item_difficulty)
+    item.se <- item.estimates$se.thresh
+    person.locations.estimate <- person.parameter(df.erm)
+    item.fit <- eRm::itemfit(person.locations.estimate)
+    # person locations
+    thetas<-as.data.frame(person.locations.estimate$theta.table)
+    pthetas<-thetas$`Person Parameter`
+    # item locations
+    thresholds<-c()
+    for (i in 2:ncol(item_difficulty)) {
+      thresholds<-c(thresholds,item_difficulty[,i])
+    }
+    #create data frame with 0 rows and 3 columns
+    df.locations <- data.frame(matrix(ncol = 2, nrow = 0))
+    #provide column names
+    colnames(df.locations) <- c('type', 'locations')
+    # change type of data
+    df.locations$type<-as.character(df.locations$type)
+    df.locations$locations<-as.numeric(df.locations$locations)
+    # insert labels in accurate amounts (N+items)
+    nper<-nrow(df.omit.na)
+    nperp<-nper+1
+    nthr<-length(thresholds)+nper
+    df.locations[1:nper,1]<-paste0("Persons")
+    df.locations[nperp:nthr,1]<-paste0("Item thresholds")
+    # insert data from vectors with thetas and thresholds
+    df.locations$locations<-c(pthetas,thresholds)
+    # change type to class factor
+    df.locations$type<-as.factor(df.locations$type)
+    
+    
+    # we need to make a new dataframe for the test information plot/curve
+    psimatrix <- data.frame(matrix(ncol = 2, nrow = 1001)) 
+    names(psimatrix) <- c("psY","psX")
+    # this gets 1001 "dots" for the scale information variable y
+    psimatrix$psY <- test_info(df.erm, seq(lo, hi, length.out = 1001L)) 
+    # this is the x variable in the TIF figure
+    psimatrix$psX <- seq(lo, hi, length.out = 1001L)
+    
+    # check if TIF goes above 3.3
+    peak.tif <- psimatrix %>% slice(which.max(psY)) %>% select(psY) %>% pull()
+    
+    if (peak.tif > 3.32) {
+      # now find where the cutoff points are for 3.33 on the theta (x) variable 
+      # this provides the highest and lowest value into two variables
+      psep_min <- psimatrix %>% filter(psX < 0) %>% slice(which.min(abs(psY - 3.33))) %>% select(psX) %>% pull()
+      psep_max <- psimatrix %>% filter(psX > 0) %>%  slice(which.min(abs(psY - 3.33))) %>% select(psX) %>% pull()
+      # calculate how many participants cross the cutoffs
+      nCeilingRel<-length(which(pthetas > psep_max))
+      nFloorRel<-length(which(pthetas < psep_min))
+      nWithinRel<-(length(pthetas)-(nCeilingRel+nFloorRel))
+      # Retrieve the lowest and highest item thresholds into vector variables
+      min_thresh <- df.locations %>% 
+        filter(type == "Item thresholds") %>% 
+        arrange(locations) %>% 
+        slice(1) %>% 
+        pull()
+      max_thresh <- df.locations %>% 
+        filter(type == "Item thresholds") %>% 
+        arrange(desc(locations)) %>% 
+        slice(1) %>% 
+        pull()
+      
+      # calculate how many participants cross the cutoffs
+      nCeilingThresh<-length(which(pthetas > max_thresh))
+      nFloorThresh<-length(which(pthetas < min_thresh))
+      #PSI<-SepRel(person.locations.estimate)
+      psep_caption <- paste0("Test Information 3.33 (PSI 0.7) is reached between ", psep_min, " and ", psep_max, " logits, where ", 
+                             round(nWithinRel/length(pthetas)*100,1), "% of the participants are located. \n",
+                             round(nCeilingRel/length(pthetas)*100,1), "% of participants have locations above the upper cutoff, and ",
+                             round(nFloorRel/length(pthetas)*100,1), "% are below the lower cutoff. \n",
+                             round(nCeilingThresh/length(pthetas)*100,1), "% have person locations above the highest item threshold (",
+                             round(max_thresh,2), ") and ", round(nFloorThresh/length(pthetas)*100,1), "% are below the lowest item threshold (",
+                             round(min_thresh,2), ").")
+    } else {
+      psep_min = 0
+      psep_max = 0
+      psep_caption <- paste0("Test information is not above 3.33 (PSI 0.7) at any part of the scale.")
+    }
+    
+    ggplot(psimatrix) + 
+      geom_point(aes(x=psX, y=psY), size = 0.1, color = dot_color) +
+      geom_hline(yintercept = 3.33, color = cutoff_line, linetype = 2, size = 0.5) +
+      geom_hline(yintercept = 5, color = cutoff_line, linetype = 2, size = 0.7) + 
+      scale_y_continuous(breaks=seq(0, 8, by = 1)) +
+      scale_x_continuous(breaks=seq(lo, hi, by = 1)) +
+      labs(x = "Logits", y = "Test information") +
+      labs(caption = paste0(psep_caption)) +
+      theme(plot.caption = element_text(hjust = 0, face = "italic")) +
+      theme(
+        panel.background = element_rect(fill = backg_color,
+                                        colour = backg_color,
+                                        size = 0.5, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "white"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "white")
+      )
+  }
 }
 
 
