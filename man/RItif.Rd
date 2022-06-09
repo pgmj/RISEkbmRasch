@@ -4,10 +4,14 @@
 \alias{RItif}
 \title{Reliability, overall test information}
 \usage{
-RItif(dfin)
+RItif(dfin, lo, hi)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
+
+\item{lo}{Lower limit of x axis (default = -6)}
+
+\item{hi}{Upper limit of x axis (default = 6)}
 }
 \description{
 Note: the eRm function below will provide individual item information curves
