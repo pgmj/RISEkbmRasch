@@ -680,11 +680,15 @@ RIresidcorr <- function(dfin, cutoff) {
   resid<-as.data.frame(resid)
   
   # table
+  resid<-as.data.frame(resid)
+  for (i in 1:ncol(resid)) {
+    resid[,i]<-round(resid[,i],2)
+  }
   resid[upper.tri(resid)] <- "" # remove values in upper right triangle to clean up table
   diag(resid) <- "" # same for diagonal
   
   resid %>% 
-    mutate(across(where(is.numeric), round, 2)) %>%
+    #mutate(across(where(is.numeric), round, 2)) %>%
     mutate(across(everything(), ~ cell_spec(.x, color = case_when(.x >= dyn.cutoff ~ "red", TRUE ~ "black")))) %>%  
     kbl(booktabs = T, escape = F, 
         table.attr = "style='width:50%;'") %>%
