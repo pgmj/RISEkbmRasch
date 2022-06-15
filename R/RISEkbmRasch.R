@@ -102,6 +102,41 @@ RIcolorlistitems <- function(items, color) {
   }
 }
 
+#' Create a Guttman-like tileplot/heatmap
+#' 
+#' Sorts items (y axis) and persons (x axis) according to respective 
+#' total score and displays them with a color gradient based on responses
+#' 
+#' @param dfin Dataframe with item data only
+#' @export
+RIheatmap <- function(dfin) {
+  # extract vectors with person/item id arranged by order of total score
+  person.order <- dfin %>% 
+    mutate(persontotal = rowSums(.)) %>% 
+    rownames_to_column("PersonID") %>% 
+    select(PersonID, persontotal) %>% 
+    arrange(persontotal) %>% 
+    pull(PersonID)
+  item.order <- dfin %>% 
+    t() %>% as.data.frame() %>% 
+    mutate(itemtotal = rowSums(.)) %>% 
+    rownames_to_column("ItemID") %>% 
+    select(ItemID, itemtotal) %>% 
+    arrange(itemtotal) %>% 
+    pull(ItemID)
+  
+  # use order vectors to sort item responses and make tile plot
+  dfin %>% 
+    #  head(20) %>% 
+    rownames_to_column("PersonID") %>%
+    mutate(PersonID = factor(PersonID, levels = person.order)) %>% 
+    melt(id.vars = "PersonID") %>%
+    rename(Item = variable) %>% 
+    mutate(Item = factor(Item, levels = item.order)) %>% 
+    ggplot(aes(x = PersonID, y = Item, fill = value)) +
+    geom_tile() + 
+    scale_fill_gradient(low = RISEprimYellowLight, high = RISEprimGreen)
+}
 
 #' Create table for demographic variables
 #' 
