@@ -1,8 +1,11 @@
-### RISE KBM Rasch analysis package
+### RISE KBM Rasch analysis package, https://github.com/pgmj/RISEkbmRasch
 ### Created by magnus.p.johansson@ri.se ORCID: 0000-0003-1669-592X
 ### The contents of this file is licensed according to 
 ### Creative Commons Attribution 4.0 International Public License
 ### https://creativecommons.org/licenses/by/4.0/ 
+
+### See .qmd files at https://github.com/pgmj/pgmj for use cases
+### Further documentation will be created at some point :)
 
 ### set up color palette based on RISE guidelines
 RISEprimGreen <- "#009ca6"
