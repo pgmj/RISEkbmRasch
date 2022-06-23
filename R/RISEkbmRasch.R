@@ -179,7 +179,7 @@ RItileplot <- function(dfin) {
     ggplot(aes(x = value, y = name, fill = n)) +
     geom_tile() +
     scale_fill_viridis_c(expression(italic(n)), limits = c(0, NA)) +
-    scale_x_continuous("Response category", expand = c(0, 0), breaks = 0:7) + # change breaks to fit number of response categories
+    scale_x_continuous("Response category", expand = c(0, 0), breaks = 0:max(dfin)) + # change breaks to fit number of response categories
     ggtitle("Items") +
     ylab("") +
     theme(axis.text.x = element_text(size = 8)) +
