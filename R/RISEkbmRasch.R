@@ -173,6 +173,7 @@ RIdemographics <- function(dif.var, label) {
 #' @export
 RItileplot <- function(dfin) {
   dfin %>% 
+    na.omit() %>% 
     pivot_longer(everything()) %>% 
     dplyr::count(name, value) %>% 
     mutate(name = factor(name, levels = rev(names(dfin)))) %>%
