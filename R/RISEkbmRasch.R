@@ -192,6 +192,7 @@ RItileplot <- function(dfin) {
 #' @export
 RIbarstack <- function(dfin) {
   dfin %>% 
+    na.omit() %>% 
     pivot_longer(everything()) %>% 
     dplyr::count(name, value) %>% 
     mutate(name = factor(name, levels = rev(names(dfin)))) %>%
@@ -208,6 +209,7 @@ RIbarstack <- function(dfin) {
 #' @export
 RIbardiv <- function(dfin) {
   dfin %>% 
+    na.omit() %>% 
     pivot_longer(everything()) %>% 
     rename(Item = name,
            Response = value) %>% 
