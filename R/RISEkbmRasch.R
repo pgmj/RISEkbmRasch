@@ -453,7 +453,7 @@ RIrawdist <- function(dfin) {
   if (rawMinX > 0) {
     rawMinN <- 0
   } else { # if lowest participant score is 0, how many participants have scored 0?
-    rawMinN <- df.omit.na %>%
+    rawMinN <- dfin %>%
       mutate(rowsums = rowSums(.)) %>%
       count(rowsums) %>% 
       arrange(rowsums) %>% 
@@ -462,7 +462,7 @@ RIrawdist <- function(dfin) {
   }
   
   # what is the highest score in the sample?
-  rawMaxX <- df.omit.na %>%
+  rawMaxX <- dfin %>%
     mutate(rowsums = rowSums(.)) %>%
     count(rowsums) %>% 
     arrange(desc(rowsums)) %>% 
@@ -473,7 +473,7 @@ RIrawdist <- function(dfin) {
   if (rawMaxX < rawMax) {
     rawMaxN <- 0
   } else {
-    rawMaxN <- df.omit.na %>%
+    rawMaxN <- dfin %>%
       mutate(rowsums = rowSums(.)) %>%
       count(rowsums) %>% 
       arrange(desc(rowsums)) %>% 
@@ -481,9 +481,9 @@ RIrawdist <- function(dfin) {
       pull(n) 
   }
   # ceiling effect
-  ceiling_eff<-round(rawMaxN/nrow(df.omit.na)*100,2)
+  ceiling_eff<-round(rawMaxN/nrow(dfin)*100,2)
   # floor effect
-  floor_eff<-round(rawMinN/nrow(df.omit.na)*100,2)
+  floor_eff<-round(rawMinN/nrow(dfin)*100,2)
   
   # create barplot to show sum score distribution
   dfin %>% 
@@ -1017,7 +1017,7 @@ RItif <- function(dfin, lo, hi) {
   df.locations$type<-as.character(df.locations$type)
   df.locations$locations<-as.numeric(df.locations$locations)
   # insert labels in accurate amounts (N+items)
-  nper<-nrow(df.omit.na)
+  nper<-nrow(dfin)
   nperp<-nper+1
   nthr<-length(thresholds)+nper
   df.locations[1:nper,1]<-paste0("Persons")
@@ -1119,7 +1119,7 @@ RItif <- function(dfin, lo, hi) {
     df.locations$type<-as.character(df.locations$type)
     df.locations$locations<-as.numeric(df.locations$locations)
     # insert labels in accurate amounts (N+items)
-    nper<-nrow(df.omit.na)
+    nper<-nrow(dfin)
     nperp<-nper+1
     nthr<-length(thresholds)+nper
     df.locations[1:nper,1]<-paste0("Persons")
@@ -1572,7 +1572,7 @@ RIloadLoc <- function(dfin) {
 #' DIF variables need to be vectors with the same length as the number of rows
 #' in the dataset.
 #' 
-#' sample usage: RIdifTable(df.omit.na, dif.age)
+#' sample usage: RIdifTable(df, dif.age)
 #' 
 #' @param dfin Dataframe with item data only
 #' @param dif.var DIF variable
@@ -1654,7 +1654,7 @@ RIdifFigure <- function(dfin, dif.var) {
 #' DIF variables need to be vectors with the same length as the number of rows
 #' in the dataset.
 #' 
-#' sample usage: RIdifTable(df.omit.na, dif.age)
+#' sample usage: RIdifTable(df, dif.age)
 #' 
 #' @param dfin Dataframe with item data only
 #' @param dif.var DIF variable
@@ -1715,7 +1715,7 @@ RIdifFigureRM <- function(dfin, dif.var) {
       as.data.frame() %>%
       t() %>%
       as.data.frame()
-    pctree.par$Item<-names(df.omit.na)
+    pctree.par$Item<-names(dfin)
     pctree.par$item <- NULL
     rownames(pctree.par)<-NULL
     #names(pctree.par)<-c("Åk 9","Gy 2","Item")
