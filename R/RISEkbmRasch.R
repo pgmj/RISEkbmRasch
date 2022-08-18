@@ -798,7 +798,7 @@ RItargeting <- function(dfin, dich) {
   df.locations$type<-as.character(df.locations$type)
   df.locations$locations<-as.numeric(df.locations$locations)
   # insert labels in accurate amounts (N+items)
-  nper<-nrow(df.omit.na)
+  nper<-nrow(dfin)
   nperp<-nper+1
   nthr<-length(thresholds)+nper
   df.locations[1:nper,1]<-paste0("Persons")
@@ -904,7 +904,7 @@ RItargeting <- function(dfin, dich) {
     df.locations$type<-as.character(df.locations$type)
     df.locations$locations<-as.numeric(df.locations$locations)
     # insert labels in accurate amounts (N+items)
-    nper<-nrow(df.omit.na)
+    nper<-nrow(dfin)
     nperp<-nper+1
     nthr<-length(thresholds)+nper
     df.locations[1:nper,1]<-paste0("Persons")
