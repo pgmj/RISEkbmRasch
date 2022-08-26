@@ -19,5 +19,5 @@ between DIF variables, which is not implemented in this function (yet).
 DIF variables need to be vectors with the same length as the number of rows
 in the dataset.
 
-sample usage: RIdifTable(df.omit.na, dif.age)
+sample usage: RIdifTable(df, dif.age)
 }
