@@ -143,16 +143,20 @@ RIheatmap <- function(dfin) {
 
 #' Create table for demographic variables
 #' 
-#' Input should be a vector with a demographic variable such as gender or age.
+#' Input should be a vector with a demographic variable such as gender or age,
+#' and the desired label, enclosed in "".
+#' 
+#' Sample use: RIdemographics(dif.gender, "Gender")
+#' 
 #' @param dif.var A vector with a demographic variable
-#' @param label What the variable represents (sex/age/etc)
+#' @param diflabel What the variable represents (sex/age/etc)
 #' @export
-RIdemographics <- function(dif.var, label) {
+RIdemographics <- function(dif.var, diflabel) {
   dif.var %>% 
     table() %>% 
     as_tibble() %>% 
     mutate('Percent' = (round((100 * n / sum(n)),1))) %>% 
-    dplyr::rename(label = '.') %>% 
+    dplyr::rename(!!quo_name(diflabel) := '.') %>% 
     kbl(booktabs = T, escape = F, table.attr = "style='width:20%;'") %>%
     # options for HTML output
     kable_styling(bootstrap_options = c("striped", "hover"), 
