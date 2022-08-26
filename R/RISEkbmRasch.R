@@ -1272,7 +1272,7 @@ RIitemparams <- function(dfin) {
   item_difficulty %>% 
     mutate(across(where(is.numeric), round, 2)) %>% 
     relocate(Location, .after = last_col()) %>% 
-    mutate(Location = cell_spec(Location, bold = T, align = "left")) %>% 
+    mutate(Location = cell_spec(Location, bold = T, align = "right")) %>% 
     dplyr::rename('Item location' = Location) %>% 
     kbl(booktabs = T, escape = F) %>%
     # bootstrap options are for HTML output
