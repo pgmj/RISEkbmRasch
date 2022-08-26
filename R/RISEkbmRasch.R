@@ -1591,16 +1591,13 @@ RIdifTable <- function(dfin, dif.var) {
       as.data.frame() %>%
       t() %>%
       as.data.frame() %>%
-      #dplyr::rename('Age 18-29' = '2', # rename numerical node names to interpretable text
-      #              'Age 30+' = '3') %>%
+      mutate('Mean location' = rowMeans(.), StDev = rowSds(as.matrix(.))) %>%
+      rowwise() %>% 
+      mutate(MaxDiff = (max(c_across(c(1:(ncol(.)-2))))) - min(c_across(c(1:(ncol(.)-2))))) %>% 
+      ungroup() %>%
+      mutate(across(where(is.numeric), round, 3)) %>%
       rownames_to_column(var = "Item") %>%
       mutate(Item = names(dfin)) %>% 
-      rowwise() %>% 
-      mutate(MaxDiff = (max(c_across(c(2:ncol(.))))) - min(c_across(c(2:ncol(.))))) %>% 
-      ungroup() %>% 
-      mutate('Mean location' = rowMeans(.[2:ncol(.)]), StDev = rowSds(as.matrix(.[2:ncol(.)]))) %>%
-      mutate(across(where(is.numeric), round, 3)) %>%
-      #arrange(desc(MaxDiff)) %>%
       relocate(MaxDiff, .after = last_col()) %>% 
       formattable(list(
         'MaxDiff' = 
