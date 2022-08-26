@@ -4,13 +4,17 @@
 \alias{RIdemographics}
 \title{Create table for demographic variables}
 \usage{
-RIdemographics(dif.var, label)
+RIdemographics(dif.var, diflabel)
 }
 \arguments{
 \item{dif.var}{A vector with a demographic variable}
 
-\item{label}{What the variable represents (sex/age/etc)}
+\item{diflabel}{What the variable represents (sex/age/etc)}
 }
 \description{
-Input should be a vector with a demographic variable such as gender or age.
+Input should be a vector with a demographic variable such as gender or age,
+and the desired label, enclosed in "".
+}
+\details{
+Sample use: RIdemographics(dif.gender, "Gender")
 }
