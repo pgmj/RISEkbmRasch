@@ -9,9 +9,9 @@ RIitemfitPCM(dfin, jz, yz)
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
-\item{jz}{Desired sample size in multisampling}
+\item{jz}{Desired sample size in multisampling (recommended range 250-500)}
 
-\item{yz}{Desired number of samples (recommended range 10-50)}
+\item{yz}{Desired number of samples (recommended range 10-30)}
 }
 \description{
 ZSTD is inflated with large samples (N > 500). Optional function to reduce
