@@ -514,8 +514,8 @@ RIrawdist <- function(dfin) {
 #' to use sample size 250-500, based on Hagell & Westergren, 2016.
 #' 
 #' @param dfin Dataframe with item data only
-#' @param jz Desired sample size in multisampling
-#' @param yz Desired number of samples (recommended range 10-50)
+#' @param jz Desired sample size in multisampling (recommended range 250-500)
+#' @param yz Desired number of samples (recommended range 10-30)
 #' @export
 RIitemfitPCM <- function(dfin, jz, yz) {
   if(missing(jz)) {
@@ -721,33 +721,50 @@ RIresidcorr <- function(dfin, cutoff) {
   sink() # disable suppress output
   
   diag(resid) <- NA # make the diagonal of correlation matrix NA instead of 1
-  dyn.cutoff<-mean(resid, na.rm=T) + cutoff # create variable indicating dynamic cutoff above average correlation
-  resid<-as.data.frame(resid)
+  resid <- as.data.frame(resid)
+  mean.resid <- resid %>% select_if(is.numeric) %>% apply(2, mean, na.rm=T) %>% mean()
+  dyn.cutoff <- mean.resid + cutoff # create variable indicating dynamic cutoff above average correlation
   
   # table
-  resid<-as.data.frame(resid)
-  for (i in 1:ncol(resid)) {
-    resid[,i]<-round(resid[,i],2)
-  }
+  resid <- resid %>% 
+    mutate_if(is.character,as.numeric) %>% 
+    mutate(across(where(is.numeric), round, 2))
   resid[upper.tri(resid)] <- "" # remove values in upper right triangle to clean up table
   diag(resid) <- "" # same for diagonal
   
-  resid %>% 
-    #mutate(across(where(is.numeric), round, 2)) %>%
-    mutate(across(everything(), ~ cell_spec(.x, color = case_when(.x >= dyn.cutoff ~ "red", TRUE ~ "black")))) %>%  
-    kbl(booktabs = T, escape = F, 
-        table.attr = "style='width:50%;'") %>%
-    # bootstrap options are for HTML output
-    kable_styling(bootstrap_options = c("striped", "hover"), 
-                  position = "left",
-                  full_width = F,
-                  font_size = r.fontsize,
-                  fixed_thead = T) %>% # when there is a long list in the table
-    column_spec(1, bold = T) %>% 
-    kable_classic(html_font = "Lato") %>% 
-    # latex_options are for PDF output
-    kable_styling(latex_options = c("striped","scale_down")) %>% 
-    footnote(general = paste0("Relative cut-off value (highlighted in red) is ", round(dyn.cutoff,3), ", which is ", cutoff, " above the average correlation."))
+  if(dyn.cutoff > 0) { 
+    resid %>% 
+      mutate(across(everything(), ~ cell_spec(.x, color = case_when(.x > dyn.cutoff ~ "red", TRUE ~ "black")))) %>%  
+      kbl(booktabs = T, escape = F, 
+          table.attr = "style='width:70%;'") %>%
+      # bootstrap options are for HTML output
+      kable_styling(bootstrap_options = c("striped", "hover"), 
+                    position = "left",
+                    full_width = F,
+                    font_size = r.fontsize,
+                    fixed_thead = T) %>% # when there is a long list in the table
+      column_spec(1, bold = T) %>% 
+      kable_classic(html_font = "Lato") %>% 
+      # latex_options are for PDF output
+      kable_styling(latex_options = c("striped","scale_down")) %>% 
+      footnote(general = paste0("Relative cut-off value (highlighted in red) is ", round(dyn.cutoff,3), ", which is ", cutoff, " above the average correlation."))
+  } else {
+    resid %>% 
+      mutate(across(everything(), ~ cell_spec(.x, color = case_when(.x > -dyn.cutoff ~ "red", TRUE ~ "black")))) %>%  
+      kbl(booktabs = T, escape = F, 
+          table.attr = "style='width:70%;'") %>%
+      # bootstrap options are for HTML output
+      kable_styling(bootstrap_options = c("striped", "hover"), 
+                    position = "left",
+                    full_width = F,
+                    font_size = r.fontsize,
+                    fixed_thead = T) %>% # when there is a long list in the table
+      column_spec(1, bold = T) %>% 
+      kable_classic(html_font = "Lato") %>% 
+      # latex_options are for PDF output
+      kable_styling(latex_options = c("striped","scale_down")) %>% 
+      footnote(general = paste0("Relative cut-off value (highlighted in red) is ", round(dyn.cutoff,3), ", which is ", cutoff, " above the average correlation."))
+  }
   
 }
 
@@ -1301,8 +1318,8 @@ RIitemparams <- function(dfin) {
 #' for options
 #' 
 #' @param dfin Dataframe with item data only
-#' @param jz Desired sample size in multisampling
-#' @param yz Desired number of samples (recommended range 10-50)
+#' @param jz Desired sample size in multisampling (recommended 250-500)
+#' @param yz Desired number of samples (recommended range 10-30)
 #' @export
 RIinfitLoc <- function(dfin, jz, yz) {
   if(missing(jz)) {
