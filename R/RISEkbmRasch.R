@@ -1657,7 +1657,7 @@ RIloadLoc <- function(dfin) {
     geom_hline(yintercept = 0, color = cutoff_line, linetype = 2) +
     scale_x_continuous(limits = c(-1,1), breaks = seq(-1,1, by = 0.25)) +
     scale_y_continuous(limits = ylims, breaks = ybreaks) +
-    geom_text(hjust=1.4, vjust=0.6) +
+    geom_text_repel() +
     theme(
       panel.background = element_rect(fill = backg_color,
                                       colour = backg_color,
