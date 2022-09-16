@@ -32,7 +32,7 @@ backg_color <- RISEprimGreenLight
 # set fontsize for all tables
 r.fontsize <- 15
 
-### first we pre-set our chosen cut-off values for some commonly used indices:
+### we pre-set our chosen cut-off values for some commonly used indices:
 msq_min <- 0.7
 msq_max <- 1.3
 zstd_min <- -2
@@ -40,11 +40,12 @@ zstd_max <- 2
 loc_dep <- 0.2 # above average residual correlation
 dif_dif <- 0.5 # logits difference between groups in average item location (DIF)
 
-### zstd is inflated with large samples (N > 500). Reduce sample size to jz and 
-### run analysis with yz random samples to get average ZSTD
-jz = 300 # number to include in dataset
-yz = 10 # number of random samples
-
+### some commands exist in multiple packages, here we define preferred ones that are preferred
+# in the package functions
+select <- dplyr::select
+count <- dplyr::count
+recode <- car::recode
+rename <- dplyr::rename
 
 #' Show items based on itemlabels file
 #' 
@@ -1534,10 +1535,12 @@ RIoutfitLoc <- function(dfin, jz, yz) {
 }
 
 
-#' Plot with first residual contrast loadings vs item locations 
+#' Generates a plot showing the first residual contrast loadings based on a PCA
+#' of Rasch model residuals vs item locations. 
 #' 
 #' @param dfin Dataframe with item data only
 #' @export
+#' @return A plot with item locations (y) and loadings (x)
 RIloadLoc <- function(dfin) {
   df.erm<-PCM(dfin) # run PCM model
   # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
