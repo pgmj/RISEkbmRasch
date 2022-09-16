@@ -2,13 +2,18 @@
 % Please edit documentation in R/RISEkbmRasch.R
 \name{RIloadLoc}
 \alias{RIloadLoc}
-\title{Plot with first residual contrast loadings vs item locations}
+\title{Generates a plot showing the first residual contrast loadings based on a PCA
+of Rasch model residuals vs item locations.}
 \usage{
 RIloadLoc(dfin)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 }
+\value{
+A plot with item locations (y) and loadings (x)
+}
 \description{
-Plot with first residual contrast loadings vs item locations
+Generates a plot showing the first residual contrast loadings based on a PCA
+of Rasch model residuals vs item locations.
 }
