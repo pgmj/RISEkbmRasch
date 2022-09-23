@@ -178,7 +178,6 @@ RIdemographics <- function(dif.var, diflabel) {
 #' @export
 RItileplot <- function(dfin) {
   dfin %>%
-    na.omit() %>%
     pivot_longer(everything()) %>%
     dplyr::count(name, value) %>%
     mutate(name = factor(name, levels = rev(names(dfin)))) %>%
@@ -195,21 +194,36 @@ RItileplot <- function(dfin) {
 #' Create a stacked bar graph to show response distribution
 #'
 #' @param dfin Dataframe with item data only
+#' @param omit.na Remove respondents with missing data (or not)
 #' @export
-RIbarstack <- function(dfin) {
-  dfin %>%
-    na.omit() %>%
-    pivot_longer(everything()) %>%
-    dplyr::count(name, value) %>%
-    mutate(name = factor(name, levels = rev(names(dfin)))) %>%
-    ggplot(aes(x = n, y = name, fill = value)) +
-    geom_col() +
-    scale_fill_viridis_c(expression(italic(n)), limits = c(0, NA)) +
-    ggtitle("Item responses") +
-    xlab("Number of responses")
+RIbarstack <- function(dfin, omit.na = F) {
+  if (omit.na) {
+    dfin %>%
+      na.omit %>%
+      pivot_longer(everything()) %>%
+      dplyr::count(name, value) %>%
+      mutate(name = factor(name, levels = rev(names(dfin)))) %>%
+      ggplot(aes(x = n, y = name, fill = value)) +
+      geom_col() +
+      scale_fill_viridis_c(expression(italic(n)), limits = c(0, NA)) +
+      ggtitle("Item responses") +
+      xlab("Number of responses")
+  } else {
+    dfin %>%
+      pivot_longer(everything()) %>%
+      dplyr::count(name, value) %>%
+      mutate(name = factor(name, levels = rev(names(dfin)))) %>%
+      ggplot(aes(x = n, y = name, fill = value)) +
+      geom_col() +
+      scale_fill_viridis_c(expression(italic(n)), limits = c(0, NA)) +
+      ggtitle("Item responses") +
+      xlab("Number of responses")
+  }
 }
 
 #' Create a stacked diverging bar graph to show response distribution
+#'
+#' This function automatically removes respondents with missing data.
 #'
 #' @param dfin Dataframe with item data only
 #' @export
@@ -235,11 +249,14 @@ RIbardiv <- function(dfin) {
 #' @param dfin Dataframe with item data only
 #' @export
 RIbarplot <- function(dfin) {
-  for (i in 1:ncol(dfin)) {
-    barplot(table(dfin[,i]), col="#8dc8c7",
-            main=names(dfin[i]),
-            ylab="Number of responses",
-            xlab=(itemlabels[i,2]))
+  for (i in 1:ncol(df.omit.na)) {
+    barplot(table(df.omit.na[, i]),
+            col = "#8dc8c7",
+            main = names(df.omit.na[i]),
+            ylab = "Number of responses",
+            xlab = (itemlabels %>%
+                      filter(itemnr %in% names(df.omit.na))
+                    %>% .[i,2]))
   }
 }
 
@@ -624,9 +641,9 @@ RIitemfitPCM <- function(dfin, jz, yz) {
 #' @param jz Desired sample size in multisampling (recommended range 250-500)
 #' @param yz Desired number of samples (recommended range 10-30)
 #' @export
-RIitemfitPCM2 <- function(dfin, jz = 300, yz = 6) {
+RIitemfitPCM2 <- function(dfin, jz = 300, yz = 6, cpu = 4) {
   library(doParallel)
-  registerDoParallel(cores=4)
+  registerDoParallel(cores=cpu)
     df.erm<-PCM(dfin) # run PCM model
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
     item.estimates <- eRm::thresholds(df.erm)
@@ -1168,7 +1185,7 @@ RItif <- function(dfin, lo, hi) {
     nCeilingThresh<-length(which(pthetas > max_thresh))
     nFloorThresh<-length(which(pthetas < min_thresh))
     #PSI<-SepRel(person.locations.estimate)
-    psep_caption <- paste0("Test Information 3.33 (PSI 0.7) is reached between ", psep_min, " and ", psep_max, " logits, where ",
+    psep_caption <- paste0("Test Information 3.33 (PSI 0.7) is reached between ", round(psep_min,2), " and ", round(psep_max,2), " logits, where ",
                            round(nWithinRel/length(pthetas)*100,1), "% of the participants are located. \n",
                            round(nCeilingRel/length(pthetas)*100,1), "% of participants have locations above the upper cutoff, and ",
                            round(nFloorRel/length(pthetas)*100,1), "% are below the lower cutoff. \n",
@@ -1629,7 +1646,9 @@ RIloadLoc <- function(dfin) {
   item.estimates <- eRm::thresholds(df.erm)
   item_difficulty <- item.estimates[["threshtable"]][["1"]]
   item_difficulty<-as.data.frame(item_difficulty)
-  item.se <- item.estimates$se.thresh
+
+  item.se <- item.estimates$se.thresh # not used yet
+
   person.locations.estimate <- person.parameter(df.erm)
   item.fit <- eRm::itemfit(person.locations.estimate)
   std.resids <- item.fit$st.res
