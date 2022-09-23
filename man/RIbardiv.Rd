@@ -10,5 +10,5 @@ RIbardiv(dfin)
 \item{dfin}{Dataframe with item data only}
 }
 \description{
-Create a stacked diverging bar graph to show response distribution
+This function automatically removes respondents with missing data.
 }

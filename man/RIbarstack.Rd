@@ -4,10 +4,12 @@
 \alias{RIbarstack}
 \title{Create a stacked bar graph to show response distribution}
 \usage{
-RIbarstack(dfin)
+RIbarstack(dfin, omit.na = F)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
+
+\item{omit.na}{Remove respondents with missing data (or not)}
 }
 \description{
 Create a stacked bar graph to show response distribution

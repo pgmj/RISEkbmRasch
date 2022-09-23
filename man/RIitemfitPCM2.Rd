@@ -4,7 +4,7 @@
 \alias{RIitemfitPCM2}
 \title{Create table with Rasch PCM model item fit values for each item.}
 \usage{
-RIitemfitPCM2(dfin, jz = 300, yz = 6)
+RIitemfitPCM2(dfin, jz = 300, yz = 6, cpu = 4)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
