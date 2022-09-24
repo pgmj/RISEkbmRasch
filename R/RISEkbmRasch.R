@@ -196,7 +196,7 @@ RItileplot <- function(dfin) {
 #' @param dfin Dataframe with item data only
 #' @param omit.na Remove respondents with missing data (or not)
 #' @export
-RIbarstack <- function(dfin, omit.na = F) {
+RIbarstack <- function(dfin, omit.na = T) {
   if (omit.na) {
     dfin %>%
       na.omit %>%
