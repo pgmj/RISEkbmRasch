@@ -465,7 +465,7 @@ RIrawdist <- function(dfin) {
 
   # what is the lowest score in the sample?
   rawMinX <- dfin %>%
-    mutate(rowsums = rowSums(.)) %>%
+    mutate(rowsums = rowSums(.,na.rm = T)) %>%
     count(rowsums) %>%
     arrange(rowsums) %>%
     head(1) %>%
@@ -476,7 +476,7 @@ RIrawdist <- function(dfin) {
     rawMinN <- 0
   } else { # if lowest participant score is 0, how many participants have scored 0?
     rawMinN <- dfin %>%
-      mutate(rowsums = rowSums(.)) %>%
+      mutate(rowsums = rowSums(.,na.rm = T)) %>%
       count(rowsums) %>%
       arrange(rowsums) %>%
       head(1) %>%
@@ -485,7 +485,7 @@ RIrawdist <- function(dfin) {
 
   # what is the highest score in the sample?
   rawMaxX <- dfin %>%
-    mutate(rowsums = rowSums(.)) %>%
+    mutate(rowsums = rowSums(.,na.rm = T)) %>%
     count(rowsums) %>%
     arrange(desc(rowsums)) %>%
     head(1) %>%
@@ -496,7 +496,7 @@ RIrawdist <- function(dfin) {
     rawMaxN <- 0
   } else {
     rawMaxN <- dfin %>%
-      mutate(rowsums = rowSums(.)) %>%
+      mutate(rowsums = rowSums(.,na.rm = T)) %>%
       count(rowsums) %>%
       arrange(desc(rowsums)) %>%
       head(1) %>%
@@ -509,7 +509,7 @@ RIrawdist <- function(dfin) {
 
   # create barplot to show sum score distribution
   dfin %>%
-    mutate('Raw sum score' = rowSums(.)) %>%
+    mutate('Raw sum score' = rowSums(.,na.rm = T)) %>%
     pull() %>%
     table() %>%
     barplot(main = "Distribution of summed ordinal raw scores",
