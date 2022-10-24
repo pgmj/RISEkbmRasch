@@ -35,3 +35,7 @@ More details and examples of use will be added.
 [Magnus Johansson](https://www.ri.se/en/person/magnus-p-johansson) is a licensed psychologist with a PhD in behavior analysis, working at [RISE Research Institutes of Sweden](https://ri.se/en).
 - Twitter: [@pgmjoh](https://twitter.com/pgmjoh)
 - ORCID: [0000-0003-1669-592X](https://orcid.org/0000-0003-1669-592X)
+
+## License
+
+This work is licensed under [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/).
