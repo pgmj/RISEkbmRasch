@@ -1,0 +1,701 @@
+---
+title: "Rasch in R and Quarto, part 1 (updated)"
+subtitle: "Intro and WAAQ-7"
+title-block-banner: "#009ca6"
+author: 
+  name: Magnus Johansson
+  affiliation: RISE Research Institutes of Sweden
+  affiliation-url: https://www.ri.se/sv/vad-vi-gor/expertiser/kategoriskt-baserade-matningar
+  orcid: 0000-0003-1669-592X
+date: '2022-08-16'
+always_allow_html: true
+format: 
+  html:
+    toc: true
+    self-contained: true
+    logo: rise_logo_quarto.png
+    mainfont: 'Lato'
+    monofont: 'Roboto Mono'
+    code-overflow: wrap
+    code-tools: true
+    code-fold: true
+    number-sections: true
+    fig-dpi: 300
+    layout-align: left
+  pdf:
+    papersize: a4
+    documentclass: article #article, report or book
+    classoption: [twocolumn, portrait]
+  revealjs:
+    theme: default
+    logo: rise_logo_quarto.png
+    chalkboard: false
+    self-contained: true
+    footer: 'Material skapat av magnus.p.johansson@ri.se'
+    mainfont: 'Lato'
+    slide-level: 4
+    scrollable: true
+    smaller: false
+  docx:
+    toc: true
+    number-sections: true
+    title: "WAAQ-7"
+    subtitle: "Rasch analysis"
+    author: "Magnus Johansson"
+#    reference-doc: RISEmallMJv6.dotx
+execute:
+  echo: false
+  warning: false
+  message: false
+  cache: true
+editor_options: 
+  markdown: 
+    wrap: 72
+  chunk_output_type: inline
+bibliography: 
+- references.bib
+- grateful-refs.bib
+---
+
+```{r}
+#| label: blurb
+#| include: false
+
+### Please check for the latest version of this file at:
+### https://github.com/pgmj/pgmj/blob/main/RaschR1v2.qmd 
+### and the companion file with more code chunks:
+### https://github.com/pgmj/pgmj/blob/main/RaschR2v2.qmd
+
+### The R package RISEkbmRasch needs to be installed using
+# install.packages('devtools')
+# devtools::install_github("pgmj/RISEkbmRasch")
+# package grateful is installed the same way:
+# devtools::install_github("Pakillo/grateful")
+
+```
+
+## Why Rasch analysis in R?
+
+::: incremental
+-   Traceability
+    -   Transparency in decisionmaking
+-   Reproducibility
+-   Freely available
+-   Documentation in the same file as analysis
+    -   (with Quarto/Rmarkdown)
+:::
+
+### Agenda overview
+
+::: incremental
+-   Sample analysis with provided data and code
+    -   WAAQ-7
+    -   PSS-10
+-   Suggested structure for analysis
+    -   Confirmatory and/or exploratory
+:::
+
+### Quarto formatting basics
+
+<https://quarto.org/docs/authoring/markdown-basics.html>
+
+-   Keep the page above open in a web browser
+-   We will use library(kableExtra) for tables
+    -   since it works with HTML/revealjs and PDF output
+    -   even though library(formattable) looks nicer...
+
+### Exercise 1
+
+::: incremental
+-   I'll walk you through the Rstudio interface
+-   You'll run the setup code chunk, and practice navigation a bit
+    -   Enable/disable *Outline*
+    -   Navigate with Outline
+    -   Navigate with *chunks*
+    -   Switch between *source* and *visual* editor
+    -   Changing size of the quadrant windows
+    -   Look at the objects *df* and *itemlabels*
+:::
+
+### Exercise 2
+
+-   We will walk through the code chunks together
+-   Learn what they do, but not how (in detail)
+-   I'll explain some basic R concepts as we move ahead
+-   Focus on how you can structure the analysis
+-   Discuss the output briefly
+    -   feedback on how to improve is welcome :)
+-   Small exercises are described at the end of the file
+
+### Exercise 3 (later on)
+
+-   In the folder "Exercise2" you will find a RaschR2 qmd file
+-   It contains a setup block that will import a dataset (PSS-10)
+-   You can practice using this file (RaschR1) as a template
+    -   copy code chunks for your analysis from this file to the other
+        file
+    -   copy code, run the chunks, check the output, write commentary.
+        **Repeat**
+    -   *there is a folder called "Exercise2solution" that shows how I did
+        the analysis*
+
+```{r}
+#| label: setup
+#| code-fold: false
+#| include: false
+
+# two packages below require that you use devtools to install them manually:
+# first install devtools by
+# install.packages('devtools')
+
+library(car)
+library(grateful) # devtools::install_github("Pakillo/grateful")
+library(kableExtra)
+library(readxl)
+library(tidyverse)
+library(eRm)
+library(ggrepel)
+library(mirt)
+library(psych)
+library(ggplot2)
+library(psychotree)
+library(matrixStats)
+library(reshape)
+library(knitr)
+library(cowplot)
+library(formattable) 
+library(RISEkbmRasch) # devtools::install_github("pgmj/RISEkbmRasch")
+library(HH)
+
+### some commands exist in multiple packages, here we define preferred ones that are frequently used
+select <- dplyr::select
+count <- dplyr::count
+recode <- car::recode
+rename <- dplyr::rename
+
+### set up color palette based on RISE guidelines
+RISEprimGreen <- "#009ca6"
+RISEprimRed <- "#e83c63"
+RISEprimYellow <- "#ffe500"
+RISEprimGreenMid <- "#8dc8c7"
+RISEprimRedMid <- "#f5a9ab"
+RISEprimYellowMid <- "#ffee8d"
+RISEprimGreenLight <- "#ebf5f0"
+RISEprimRedLight <- "#fde8df"
+RISEprimYellowLight <- "#fff7dd"
+RISEcompPurple <- "#482d55"
+RISEcompGreenDark <- "#0e4e65"
+RISEgrey1 <- "#f0f0f0"
+RISEgrey2 <- "#c8c8c8"
+RISEgrey3 <- "#828282"
+RISEgrey4 <- "#555555"
+
+# set some colors used later
+cutoff_line <- RISEprimRed
+dot_color <- "black"
+backg_color <- RISEprimGreenLight
+
+# set fontsize for all tables
+r.fontsize <- 15
+
+### first we pre-set our chosen cut-off values for some commonly used indices:
+msq_min <- 0.7
+msq_max <- 1.3
+zstd_min <- -2
+zstd_max <- 2
+loc_dep <- 0.2 # above average residual correlation
+dif_dif <- 0.5 # logits difference between groups in average item location (DIF)
+
+### zstd is inflated with large samples (N > 500). Reduce sample size to jz and 
+### run analysis yz random samples to get average ZSTD
+jz = 300 # number to include in dataset
+yz = 10 # number of random samples
+
+# Load data
+df<-as.data.frame(read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/GNI23data v1.1.xls"))
+
+### if you need to download the datafile:
+# library(readODS)
+# url <- "https://figshare.com/ndownloader/files/27953790"
+# destfile <- "gnidata.ods"
+# download.file(url, destfile, mode="wb")
+# df <- read_ods(file = "gnidata.ods")
+
+# Load item information
+itemlabels<-read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/WAAQitemlabels.xls")
+#responseOptions<-read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls", sheet = 2)
+#introText<-read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls", sheet = 3)
+
+# our datafile contains miscoded variable, the code below makes all variables numeric
+# this is not needed/desirable for all datasets, so use with care
+df <- df %>% 
+  mutate_if(is.character, as.numeric)
+
+# Make a backup of the dataframe
+df.all<-df
+
+# Create a vector with variables names
+scale.items <- itemlabels$itemnr
+
+# recode WAAQ items to 0-6 (instead of 1-7)
+for (i in scale.items) {
+  df[[i]]<-recode(df[[i]],"1=0;2=1;3=2;4=3;5=4;6=5;7=6",as.factor=FALSE)
+}
+
+##### Code for dealing with missing data
+
+# Create a figure showing % of missing data based on the complete dataset
+missingdata <- df %>% 
+  select(starts_with("WAAQ")) %>% 
+  t() %>% 
+  as.data.frame() %>% 
+  mutate(Missing = rowSums(is.na(.))) %>% 
+  select(Missing) %>% 
+  arrange(desc(Missing)) %>% 
+  rownames_to_column(var = "Item") %>% 
+  mutate(Percentage = Missing/nrow(df)*100) %>% 
+  mutate(Item = factor(Item, levels = rev(Item))) %>%
+  ggplot(aes(x = Item, y = Percentage)) +
+  geom_col() +
+  coord_flip() +
+  ggtitle("Missing data per item") +
+  xlab("Items") +
+  ylab("Percentage of responses missing")
+
+# Minimum items responses that a participant should have to be included in the analysis?
+min.responses <- 3
+
+# Select the variables we will work with, and filter out respondents with a lot of missing data
+df.omit.na <- df %>% 
+  select(starts_with("WAAQ"),Sex,Age) %>%  # variables that start with "WAAQ"
+  filter(length(scale.items)-rowSums(is.na(.[scale.items])) >= min.responses) # include only respondents with data for at least 3 items
+
+###
+  
+# DIF variables into vectors
+dif.gender <- df.omit.na$Sex
+dif.age <- df.omit.na$Age
+# then remove them from dataframe, since we need a dataframe with only item data for the Rasch analyses
+df.omit.na$Sex <- NULL
+df.omit.na$Age <- NULL
+
+# set item names to neutral qX (and avoid issues with the character "_" in pdf output)
+#names(df.omit.na) <- paste0("q", c(1:ncol(df.omit.na)))
+
+```
+
+## Background information {.smaller}
+
+The Work-related Acceptance and Action Questionnaire [@bond2013] is a
+measure of psychological flexibility contextualized to a workplace
+setting.
+
+The WAAQ uses 7 questions, all using the same response scale with 7
+steps (ranging from *"Stämmer aldrig"* to *"Stämmer alltid"*, with
+labels on all categories).
+
+```{r}
+#| label: showitems
+#| tbl-cap: "Items in the Swedish WAAQ"
+#| tbl-cap-location: top
+
+RIlistitems(df.omit.na)
+  
+```
+
+### Participants {.smaller}
+
+We have `r nrow(df.omit.na)` participants and their gender distribution
+is shown in the table below. All participants are Swedish adults and the
+dataset was collected to validate a measure of social interactions at
+workplaces [@johansson2021; @johansson2021a].
+
+```{r}
+#| label: genderdistr
+#| tbl-cap: "Gender distribution in sample"
+#| tbl-cap-location: top
+
+# Make table object to show gender counts and percentages
+dif.gender %>%
+  recode("1='Male';2='Female'") %>% # change these values depending on demographic variable
+  table() %>% 
+  as_tibble() %>% 
+  mutate('Percent' = (round((100 * n / sum(n)),1))) %>% 
+  dplyr::rename('Gender' = '.') %>% 
+  kbl(booktabs = T, escape = F, table.attr = "style='width:20%;'") %>%
+  # options for HTML output
+  kable_styling(bootstrap_options = c("striped", "hover"), 
+                position = "center",
+                full_width = T,
+                font_size = r.fontsize,
+                fixed_thead = T) %>% 
+  column_spec(1, bold = T) %>% 
+  kable_classic(html_font = "Lato") %>% 
+  # latex_options are for PDF output
+  kable_styling(latex_options = c("striped","scale_down"))
+
+## Alternative option:
+#RIdemographics(dif.gender, "Gender")
+# this may need explanatory text, as the function does not include any recoding of numerical demographic categories
+                
+```
+
+### Descriptives of raw data
+
+Responses to all items are summarized below.
+
+```{r}
+#| label: desc1
+#| tbl-cap: "Total number of responses for all items"
+RIallresp(df.omit.na)
+```
+
+### Descriptives - item level
+
+::: panel-tabset
+### Tile plot
+```{r}
+#| label: desc1.2
+RItileplot(df.omit.na)
+```
+### Stacked bars
+```{r}
+#| label: desc1.3
+RIbarstack(df.omit.na)
+```
+### Barplots
+```{r}
+#| label: desc1.5
+#| layout-ncol: 2
+RIbarplot(df.omit.na)
+```
+:::
+
+#### Recoding responses {.smaller}
+
+There are fewer than 10 responses in category 0 for all items, which is
+problematic for the analysis. We will merge the two lowest categories.
+For item 2 the four lowest categories will be merged.
+
+```{r}
+#| label: recode
+
+# recode all variables in dataframe (from column 1 to the maximum number of columns)
+for (i in 1:ncol(df.omit.na)) {
+  df.omit.na[,i]<-recode(df.omit.na[,i],"1=0;2=1;3=2;4=3;5=4;6=5",as.factor=FALSE)
+}
+# then recode a single variable, q2
+df.omit.na$WAAQ_2<-recode(df.omit.na$WAAQ_2,"1=0;2=0;3=1;4=2;5=3",as.factor=FALSE)
+
+# make a new tile plot to review results
+RItileplot(df.omit.na)
+
+```
+
+Some cells still have fewer than 10 responses. Let's look at the response categories using Rasch modeling to produce ICC plots.
+
+## Analysis of response categories {.smaller}
+
+```{r}
+#| label: respcat1
+#| include: false
+
+# package mirt is used to create a compact figure with all item ICCs
+
+mirt.rasch <- mirt(df.omit.na, model=1, itemtype='Rasch') # unidimensional Rasch model
+```
+
+```{r}
+#| label: respcatfig1
+plot(mirt.rasch, type="trace")
+# for bigger, better looking, individual figures:
+#df.erm<-PCM(df.omit.na) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+#plotICC(df.erm, xlim = c(-6, 8), legpos = FALSE, ylab = "Sannolikhet", xlab = "Övergripande förmåga")
+
+```
+
+Items 1 and 5 have issues with disordered response categories, which
+need to be addressed. For both items the two lowest categories will be
+merged.
+
+### ICC plots for recoded items
+
+```{r}
+#| label: recode2
+#| layout-ncol: 2
+
+df.omit.na$WAAQ_1<-recode(df.omit.na$WAAQ_1,"1=0;2=1;3=2;4=3;5=4",as.factor=FALSE)
+df.omit.na$WAAQ_5<-recode(df.omit.na$WAAQ_5,"1=0;2=1;3=2;4=3;5=4",as.factor=FALSE)
+
+# individual plots for those two items:
+RIitemcats(df.omit.na, items = c("WAAQ_1","WAAQ_5"))
+
+```
+
+Response categories are working as expected, after the adjustments made.
+
+### Floor/ceiling effects - raw data {.smaller}
+
+```{r}
+#| label: rawdist2
+
+RIrawdist(df.omit.na)
+
+```
+
+## Rasch analysis 1 {.smaller}
+
+The eRm package, which uses Conditional Maximum Likelihood (CML)
+estimation, will be used primarily. For this analysis, the Partial
+Credit Model will be used.
+
+::: panel-tabset
+### Item fit {.smaller}
+```{r}
+#| label: rasch1.fit
+RIitemfitPCM(df.omit.na)
+```
+### PCA
+```{r}
+#| label: rasch1.pca
+#| tbl-cap: "PCA of Rasch model residuals"
+RIpcmPCA(df.omit.na)
+```
+## 1st contrast loadings
+```{r}
+#| label: rasch1.load
+RIloadLoc(df.omit.na)
+```
+### Residual correlations {.smaller}
+```{r}
+#| label: rasch1.rcorr
+RIresidcorr(df.omit.na, cutoff = 0.2)
+```
+### Targeting
+```{r}
+#| label: rasch1.targ
+RItargeting(df.omit.na)
+```
+### Targeting sorted
+```{r}
+#| label: rasch1.targs
+df.erm<-PCM(df.omit.na)
+plotPImap(df.erm, sorted = T)
+```
+### Reliability
+```{r}
+#| label: rasch1.rel
+RItif(df.omit.na)
+```
+### Items
+```{r}
+#| label: rasch1.items
+RIlistitems(df.omit.na)
+```
+:::
+
+Values in red are below/above the pre-set cutoff values.
+
+A correlation matrix is created based on the Rasch model residuals for
+each item. The average correlation is calculated, and item pairs that
+correlate more than the pre-set cutoff value (see footnote) above the
+average correlation are indicated in red in the table below.
+
+Items 1 and 3 are correlated above the relative cutoff value. 
+Looking at the item descriptions, both are related to
+working efficiently when being worried in general (item 3) or being
+worried about personal problems. As we saw in the section on item fit,
+item 3 had quite low item fit values. This is a common issue with broad
+questions.
+
+It would be reasonable to eliminate either question 1 or 3, since they
+clearly overlap in content. We will leave this for an exercise.
+
+## DIF analysis {.smaller}
+
+Our sample is too small to conduct a properly powered DIF-analysis of any of
+the demographic variables available (gender/age). N \> 250 per subgroup
+would be ideal, and N \> 150 minimal.
+
+For the sake of practice, we will go through the steps in setting up and
+conducting a DIF analysis anyway.
+
+We will use the Rasch Tree tool [@strobl2013], which makes it possible
+to evaluate interaction DIF, if sample size allows. For this analysis,
+we will only investigate gender effects on DIF.
+
+```{r}
+#| label: dif1
+
+RIdifTable(df.omit.na, dif.var = dif.gender)
+# if no DIF is found, only a text saying so will be in the output
+# if DIF is found, a figure and a table is created
+# RIdifFigure() can then be used, if desired
+# same functions ending with RM are available for dichotomous data
+
+```
+
+No DIF was found in our small sample.
+
+## Targeting & item/person locations
+
+```{r}
+#| label: wrightm1
+#| fig-width: 8
+#| fig-height: 8
+
+RItargeting(df.omit.na) # use option dich = TRUE for dichotomous data
+
+# another option is:
+df.erm <- PCM(df.omit.na)
+plotPImap(df.erm, sorted = TRUE) # sorts items based on location (black dots)
+
+```
+
+### Reliability {.smaller}
+
+"Test information" shows the collective information based on the
+combination of all items into a unidimensional scale.
+
+```{r}
+#| label: tif1
+
+RItif(df.omit.na)
+
+# if you want other limits for the x axis:
+#RItif(df.omit.na, lo = -8, hi = 8)
+
+```
+
+The horizontal lines at TIF 3.33 and 5.0 indicate the conventional 
+cutoff values for acceptable reliability of 0.7 and 0.8, respectively.
+
+The table footnote includes information on floor/ceiling effects.
+
+#### Item information {.smaller}
+
+"Item information" shows individual curves indicating the amount of
+information contributed by each item.
+
+```{r}
+#| label: iteminf
+df.erm <- PCM(df.omit.na)
+plotINFO(df.erm, type = "item", legpos = "topleft") # get item information curves
+```
+
+### Person location and infit ZSTD {.smaller}
+
+```{r}
+#| label: personfit1
+
+RIpfit(df.omit.na)
+
+```
+
+## Item parameters
+
+```{r}
+#| label: itemparams
+
+RIitemparams(df.omit.na)
+
+```
+
+## Ordinal to interval transformation table
+
+```{r}
+#| label: ordintTr
+#| include: false
+df.erm<-PCM(df.omit.na) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+# get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+item.estimates <- eRm::thresholds(df.erm)
+item_difficulty <- item.estimates[["threshtable"]][["1"]]
+item_difficulty<-as.data.frame(item_difficulty)
+item.se <- item.estimates$se.thresh
+person.locations.estimate <- person.parameter(df.erm) 
+ple<-as.data.frame(print(person.locations.estimate))
+rownames(ple)<-NULL
+colnames(ple)<-c("Ordinal sum score","Logits","SE (Logits)")
+ple[,2]<-round(ple[,2],2)
+ple[,3]<-round(ple[,3],2)
+
+ple$'Interval score (0-100)'<-round(scales::rescale(ple[,2], to = c(0,100)),1) # set 0,100 to desired range
+ple$'SE (0-100)'<-round((ple$`SE (Logits)`/(0.83/8)),1) # approximated from looking at the table
+ple$'MU (0-100)'<-(ple$'SE (0-100)')*2
+```
+
+```{r}
+#| label: ordintTbl
+#| tbl-cap: "Ordinal-interval transformation table"
+#| layout-ncol: 2
+
+ple %>% 
+  mutate(across(where(is.numeric), round, 2)) %>% 
+  kbl(booktabs = T, escape = F) %>%
+  # bootstrap options are for HTML output
+  kable_styling(bootstrap_options = c("striped", "hover"), 
+                position = "left",
+                full_width = F,
+                font_size = r.fontsize,
+                fixed_thead = T) %>% # when there is a long list in the table
+#  column_spec(c(2:3), color = "red") %>% 
+#  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>% 
+  column_spec(1, bold = T) %>% 
+  kable_classic(html_font = "Lato") %>% 
+  # latex_options are for PDF output
+  kable_styling(latex_options = c("striped","scale_down")) %>% 
+  footnote(general = "SE = Standard Error. Multiply by 2 for MU = Measurement Uncertainty")
+```
+
+## Item location & infit ZSTD
+
+```{r}
+#| label: locinfz
+
+RIinfitLoc(df.omit.na)
+
+```
+
+## Item location & outfit ZSTD
+
+```{r}
+#| label: locoutfz
+
+RIoutfitLoc(df.omit.na)
+
+```
+
+## First contrast loadings & item locations
+
+```{r}
+#| label: locload
+
+RIloadLoc(df.omit.na)
+
+```
+
+The figure above shows the item loadings on the first contrast factor of the PCA of Rasch model residuals, and the item locations.
+
+## Software used
+
+```{r}
+#| label: packagesv
+pkgs <- cite_packages(cite.tidyverse = TRUE, 
+                      output = "table",
+                      bib.file = "grateful-refs.bib",
+                      include.RStudio = TRUE)
+formattable(pkgs, 
+            table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 80%"')
+```
+
+## Exercises
+
+1.  Make a table of partipant age distribution
+2.  Eliminate either item 1 or 3 and check the effects on reliability
+    - hint: df.omit.na$item <- NULL
+3.  Bonus if you are quick:
+    -   Run a DIF analysis using age as DIF variable
+    -   first add the dif.age variable in the setup chunk
+    -   then duplicate the DIF chunk and modify code
+
+## References

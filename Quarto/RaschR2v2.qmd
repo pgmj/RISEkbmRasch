@@ -1,0 +1,596 @@
+---
+title: "Rasch in R and Quarto, part 2"
+subtitle: "PSS-10"
+title-block-banner: "#009ca6"
+author: 
+  name: Magnus Johansson
+  affiliation: RISE Research Institutes of Sweden
+  affiliation-url: https://ri.se/shic
+  orcid: 0000-0003-1669-592X
+date: '2022-06-13'
+format: 
+  html:
+    toc: true
+    self-contained: true
+    logo: rise_logo_quarto.png
+    mainfont: 'Lato'
+    monofont: 'Roboto Mono'
+    code-overflow: wrap
+    code-tools: true
+    code-fold: true
+    number-sections: true
+    fig-dpi: 300
+  pdf:
+    papersize: a4
+    documentclass: report #article, report or book
+    classoption: [onecolumn, portrait]
+  revealjs:
+    theme: default
+    logo: rise_logo_quarto.png
+    chalkboard: true
+    self-contained: false
+#    footer: 'Material skapat av magnus.p.johansson@ri.se'
+    mainfont: 'Lato'
+    slide-level: 4
+    scrollable: true
+    smaller: true
+execute:
+  echo: false
+  warning: false
+  message: false
+  cache: true
+editor_options: 
+  markdown: 
+    wrap: 72
+  chunk_output_type: inline
+bibliography: references.bib
+---
+
+```{r}
+#| label: setup
+#| code-fold: false
+#| include: false
+
+library(car)
+library(grateful)
+library(kableExtra)
+library(readxl)
+library(tidyverse)
+library(eRm)
+library(ggrepel)
+library(mirt)
+library(psych)
+library(ggplot2)
+library(psychotree)
+library(matrixStats)
+library(reshape)
+library(knitr)
+library(cowplot)
+library(formattable)
+library(RISEkbmRasch)
+library(HH)
+
+### some commands exist in multiple packages, here we define preferred ones that are frequently used
+select <- dplyr::select
+count <- dplyr::count
+recode <- car::recode
+rename <- dplyr::rename
+
+### set up color palette based on RISE guidelines
+RISEprimGreen <- "#009ca6"
+RISEprimRed <- "#e83c63"
+RISEprimYellow <- "#ffe500"
+RISEprimGreenMid <- "#8dc8c7"
+RISEprimRedMid <- "#f5a9ab"
+RISEprimYellowMid <- "#ffee8d"
+RISEprimGreenLight <- "#ebf5f0"
+RISEprimRedLight <- "#fde8df"
+RISEprimYellowLight <- "#fff7dd"
+RISEcompPurple <- "#482d55"
+RISEcompGreenDark <- "#0e4e65"
+RISEgrey1 <- "#f0f0f0"
+RISEgrey2 <- "#c8c8c8"
+RISEgrey3 <- "#828282"
+RISEgrey4 <- "#555555"
+
+# set some colors used later
+cutoff_line <- RISEprimRed
+dot_color <- "black"
+backg_color <- RISEprimGreenLight
+
+### first we pre-set our chosen cut-off values for some commonly used indices:
+msq_min <- 0.7
+msq_max <- 1.3
+zstd_min <- -2
+zstd_max <- 2
+loc_dep <- 0.2 # above average residual correlation
+dif_dif <- 0.5 # logits difference between groups in average item location (DIF)
+
+### zstd is inflated with large samples (N > 500). Reduce sample size to jz and 
+### run analysis yz random samples to get average ZSTD
+jz = 300 # number to include in dataset
+yz = 10 # number of random samples
+
+# Load data
+df<-as.data.frame(read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/GNI23data v1.1.xls"))
+
+### if you need to download the datafile:
+# library(readODS)
+# url <- "https://figshare.com/ndownloader/files/27953790"
+# destfile <- "gnidata.ods"
+# download.file(url, destfile, mode="wb")
+# read_ods(file = "gnidata.ods")
+
+df <- df %>% 
+  mutate_if(is.character, as.numeric)
+
+# Make a backup of the dataframe
+df.all<-df
+
+# Select the variables we will work with, which as this point can only be items
+df.omit.na <- df %>% 
+  select(starts_with("PSS"),Sex,Age) %>% # variables that start with "WAAQ"
+  na.omit() # remove rows with 100% missing data
+
+# DIF variables into vectors
+dif.gender <- df.omit.na$Sex
+dif.age <- df.omit.na$Age
+# them remove them from dataframe
+df.omit.na$Sex <- NULL
+df.omit.na$Age <- NULL
+
+# set item names to neutral qX (and avoid issues with _ in pdf output)
+names(df.omit.na) <- paste0("q", c(1:ncol(df.omit.na)))
+
+# recode items to 0-6 (instead of 1-7)
+# for (i in 1:7) {
+#   df.omit.na[,i]<-recode(df.omit.na[,i],"1=0;2=1;3=2;4=3;5=4;6=5;7=6",as.factor=FALSE)
+# }
+
+# Load item information
+itemlabels<-read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls")
+responseOptions<-read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls", sheet = 2)
+introText<-read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls", sheet = 3)
+```
+
+## Background information
+
+The Perceived Stress Scale [@lee2012; @nordin2013] is a measure of
+subjective stress. It is available in three versions, with 14, 10 or 4
+items. This dataset consists of the 10 item version, PSS-10.
+
+All items have the same response options,
+**`r responseOptions$ResponseText`**, which are recoded to 0-4 for this
+analysis. The questions are introduced with the text
+***`r introText$introtext`***.
+
+The table below lists all items, with the four positively worded items
+highlighted with green backgrounds.
+
+```{r}
+#| label: showitems
+#| tbl-cap: "Items in the Swedish PSS-10"
+#| tbl-cap-location: top
+
+RIcolorlistitems(c(4,5,7,8), color = RISEprimGreenLight)
+
+```
+
+### Participants
+
+We have `r nrow(df.omit.na)` participants and their gender distribution
+is shown in the table below. All participants are Swedish adults and the
+dataset was collected to validate a measure of social interactions at
+workplaces [@johansson2021; @johansson2021a].
+
+```{r}
+#| label: genderdistr
+#| tbl-cap: "Gender and age distribution in sample"
+#| tbl-cap-location: top
+#| layout-ncol: 2
+
+# Make table object to show gender counts and percentages
+dif.gender %>%
+  recode("1='Male';2='Female'") %>% 
+  table() %>% 
+  as_tibble() %>% 
+  mutate('Percent' = (round((100 * n / sum(n)),1))) %>% 
+  dplyr::rename('Gender' = '.') %>% 
+  kbl(booktabs = T, escape = F, table.attr = "style='width:20%;'") %>%
+  # options for HTML output
+  kable_styling(bootstrap_options = c("striped", "hover"), 
+                position = "center",
+                full_width = T,
+                font_size = 12,
+                fixed_thead = T) %>% 
+  column_spec(1, bold = T) %>% 
+  kable_classic(html_font = "Lato") %>% 
+  # latex_options are for PDF output
+  kable_styling(latex_options = c("striped"))
+
+dif.age %>%
+  recode("2='18-29';3='30-39';4='40-49';5='50-59';6='60+'") %>% 
+  table() %>% 
+  as_tibble() %>% 
+  mutate('Procent' = (round((100 * n / sum(n)),1))) %>% 
+  dplyr::rename('Age group' = '.') %>% 
+  kbl(caption = "Age distribution", booktabs = T, escape = F, table.attr = "style='width:35%;'") %>%
+  # options for HTML output
+  kable_styling(bootstrap_options = c("striped", "hover"), 
+                position = "center",
+                full_width = T,
+                font_size = 12,
+                fixed_thead = T) %>% 
+  column_spec(1, bold = T) %>% 
+  kable_classic(html_font = "Lato") %>% 
+  # latex_options are for PDF output
+  kable_styling(latex_options = c("striped"))
+                
+```
+
+Demographic subgroups are too small for properly powered DIF-analyses,
+which should have at least 150 in each subgroup, and ideally 250 or
+more.
+
+## Descriptives of raw data
+
+Responses to all items are summarized below.
+
+```{r}
+#| label: descriptives1
+#| tbl-cap: "Total number of responses for all items"
+
+RIallresp(df.omit.na)
+
+```
+
+## Descriptives - item level
+
+::: panel-tabset
+### Tile plot
+
+```{r}
+#| label: descriptives2
+
+RItileplot(df.omit.na)
+
+```
+
+### Stacked bars
+
+```{r}
+#| label: stack1
+
+RIbarstack(df.omit.na)
+```
+
+### Diverging bars
+
+```{r}
+#| label: diverg1
+
+RIbardiv(df.omit.na)
+```
+
+### Barplots {.scrollable}
+
+```{r}
+#| label: alt-descriptives
+#| layout-ncol: 2
+
+RIbarplot(df.omit.na)
+
+```
+:::
+
+#### Recoding responses
+
+Since there are fewer than 10 responses in category 4 for most items we
+will merge category 4 with category 3 before proceeding with the
+analysis.
+
+```{r}
+#| label: recode
+
+for (i in 1:ncol(df.omit.na)) {
+  df.omit.na[,i]<-recode(df.omit.na[,i],"4=3",as.factor=FALSE)
+}
+
+RItileplot(df.omit.na)
+RIbardiv(df.omit.na)
+
+```
+
+## Analysis of response categories
+
+```{r}
+#| label: respcat1
+#| include: false
+
+mirt.rasch <- mirt(df.omit.na, model=1, itemtype='Rasch') # unidimensional Rasch model
+```
+
+```{r}
+#| label: respcatfig1
+plot(mirt.rasch, type="trace")
+
+```
+
+### ICC plots for recoded items
+
+```{r}
+#| label: recode2
+#| code-fold: true
+#| layout-ncol: 2
+
+df.omit.na$q4<-recode(df.omit.na$q4,"2=1;3=2",as.factor=FALSE)
+
+# individual plots for those two items:
+RIitemcats(df.omit.na, items = "q4")
+
+```
+
+Response categories are working as expected, after the adjustments made.
+
+## Dimensionality
+
+The eRm package, which uses Conditional Maximum Likelihood (CML)
+estimation, will be used primarily. For this analysis, the Partial
+Credit Model will be used.
+
+First, we look at the eigenvalues from PCA analysis of Rasch residuals.
+These should be below 2.0 to support unidimensionality.
+
+```{r}
+#| label: dim1
+#| tbl-cap: "PCA of Rasch model residuals"
+
+RIpcmPCA(df.omit.na)
+```
+
+The first eigenvalue exceeds 2.0, which indicates multidimensionality.
+
+```{r}
+#| label: modelfit1
+
+### zstd is inflated with large samples (N > 500). Reduce sample size to jz and 
+### run analysis yz random samples to get average ZSTD
+RIitemfitPCM(df.omit.na, 300, 10)
+
+```
+
+Values in red are beyond the pre-set cutoff values. We'll leave them for
+now.
+
+### Residual correlations
+
+A correlation matrix is created based on the Rasch model residuals for
+each item.
+
+The average correlation is calculated, and item pairs that correlate
+more than the pre-set cutoff value of `r loc_dep` above the average
+correlation are indicated in red in the table below.
+
+```{r}
+#| label: locdeps1
+
+RIresidcorr(df.omit.na, cutoff = 0.2)
+```
+
+We have multiple item pairs with too large correlations:
+
+-   q4 with 5 and 7
+-   q7 with 8
+-   q1 with 9
+
+This means that all four positively worded items are problematic. They
+will be removed, and a new analysis of item fit and residual
+correlations conducted.
+
+### Item fit 2, without positive items
+
+```{r}
+#| label: dim2
+#| tbl-cap: "PCA of Rasch model residuals"
+
+# create vector with eliminated items
+removed_items<-c("q4","q5","q7","q8")
+
+# select all items except those removed
+df.omit.na <- df.omit.na %>% 
+  select(!all_of(removed_items))
+
+RIpcmPCA(df.omit.na)
+``` 
+
+Eigenvalues look good, supporting unidimensionality.
+
+```{r}
+#| label: modelfit2
+
+RIitemfitPCM(df.omit.na)
+
+RIlistitems(df.omit.na)
+
+```
+
+Item fit is acceptable for all items.
+
+### Residual correlations 2
+
+```{r}
+#| label: locdeps2
+
+RIresidcorr(df.omit.na, 0.2)
+
+```
+
+Item 1 and 9 are still correlated above the cutoff. Both items contain wording about being
+upset/angry about things that are unexpected or outside of one's
+control.
+
+Both items have similar item fit. Let's look at the targeting properties
+of these items to see how they compare.
+
+### Targeting
+
+```{r}
+#| label: wrightm1
+
+RItargeting(df.omit.na)
+df.erm <- PCM(df.omit.na)
+plotPImap(df.erm, sorted = TRUE)
+```
+
+Items 1 and 9 are virtually identical in threshold locations, let's see
+how the DIF analysis works out before removing either of them.
+
+## DIF analysis of gender
+
+```{r}
+#| label: dif1
+
+RIdifTable(df.omit.na, dif.gender)
+
+```
+
+No significant gender DIF is indicated.
+
+### DIF analysis of age
+
+We will look at the age variable, for practice.
+
+```{r}
+#| label: dif2
+
+RIdifTable(df.omit.na, dif.age)
+
+```
+
+Finally we get to investigate DIF size! One interesting property of the
+Rasch Tree DIF method is that when a DIF variable has more than 2
+levels, it will determine where the largest differences are, and build a
+sequential tree if multiple significant differences are found.
+
+In our sample, there was DIF of age found between those with category 2
+or lower (age 18-29), and those with category 3 and above (age 30+).
+
+The DIF table highlights values beyond 0.5 logits maximum difference between groups. If more than two groups are included in the DIF analysis, the lowest and highest value is automatically identified.
+
+#### DIF size figure
+
+```{r}
+#| label: DIFsize
+
+RIdifFigure(df.omit.na, dif.age)
+
+```
+
+Significant DIF size was found for items 3 and 9. This could be a good reason
+to remove item 9 instead of item 1 (residual correlation problems
+earlier). Our sample is too small to draw conclusions about DIF, but since
+one of them needs to be removed, item 9 will be removed before moving on
+to the Targeting section.
+
+### DIF interaction (age + gender)
+
+There is another unique function in the Rasch Tree DIF, which is the
+interaction of multiple DIF variables. We can input age and gender at
+the same time! Our groups will be way too small, so this is really only
+to illustrate how to do it.
+
+```{r}
+#| label: dif3
+#| echo: true
+
+# set up the DIF analysis
+df.tree <- data.frame(matrix(ncol = 0, nrow = nrow(df.omit.na))) # we need to make a new dataframe
+df.tree$difdata <- as.matrix(df.omit.na) # containing item data in a nested dataframe
+# and DIF variables:
+df.tree$age<-dif.age
+df.tree$gender<-dif.gender
+pctree.out<-pctree(difdata ~ age + gender, data = df.tree)
+plot(pctree.out)
+
+```
+
+No interaction DIF found (only age shows problems), which unfortunately means we won't get
+to make a neat table showing multiple groups, item locations, means and
+standard deviations.
+
+## Targeting
+
+```{r}
+#| label: itemremoval
+#| include: false
+
+# delete item
+df.omit.na$q9 <- NULL
+# add to list of removed items
+removed_items <- c(removed_items,"q9")
+
+RItargeting(df.omit.na)
+```
+
+### Reliability
+
+"Test/scale information" shows the collective information based on the
+combination of all items into a unidimensional scale.
+
+```{r}
+#| label: tif1
+
+RItif(df.omit.na)
+```
+Reliability is insufficient for the 5 item PSS scale.
+
+#### Item information
+
+"Item information" shows individual curves indicating the amount of
+information contributed by each item.
+
+```{r}
+#| label: iteminf
+df.erm <- PCM(df.omit.na)
+plotINFO(df.erm, type = "item", legpos = "topleft") # get item information curves
+```
+
+### Person fit
+
+```{r}
+#| label: personfit1
+
+RIpfit(df.omit.na)
+
+```
+
+
+## Item parameters
+
+```{r}
+#| label: itemparams
+#| tbl-cap: "Item thresholds and locations"
+
+RIitemparams(df.omit.na)
+```
+
+## Ordinal to interval transformation table
+
+Since the scale is not reliable enough, this will not be provided.
+
+## Software used
+
+```{r}
+#| label: packagesv
+
+
+pkgs <- cite_packages(cite.tidyverse = TRUE, 
+                      output = "table",
+                      bib.file = "grateful-refs.bib",
+                      include.RStudio = TRUE)
+
+formattable(pkgs, 
+            table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 80%"')
+```
+
+## References
