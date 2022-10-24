@@ -15,7 +15,7 @@ devtools::install_github("pgmj/RISEkbmRasch")
 
 ## Usage
 
-Most functions in this package are relatively simple wrappers that create outputs such as tables and figures to make the Rasch analysis process quick and visual. There is a companion Quarto template file that shows suggested ways to use this package.
+Most functions in this package are relatively simple wrappers that create outputs such as tables and figures to make the Rasch analysis process quick and visual. There is a [companion Quarto template file](https://github.com/pgmj/RISEkbmRasch/tree/main/Quarto) that shows suggested ways to use this package.
 
 There are two basic data structure requirements:
 
