@@ -26,7 +26,7 @@ There are two basic data structure requirements:
   - the lowest response category needs to be zero (0)
   - during data import, you will need to separate any demographic variables into vectors, for analysis of differential item functioning (DIF), and then remove them from the dataframe with item data - **the dataframe with item data has to only contain item data for the analysis functions to work**
   
-If there is too much missingness in your data, some functions will struggle. In the Quarto template file there is a script for choosing how many responses a participant needs to have to be included in the analysis. You can experiment with this if you run in to trouble. Currently, the ```RIloadloc()```function does not work with any missing data, and the workaround is to run this command with ```na.omit()``` around the dataframe (ie. ```RIloadloc(na.omit(df))```.
+If there is too much missingness in your data, some functions will struggle. In the Quarto template file there is a script for choosing how many responses a participant needs to have to be included in the analysis. You can experiment with this if you run in to trouble. Currently, the ```RIloadLoc()```function does not work with any missing data (due to the PCA function), and the workaround for now is to run this command with ```na.omit()``` around the dataframe (ie. ```RIloadLoc(na.omit(df))```.
 
 More details and examples of use will be added.
 
