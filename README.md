@@ -3,12 +3,12 @@ R package for Rasch Measurement Theory based psychometric analysis. Intended for
 
 ## Installation
 
-You first need to install the devtools package:
+First, install the devtools package:
 ```r
 install.packages('devtools')
 ```
 
-Then run 
+Then install the package: 
 ```r
 devtools::install_github("pgmj/RISEkbmRasch")
 ```
@@ -28,7 +28,7 @@ There are two basic data structure requirements:
   
 If there is too much missingness in your data, some functions will struggle. In the Quarto template file there is a script for choosing how many responses a participant needs to have to be included in the analysis. You can experiment with this if you run in to trouble. Currently, the ```RIloadLoc()```function does not work with any missing data (due to the PCA function), and the workaround for now is to run this command with ```na.omit()``` around the dataframe (ie. ```RIloadLoc(na.omit(df))```.
 
-More details and examples of use will be added.
+More details and examples of use will be added. You can find two Quarto use cases with Rasch analyses in the [project subfolder Quarto](https://github.com/pgmj/RISEkbmRasch/tree/main/Quarto). Examples of output from the Quarto files are [also available](https://github.com/pgmj/RISEkbmRasch/tree/main/Quarto/output).
 
 ## Author
 
