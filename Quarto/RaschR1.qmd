@@ -1,5 +1,5 @@
 ---
-title: "Rasch in R and Quarto, part 1 (updated)"
+title: "Rasch in R and Quarto, part 1"
 subtitle: "Intro and WAAQ-7"
 title-block-banner: "#009ca6"
 author: 
