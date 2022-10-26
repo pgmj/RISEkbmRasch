@@ -11,7 +11,8 @@ date: '2022-06-13'
 format: 
   html:
     toc: true
-    self-contained: true
+    embed-resources: true
+    standalone: true
     logo: rise_logo_quarto.png
     mainfont: 'Lato'
     monofont: 'Roboto Mono'
