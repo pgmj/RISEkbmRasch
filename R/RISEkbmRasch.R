@@ -1846,3 +1846,112 @@ RIdifFigureRM <- function(dfin, dif.var) {
     print("No significant DIF found.")
   }
 }
+
+#' Create a figure showing items and thresholds (with 95% CI)
+#'
+#' Items are sorted by item location.
+#'
+#' Only works for PCM models currently.
+#'
+#' @param dfin Dataframe with item data only
+#' @param ci Show 95% CI (default) around each threshold location, or "none"
+#' @export
+RIitemHierarchy <- function(dfin, ci = "95"){
+  df.erm <- PCM(dfin)
+  item.estimates <- eRm::thresholds(df.erm)
+  item_difficulty <- item.estimates[["threshtable"]][["1"]]
+  item_difficulty<-as.data.frame(item_difficulty)
+
+  item.locations<-item_difficulty[,2:ncol(item_difficulty)]
+  names(item.locations) <- paste0("T", c(1:ncol(item.locations))) #re-number items
+
+  itemloc.long <- item.locations %>%
+    rownames_to_column() %>%
+    dplyr::rename(names = "rowname") %>%
+    pivot_longer(
+      cols = starts_with("T"),
+      names_to = "thresholds",
+      values_to = "par_values"
+    ) %>%
+    dplyr::rename(itemnr = names,
+                  Threshold = thresholds,
+                  Locations = par_values
+    )
+  # get SEM estimates for each threshold
+  itemSE <- as.data.frame(item.estimates[["se.thresh"]]) %>%
+    rownames_to_column(var = 'itemThresh') %>%
+    rename(ThreshSEM = 'item.estimates[["se.thresh"]]')
+  # long format dataframe with separate variables for item and threshold
+
+  # vector of threshold names as "T1" etc
+  Tthresh <- paste0("T",c(1:100))
+  # vector with threshold names as "c1" etc (since eRm outputs these)
+  names(Tthresh) <- paste0("c",c(1:100))
+  # create df and recode c1 to T1, etc
+  itemSE <- itemSE %>%
+    separate(itemThresh, c(NA,"itemThresh"), sep = "beta ") %>%
+    separate(itemThresh, c("itemnr","threshnr")) %>%
+    mutate(Threshold = dplyr::recode(threshnr, !!!Tthresh)) %>%
+    select(!threshnr)
+
+  # join all dataframes together
+  itemLocs <- item_difficulty %>%
+    rownames_to_column(var = "itemnr") %>%
+    select(!any_of(starts_with("Thresh"))) %>%
+    left_join(itemloc.long, ., by = "itemnr") %>%
+    left_join(., itemlabels, by = "itemnr") %>%
+    rename(itemDescr = item) %>%
+    left_join(., itemSE, by = c("itemnr","Threshold"))
+
+  # get order of items
+  itemOrder <- itemLocs %>%
+    arrange(Location) %>%
+    distinct(itemnr) %>%
+    pull()
+
+  # and itemlabels in the same order
+  itemLabels <- itemLocs %>%
+    arrange(Location) %>%
+    distinct(itemDescr) %>%
+    pull()
+
+  # use the ordering and create plot
+
+  if(ci == "none"){
+    itemLocs %>%
+      mutate(Item = factor(itemnr, levels = itemOrder)) %>%
+      ggplot(aes(x = Item)) +
+      geom_point(aes(y = Locations, color = itemnr)) +
+      geom_text(aes(y = Locations, label = Threshold, color = itemnr), hjust = 1, vjust = 1.3) +
+      geom_point(aes(y = Location),
+                 size = 4,
+                 shape = 18) +
+      theme(legend.position = "none") +
+      scale_x_discrete(labels = str_wrap(paste0(itemOrder, " - ", itemLabels), width = 28)) +
+      coord_flip() +
+      labs(caption = "Note. Item locations are indicated by black diamond shapes. Item threshold locations are indicated by colored dots.") +
+      theme(plot.caption = element_text(hjust = 0, face = "italic"))
+
+  }
+  else {
+    itemLocs %>%
+      mutate(Item = factor(itemnr, levels = itemOrder)) %>%
+      ggplot(aes(x = Item)) +
+      geom_point(aes(y = Locations, color = itemnr)) +
+      geom_errorbar(aes(ymin = Locations - 1.96*ThreshSEM, ymax = Locations + 1.96*ThreshSEM, color = itemnr),
+                    width = 0.05,
+                    ) +
+      geom_text(aes(y = Locations, label = Threshold, color = itemnr), hjust = 1, vjust = 1.3) +
+      geom_point(aes(y = Location),
+                 size = 4,
+                 shape = 18,
+                 color = "black"
+                 ) +
+      theme(legend.position = "none") +
+      scale_x_discrete(labels = str_wrap(paste0(itemOrder, " - ", itemLabels), width = 28)) +
+      coord_flip() +
+      labs(caption = "Note. Item locations are indicated by black diamond shapes. Item threshold locations are indicated by colored dots.
+                              Brackets indicate 95% confidence intervals for threshold locations.") +
+      theme(plot.caption = element_text(hjust = 0, face = "italic"))
+  }
+}
