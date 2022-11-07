@@ -4,7 +4,7 @@
 \alias{RIbarstack}
 \title{Create a stacked bar graph to show response distribution}
 \usage{
-RIbarstack(dfin, omit.na = F)
+RIbarstack(dfin, omit.na = T)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
