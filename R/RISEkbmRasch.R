@@ -1937,7 +1937,7 @@ RIitemHierarchy <- function(dfin, ci = "95"){
       theme(legend.position = "none") +
       scale_x_discrete(labels = str_wrap(paste0(itemOrder, " - ", itemLabels), width = 28)) +
       coord_flip() +
-      labs(caption = "Note. Item locations are indicated by black diamond shapes. Item threshold locations are indicated by colored dots.") +
+      labs(caption = str_wrap("Note. Item locations are indicated by black diamond shapes. Item threshold locations are indicated by colored dots.")) +
       theme(plot.caption = element_text(hjust = 0, face = "italic"))
 
   }
@@ -1958,8 +1958,8 @@ RIitemHierarchy <- function(dfin, ci = "95"){
       theme(legend.position = "none") +
       scale_x_discrete(labels = str_wrap(paste0(itemOrder, " - ", itemLabels), width = 28)) +
       coord_flip() +
-      labs(caption = "Note. Item locations are indicated by black diamond shapes. Item threshold locations are indicated by colored dots.
-                              Brackets indicate 95% confidence intervals for threshold locations.") +
+      labs(caption = str_wrap("Note. Item locations are indicated by black diamond shapes. Item threshold locations are indicated by colored dots.
+                              Brackets indicate 95% confidence intervals for threshold locations.")) +
       theme(plot.caption = element_text(hjust = 0, face = "italic"))
   }
 }
