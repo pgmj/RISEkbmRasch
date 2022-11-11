@@ -158,7 +158,7 @@ RIdemographics <- function(dif.var, diflabel) {
     as_tibble() %>%
     mutate('Percent' = (round((100 * n / sum(n)),1))) %>%
     dplyr::rename(!!quo_name(diflabel) := '.') %>%
-    kbl(booktabs = T, escape = F, table.attr = "style='width:20%;'") %>%
+    kbl(booktabs = T, escape = F, table.attr = "style='width:40%;'") %>%
     # options for HTML output
     kable_styling(bootstrap_options = c("striped", "hover"),
                   position = "left",
@@ -1382,6 +1382,10 @@ RIpfit <- function(dfin) {
 
 #' Item parameters summary
 #'
+#' Displays a table with item threshold locations
+#' and exports a CSV file ("itemParameters.csv") to your working
+#' directory. This file can be used for estimating person thetas/scores.
+#'
 #' @param dfin Dataframe with item data only
 #' @export
 RIitemparams <- function(dfin) {
@@ -1389,6 +1393,10 @@ RIitemparams <- function(dfin) {
   item.estimates <- eRm::thresholds(df.erm)
   item_difficulty <- item.estimates[["threshtable"]][["1"]]
   item_difficulty<-as.data.frame(item_difficulty)
+  item_difficulty %>%
+    select(!Location) %>%
+    mutate(across(where(is.numeric), round, 4)) %>%
+    write_csv(., file = "itemParameters.csv")
 
   item_difficulty %>%
     mutate(across(where(is.numeric), round, 2)) %>%
@@ -1939,7 +1947,7 @@ RIitemHierarchy <- function(dfin, ci = "95"){
       ggplot(aes(x = Item)) +
       geom_point(aes(y = Locations, color = itemnr)) +
       geom_errorbar(aes(ymin = Locations - 1.96*ThreshSEM, ymax = Locations + 1.96*ThreshSEM, color = itemnr),
-                    width = 0.05,
+                    width = 0.05
                     ) +
       geom_text(aes(y = Locations, label = Threshold, color = itemnr), hjust = 1, vjust = 1.3) +
       geom_point(aes(y = Location),
