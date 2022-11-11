@@ -5,14 +5,14 @@ title-block-banner: "#009ca6"
 author: 
   name: Magnus Johansson
   affiliation: RISE Research Institutes of Sweden
-  affiliation-url: https://www.ri.se/en/what-we-do/expertises/categorically-based-measurements
+  affiliation-url: https://www.ri.se/en/vad-vi-gor/expertiser/kategoriskt-baserade-matningar
   orcid: 0000-0003-1669-592X
-date: '2022-10-27'
+date: '2022-11-10'
 always_allow_html: true
 format: 
   html:
     toc: true
-    embed-resources: true
+    self-contained: true
     standalone: true
     logo: rise_logo_quarto.png
     mainfont: 'Lato'
@@ -21,7 +21,7 @@ format:
     code-tools: true
     code-fold: true
     number-sections: true
-    fig-dpi: 300
+    fig-dpi: 250
     layout-align: left
   pdf:
     papersize: a4
@@ -71,7 +71,6 @@ library(kableExtra)
 library(readxl)
 library(tidyverse)
 library(eRm)
-library(mokken)
 library(mirt)
 library(psych)
 library(ggplot2)
@@ -197,9 +196,9 @@ df.omit.na <- df %>%
 
 #---- Create DIF variables----
   
-# DIF variables into vectors
-dif.gender <- df.omit.na$Sex
-dif.age <- df.omit.na$Age
+# DIF variables into vectors, recoded as factors since DIF functions need this
+dif.gender <- as.factor(df.omit.na$Sex)
+dif.age <- as.factor(df.omit.na$Age)
 # then remove them from dataframe, since we need a dataframe with only item data for the Rasch analyses
 df.omit.na$Sex <- NULL
 df.omit.na$Age <- NULL
@@ -207,6 +206,11 @@ df.omit.na$Age <- NULL
 ##### If desired, set item names to brief and neutral "qX" (and avoid issues with the character "_" in pdf output)
 ##### The important thing is that variable names in the data match the variablenames in the itemlabels dataframe
 #names(df.omit.na) <- paste0("q", c(1:ncol(df.omit.na)))
+
+# label gender variable
+# dif.gender <- factor(dif.gender,
+#                       levels = c(1,2,3),
+#                       labels = c("Flicka", "Pojke", "Annat/vill ej svara"))
 
 ```
 
@@ -218,10 +222,10 @@ RIlistitems(df.omit.na)
 ## Demographics
 ```{r}
 #| layout-ncol: 2
-RIdemographics(dif.gender,"Kön")
-# if you want to recode a numerical variable to text for the table (or vice versa), you can use this line
+RIdemographics(dif.gender, "Kön")
+# if you want to recode a numerical variable to text for the table (or vice versa), you can use this line of code instead:
 #dplyr::recode(dif.gender, '1' = "Male", '2' = "Female") %>% RIdemographics("Gender")
-RIdemographics(dif.age,"Ålder")
+RIdemographics(dif.age, "Ålder")
 ```
 
 ### Descriptives of raw data
@@ -288,7 +292,7 @@ RIpcmPCA(df.omit.na)
 ```{r}
 RIresidcorr(df.omit.na, cutoff = 0.2)
 ```
-## 1st contrast loadings
+### 1st contrast loadings
 ```{r}
 RIloadLoc(df.omit.na)
 ```
@@ -296,10 +300,12 @@ RIloadLoc(df.omit.na)
 ```{r}
 RItargeting(df.omit.na)
 ```
-### Targeting sorterad
+### Targeting sorted
 ```{r}
-df.erm<-PCM(df.omit.na)
-plotPImap(df.erm, sorted = T)
+RIitemHierarchy(df.omit.na)
+# or use:
+#df.erm<-PCM(df.omit.na)
+#plotPImap(df.erm, sorted = T)
 ```
 ### Items
 ```{r}
