@@ -1958,8 +1958,32 @@ RIitemHierarchy <- function(dfin, ci = "95"){
       theme(legend.position = "none") +
       scale_x_discrete(labels = str_wrap(paste0(itemOrder, " - ", itemLabels), width = 36)) +
       coord_flip() +
+      #scale_y_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) +
       labs(caption = str_wrap("Note. Item locations are indicated by black diamond shapes. Item threshold locations are indicated by colored dots.
                               Brackets indicate 95% confidence intervals for threshold locations.")) +
       theme(plot.caption = element_text(hjust = 0, face = "italic"))
   }
 }
+
+
+#' Create a table with the items used in a dataframe
+#'
+#' Depends on the `itemlabels` object.
+#'
+#' Is intended to use with Quarto chunk option `column: margin`
+#'
+#' @param dfin Dataframe with item data only
+#' @param fontsize Defaults to 11, optimize if desired
+#' @export
+RIlistItemsMargin <- function(dfin, fontsize = 11){
+  itemlabels %>%
+    filter(itemnr %in% names(dfin)) %>%
+    formattable(align = c(
+      "c",
+      "l"
+    ), list(itemnr = formatter("span", style = ~ style(
+      color = "grey",
+      font.weight = "bold"
+    ))), table.attr = glue::glue("class=\"table table-striped\" style=\"font-size: {fontsize}px; font-family: Lato\""))
+}
+
