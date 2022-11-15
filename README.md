@@ -13,9 +13,12 @@ Then install the package:
 devtools::install_github("pgmj/RISEkbmRasch")
 ```
 
+And, while not necessary it is highly recommended to install Quarto (and update your Rstudio installation if needed):
+https://quarto.org/docs/get-started/
+
 ### Upgrading
 ```r
-detach("package:RISEkbmRasch", unload = TRUE)
+detach("package:RISEkbmRasch", unload = TRUE) # not needed if you haven't loaded the package in your current session
 devtools::install_github("pgmj/RISEkbmRasch")
 ```
 
