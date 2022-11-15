@@ -1970,7 +1970,7 @@ RIitemHierarchy <- function(dfin, ci = "95"){
 #'
 #' Depends on the `itemlabels` object.
 #'
-#' Is intended to use with Quarto chunk option `column: margin`
+#' Intended for use with Quarto chunk option `column: margin`
 #'
 #' @param dfin Dataframe with item data only
 #' @param fontsize Defaults to 11, optimize if desired
