@@ -3,7 +3,7 @@ R package for Rasch Measurement Theory based psychometric analysis. Intended for
 
 ## Installation
 
-First, install the devtools package:
+First, install the [`devtools`](https://devtools.r-lib.org/) package:
 ```r
 install.packages('devtools')
 ```
