@@ -10,5 +10,7 @@ RIitemparams(dfin)
 \item{dfin}{Dataframe with item data only}
 }
 \description{
-Item parameters summary
+Displays a table with item threshold locations
+and exports a CSV file ("itemParameters.csv") to your working
+directory. This file can be used for estimating person thetas/scores.
 }
