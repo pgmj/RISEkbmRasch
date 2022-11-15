@@ -12,8 +12,9 @@ always_allow_html: true
 format: 
   html:
     toc: true
-    self-contained: true
+    embed-resources: true
     standalone: true
+    page-layout: full
     logo: rise_logo_quarto.png
     mainfont: 'Lato'
     monofont: 'Roboto Mono'
@@ -23,6 +24,8 @@ format:
     number-sections: true
     fig-dpi: 250
     layout-align: left
+    linestretch: 1.7
+    theme: materia
   pdf:
     papersize: a4
     documentclass: article #article, report or book
@@ -82,6 +85,7 @@ library(cowplot)
 library(formattable) 
 library(RISEkbmRasch) # devtools::install_github("pgmj/RISEkbmRasch")
 library(HH)
+library(glue)
 
 ### some commands exist in multiple packages, here we define preferred ones that are frequently used
 select <- dplyr::select
@@ -260,16 +264,6 @@ RIbarplot(df.omit.na)
 RIrawdist(df.omit.na)
 ```
 
-## Analysis of response categories {.smaller}
-
-```{r}
-#| include: false
-mirt.rasch <- mirt(df.omit.na, model=1, itemtype='Rasch') # unidimensional Rasch model
-```
-```{r}
-plot(mirt.rasch, type="trace")
-```
-
 ## Rasch analysis 1 {.smaller}
 
 The eRm package, which uses Conditional Maximum Likelihood (CML)
@@ -278,6 +272,16 @@ Credit Model will be used.
 
 **The section below is useful to copy and re-run after making changes to the data, such as removing ill-fitting items or recoding disordered response categories.**
 
+```{r}
+#| column: margin
+
+# this code chunk creates a small table in the margin beside the panel-tabset output below,
+# showing all items currently in the df.omit.na dataframe
+# the chunk option "#| column: margin" is necessary for the layout to work as intended
+RIlistItemsMargin(df.omit.na)
+```
+
+:::: column-page-left
 ::: panel-tabset
 ### Item fit {.smaller}
 ```{r}
@@ -288,7 +292,7 @@ RIitemfitPCM(df.omit.na)
 #| tbl-cap: "PCA of Rasch model residuals"
 RIpcmPCA(df.omit.na)
 ```
-### Residual correlations {.smaller}
+### Residual correlations
 ```{r}
 RIresidcorr(df.omit.na, cutoff = 0.2)
 ```
@@ -296,12 +300,26 @@ RIresidcorr(df.omit.na, cutoff = 0.2)
 ```{r}
 RIloadLoc(df.omit.na)
 ```
+### Analysis of response categories
+```{r}
+#| include: false
+mirt.rasch <- mirt(df.omit.na, model=1, itemtype='Rasch') # unidimensional Rasch model
+```
+```{r}
+plot(mirt.rasch, type="trace")
+```
 ### Targeting
 ```{r}
+#| fig-height: 5
+
+# increase fig-height above as needed, if you have many items
 RItargeting(df.omit.na)
 ```
-### Targeting sorted
+### Item hierarchy
 ```{r}
+#| fig-height: 5
+
+# increase fig-height above as needed, if you have many items
 RIitemHierarchy(df.omit.na)
 # or use:
 #df.erm<-PCM(df.omit.na)
@@ -312,6 +330,7 @@ RIitemHierarchy(df.omit.na)
 RIlistitems(df.omit.na)
 ```
 :::
+::::
 
 #### Item information {.smaller}
 "Item information" shows individual curves indicating the amount of
