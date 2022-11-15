@@ -68,6 +68,7 @@ library(reshape)
 library(knitr)
 library(cowplot)
 library(formattable)
+library(glue)
 library(RISEkbmRasch)
 
 ### some commands exist in multiple packages, here we define preferred ones that are frequently used
