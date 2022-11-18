@@ -38,7 +38,9 @@ There are two basic data structure requirements:
 
 For most Rasch-related functions in the package, there are separate functions for polytomous data (more than two response options for each item) and dichotomous data, except `RItargeting()` which defaults to polytomous data and has the option `dich = TRUE` for dichotomous data. For instance, `RIitemfitPCM()` for the Partial Credit Model and `RIitemfitRM()` for the dichotomous Rasch Model. The Rating Scale Model (RSM) for polytomous data has not been implemented in any of the functions.
 
-More details and examples of use will be added. You can find two Quarto use cases with Rasch analyses in the [project subfolder Quarto](https://github.com/pgmj/RISEkbmRasch/tree/main/Quarto). Examples of output from the Quarto files are [also available](https://github.com/pgmj/RISEkbmRasch/tree/main/Quarto/output). Quarto can output multiple types of documents based on the same script, which is illustrated using the RaschR1.qmd file to output both a HTML scrollable file with menu, and a revealjs presentation (also HTML). The HTML files need to be downloaded and opened with a web browser.
+More details and examples of use will be added. You can find two Quarto use cases with Rasch analyses in the [project subfolder Quarto](https://github.com/pgmj/RISEkbmRasch/tree/main/Quarto). You will need to copy all the text from the .qmd template file and paste it into a new file, since GitHub does not allow any simple way to just download a file(?). Since Quarto/qmd files are just text files, this is hopefully not too inconvenient.
+
+Examples of output from the Quarto files are [also available](https://github.com/pgmj/RISEkbmRasch/tree/main/Quarto/output). Quarto can output multiple types of documents based on the same script, which is illustrated using the RaschR1.qmd file to output both a HTML scrollable file with side menu, and a revealjs presentation (also using HTML). The HTML files need to be downloaded and opened with a web browser.
 
 ### Notes on known issues
 
