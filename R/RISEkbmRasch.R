@@ -98,13 +98,35 @@ RIcolorlistitems <- function(items, color) {
   if(missing(color)) {
     formattable(itemlabels, align=c("r","l"), list(
       formattable::area(row = items) ~ color_tile("lightblue", "lightpink")),
-      table.attr = 'style="font-size: 15px; font-family: Lato"')
+      table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato"')
   } else {
     formattable(itemlabels, align=c("r","l"), list(
       formattable::area(row = items) ~ color_tile(color, "lightpink")),
-      table.attr = 'style="font-size: 15px; font-family: Lato"')
+      table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato"')
   }
 }
+
+#' Create a table with the items used in a dataframe
+#'
+#' Depends on the `itemlabels` object, see package README.
+#'
+#' Intended for use with Quarto chunk option `column: margin`
+#'
+#' @param dfin Dataframe with item data only
+#' @param fontsize Defaults to 11, optimize if desired
+#' @export
+RIlistItemsMargin <- function(dfin, fontsize = 11){
+  itemlabels %>%
+    filter(itemnr %in% names(dfin)) %>%
+    formattable(align = c(
+      "c",
+      "l"
+    ), list(itemnr = formatter("span", style = ~ style(
+      color = "grey",
+      font.weight = "bold"
+    ))), table.attr = glue::glue("class=\"table table-striped\" style=\"font-size: {fontsize}px; font-family: Lato\""))
+}
+
 
 #' Create a Guttman-like tileplot/heatmap
 #'
@@ -954,45 +976,53 @@ RItargeting <- function(dfin, dich) {
   pi.locations[3,3] <- round(sd(pthetas),2)
 
   # Person location histogram
-  p2<-ggplot() +
-    geom_histogram(data=subset(df.locations, type=="Persons"),
-                   aes(locations, fill="Persons", y= ..count..)) +
-    xlab('') +
-    ylab('Persons') +
-    scale_x_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) +
+  p2 <- ggplot() +
+    geom_histogram(
+      data = subset(df.locations, type == "Persons"),
+      aes(locations, fill = "Persons", y = after_stat(count))
+    ) +
+    xlab("") +
+    ylab("Persons") +
+    scale_x_continuous(limits = c(-5, 6), breaks = scales::pretty_breaks(n = 10)) +
     geom_vline(xintercept = person.mean, color = RISEcompGreenDark, linetype = 2) +
-    annotate("rect", ymin = 0, ymax = Inf, xmin = (person.mean-person.sd), xmax = (person.mean+person.sd), alpha = .2) +
+    annotate("rect", ymin = 0, ymax = Inf, xmin = (person.mean - person.sd), xmax = (person.mean + person.sd), alpha = .2) +
     geom_text(hjust = 1.1, vjust = 1) +
     theme_bw() +
-    theme(legend.position = 'none',
-          text=element_text(family = "sans"))
+    theme(
+      legend.position = "none",
+      text = element_text(family = "sans")
+    )
 
   # Item Threshold location histogram
   p3 <- ggplot() +
-    geom_histogram(data=subset(df.locations, type=="Item thresholds"),
-                   aes(locations, y= ..count..)) +
-    xlab('') +
-    ylab('Thresholds') +
-    scale_x_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) +
+    geom_histogram(
+      data = subset(df.locations, type == "Item thresholds"),
+      aes(locations, y = after_stat(count))
+    ) +
+    xlab("") +
+    ylab("Thresholds") +
+    scale_x_continuous(limits = c(-5, 6), breaks = scales::pretty_breaks(n = 10)) +
     scale_y_reverse() +
     geom_vline(xintercept = item.mean, color = RISEprimRed, linetype = 2) +
-    annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean-item.thresh.sd), xmax = (item.mean+item.thresh.sd), alpha = .2) +
+    annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean - item.thresh.sd), xmax = (item.mean + item.thresh.sd), alpha = .2) +
     geom_text(hjust = 1.1, vjust = 1) +
     theme_bw() +
-    theme(legend.position = 'none')
+    theme(legend.position = "none")
 
   # make plot with each items thresholds shown as dots
-  p1=ggplot(itemloc.long, aes(x = names, y = par_values, label = thresholds, color = names)) +
+  p1 <- ggplot(itemloc.long, aes(x = names, y = par_values, label = thresholds, color = names)) +
     geom_point() +
     geom_text(hjust = 1.1, vjust = 1) +
-    ylab('Location (logit scale)') +
-    xlab('Items') +
-    scale_y_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) +
+    ylab("Location (logit scale)") +
+    xlab("Items") +
+    scale_y_continuous(limits = c(-5, 6), breaks = scales::pretty_breaks(n = 10)) +
     theme_bw() +
-    theme(legend.position = 'none') +
+    theme(legend.position = "none") +
     coord_flip() +
-    labs(caption = paste0("Person location average: ", pi.locations[3,2], " (SD ", pi.locations[3,3],"), Item threshold location average: ",
-                          pi.locations[2,2], " (SD ", pi.locations[2,3], ").")) +
+    labs(caption = paste0(
+      "Person location average: ", pi.locations[3, 2], " (SD ", pi.locations[3, 3], "), Item threshold location average: ",
+      pi.locations[2, 2], " (SD ", pi.locations[2, 3], ")."
+    )) +
     theme(plot.caption = element_text(hjust = 0, face = "italic"))
 
   # combine plots together to create Wright map, and let the individual item threshold plot have some more space
@@ -1072,7 +1102,7 @@ RItargeting <- function(dfin, dich) {
     # Person location histogram
     p2<-ggplot() +
       geom_histogram(data=subset(df.locations, type=="Persons"),
-                     aes(locations, fill="Persons", y= ..count..)) +
+                     aes(locations, fill="Persons", y= after_stat(count))) +
       xlab('') +
       ylab('Persons') +
       scale_x_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) +
@@ -1086,7 +1116,7 @@ RItargeting <- function(dfin, dich) {
     # Item Threshold location histogram
     p3 <- ggplot() +
       geom_histogram(data=subset(df.locations, type=="Item thresholds"),
-                     aes(locations, y= ..count..)) +
+                     aes(locations, y= after_stat(count))) +
       xlab('') +
       ylab('Items aggregated') +
       scale_x_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) +
@@ -1963,27 +1993,5 @@ RIitemHierarchy <- function(dfin, ci = "95"){
                               Brackets indicate 95% confidence intervals for threshold locations.")) +
       theme(plot.caption = element_text(hjust = 0, face = "italic"))
   }
-}
-
-
-#' Create a table with the items used in a dataframe
-#'
-#' Depends on the `itemlabels` object.
-#'
-#' Intended for use with Quarto chunk option `column: margin`
-#'
-#' @param dfin Dataframe with item data only
-#' @param fontsize Defaults to 11, optimize if desired
-#' @export
-RIlistItemsMargin <- function(dfin, fontsize = 11){
-  itemlabels %>%
-    filter(itemnr %in% names(dfin)) %>%
-    formattable(align = c(
-      "c",
-      "l"
-    ), list(itemnr = formatter("span", style = ~ style(
-      color = "grey",
-      font.weight = "bold"
-    ))), table.attr = glue::glue("class=\"table table-striped\" style=\"font-size: {fontsize}px; font-family: Lato\""))
 }
 
