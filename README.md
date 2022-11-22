@@ -105,6 +105,7 @@ backg_color <- RISEprimGreenLight
 r.fontsize <- 15
 
 ### pre-set our chosen cut-off values for some commonly used indices:
+### these are used to create highlight colors in tables
 msq_min <- 0.7
 msq_max <- 1.3
 zstd_min <- -2
