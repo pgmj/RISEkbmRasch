@@ -12,8 +12,8 @@ RIlistItemsMargin(dfin, fontsize = 11)
 \item{fontsize}{Defaults to 11, optimize if desired}
 }
 \description{
-Depends on the \code{itemlabels} object.
+Depends on the \code{itemlabels} object, see package README.
 }
 \details{
-Is intended to use with Quarto chunk option \code{column: margin}
+Intended for use with Quarto chunk option \code{column: margin}
 }
