@@ -441,9 +441,11 @@ RIrmPCA <- function(dfin, no.table) {
 #'
 #' @param dfin Dataframe with item data only
 #' @export
-RIrespcats <- function(dfin) {
-  mirt.rasch <- mirt(dfin, model=1, itemtype='Rasch') # unidimensional Rasch model
-  plot(mirt.rasch, type="trace") # create ICC plots for all items
+RIrespCats <- function(dfin) {
+  sink(nullfile()) # suppress output from the rows below
+  mirt.rasch <- mirt(dfin, model = 1, itemtype = "Rasch") # unidimensional Rasch model
+  sink()
+  plot(mirt.rasch, type = "trace") # create ICC plots for all items
 }
 
 
@@ -451,13 +453,16 @@ RIrespcats <- function(dfin) {
 #' @param dfin Dataframe with item data only
 #' @param items A single item (e.g. "q4"), or a vector with multiple items (e.g. c("q4","q2")).
 #' @export
-RIitemcats <- function(dfin, items) {
+RIitemCats <- function(dfin, items) {
   # individual plots for those two items:
-  df.erm<-PCM(dfin) # run PCM, partial credit model
-  plotICC(df.erm, xlim = c(-6, 6), # change the theta interval to display
-          legpos = FALSE, # change legpos to TRUE if you want the legend displayed
-          ylab = "Probability", xlab = "Person location/ability",
-          item.subset = items)
+  df.erm <- PCM(dfin) # run PCM, partial credit model
+  plotICC(df.erm,
+    xlim = c(-6, 6), # change the theta interval to display
+    legpos = FALSE, # change legpos to TRUE if you want the legend displayed
+    ylab = "Probability",
+    xlab = "Person location",
+    item.subset = items
+  )
 }
 #make this escape the "hit return to see next plot"
 
@@ -1995,3 +2000,28 @@ RIitemHierarchy <- function(dfin, ci = "95"){
   }
 }
 
+#' Raw sum score to logit score transformation table
+#'
+#' Displays a table with raw sum scores and their corresponding logit score
+#' and logit standard error.
+#'
+#' @param dfin Dataframe with item data only
+#' @export
+RIscoreSE <- function(dfin) {
+  sink(nullfile()) # suppress output from the rows below
+  ppar <- dfin %>%
+    PCM() %>%
+    person.parameter() %>%
+    print() %>%
+    as.data.frame()
+  sink()
+
+  ppar %>%
+    #select(!X1.Raw.Score) %>%
+    rename('Logit score' = 'X1.Estimate',
+           'Logit std.error' = 'X1.Std.Error',
+           'Ordinal sum score' = 'X1.Raw.Score') %>%
+    remove_rownames() %>%
+    mutate(across(where(is.numeric), round, 2)) %>%
+    formattable(., table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 80%"')
+}
