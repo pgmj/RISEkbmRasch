@@ -138,14 +138,14 @@ RIlistItemsMargin <- function(dfin, fontsize = 11){
 RIheatmap <- function(dfin) {
   # extract vectors with person/item id arranged by order of total score
   person.order <- dfin %>%
-    mutate(persontotal = rowSums(.)) %>%
+    mutate(persontotal = rowSums(., na.rm = TRUE)) %>%
     rownames_to_column("PersonID") %>%
     select(PersonID, persontotal) %>%
     arrange(persontotal) %>%
     pull(PersonID)
   item.order <- dfin %>%
     t() %>% as.data.frame() %>%
-    mutate(itemtotal = rowSums(.)) %>%
+    mutate(itemtotal = rowSums(., na.rm = TRUE)) %>%
     rownames_to_column("ItemID") %>%
     select(ItemID, itemtotal) %>%
     arrange(itemtotal) %>%
