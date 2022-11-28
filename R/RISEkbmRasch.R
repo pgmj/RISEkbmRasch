@@ -161,7 +161,9 @@ RIheatmap <- function(dfin) {
     mutate(Item = factor(Item, levels = item.order)) %>%
     ggplot(aes(x = PersonID, y = Item, fill = value)) +
     geom_tile() +
-    scale_fill_gradient(low = RISEprimYellowLight, high = RISEprimGreen)
+    scale_fill_gradient(low = RISEprimYellowLight, high = RISEprimGreen) +
+    #scale_x_discrete(guide = guide_axis(n.dodge = 2))
+    theme(axis.text.x = element_text(angle = 90))
 }
 
 #' Create table for demographic variables
@@ -1422,8 +1424,9 @@ RIpfit <- function(dfin) {
 #' directory. This file can be used for estimating person thetas/scores.
 #'
 #' @param dfin Dataframe with item data only
+#' @param filename Optional specification of filename for item parameters output
 #' @export
-RIitemparams <- function(dfin) {
+RIitemparams <- function(dfin, filename = "itemParameters.csv") {
   df.erm <- PCM(dfin)
   item.estimates <- eRm::thresholds(df.erm)
   item_difficulty <- item.estimates[["threshtable"]][["1"]]
@@ -1431,7 +1434,7 @@ RIitemparams <- function(dfin) {
   item_difficulty %>%
     select(!Location) %>%
     mutate(across(where(is.numeric), round, 4)) %>%
-    write_csv(., file = "itemParameters.csv")
+    write_csv(., file = filename)
 
   item_difficulty %>%
     mutate(across(where(is.numeric), round, 2)) %>%
