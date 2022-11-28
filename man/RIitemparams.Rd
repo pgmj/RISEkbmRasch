@@ -4,10 +4,12 @@
 \alias{RIitemparams}
 \title{Item parameters summary}
 \usage{
-RIitemparams(dfin)
+RIitemparams(dfin, filename = "itemParameters.csv")
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
+
+\item{filename}{Optional specification of filename for item parameters output}
 }
 \description{
 Displays a table with item threshold locations
