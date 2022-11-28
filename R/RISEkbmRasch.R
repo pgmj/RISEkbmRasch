@@ -909,67 +909,72 @@ RIresidcorr <- function(dfin, cutoff) {
 #'
 #' @param dfin Dataframe with item data only
 #' @param dich Set to TRUE if your data is dichotomous
+#' @param xlim Optionally, set lower/upper limits for x axis, c(-5,6) is default
 #' @export
-RItargeting <- function(dfin, dich) {
+RItargeting <- function(dfin, dich, xlim = c(-5,6)) {
   if(missing(dich)) {
-  df.erm<-PCM(dfin) # run PCM model
+  df.erm <- PCM(dfin) # run PCM model
   # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
   item.estimates <- eRm::thresholds(df.erm)
   item_difficulty <- item.estimates[["threshtable"]][["1"]]
-  item_difficulty<-as.data.frame(item_difficulty)
+  item_difficulty <- as.data.frame(item_difficulty)
   item.se <- item.estimates$se.thresh
   person.locations.estimate <- person.parameter(df.erm)
   item.fit <- eRm::itemfit(person.locations.estimate)
 
-  item.locations<-item_difficulty[,2:ncol(item_difficulty)]
-  names(item.locations) <- paste0("T", c(1:ncol(item.locations))) #re-number items
+  item.locations <- item_difficulty[, 2:ncol(item_difficulty)]
+  names(item.locations) <- paste0("T", c(1:ncol(item.locations))) # re-number items
   itemloc.long <- item.locations %>%
     rownames_to_column() %>%
-    dplyr::rename(names = 'rowname') %>%
+    dplyr::rename(names = "rowname") %>%
     mutate(names = factor(names, levels = rev(names(dfin)))) %>%
-    pivot_longer(cols=starts_with('T'),
-                 names_to ='thresholds',
-                 values_to = 'par_values' )
+    pivot_longer(
+      cols = starts_with("T"),
+      names_to = "thresholds",
+      values_to = "par_values"
+    )
   ### create df for ggplot histograms
   # person locations
-  thetas<-as.data.frame(person.locations.estimate$theta.table)
-  pthetas<-thetas$`Person Parameter`
+  thetas <- as.data.frame(person.locations.estimate$theta.table)
+  pthetas <- thetas$`Person Parameter`
   # item locations
-  thresholds<-c()
+  thresholds <- c()
   for (i in 2:ncol(item_difficulty)) {
-    thresholds<-c(thresholds,item_difficulty[,i])
+    thresholds <- c(thresholds, item_difficulty[, i])
   }
   ### items and persons in the same variable
   #create data frame with 0 rows and 3 columns
   df.locations <- data.frame(matrix(ncol = 2, nrow = 0))
-  #provide column names
-  colnames(df.locations) <- c('type', 'locations')
+  # provide column names
+  colnames(df.locations) <- c("type", "locations")
   # change type of data
-  df.locations$type<-as.character(df.locations$type)
-  df.locations$locations<-as.numeric(df.locations$locations)
+  df.locations$type <- as.character(df.locations$type)
+  df.locations$locations <- as.numeric(df.locations$locations)
   # insert labels in accurate amounts (N+items)
-  nper<-nrow(dfin)
-  nperp<-nper+1
-  nthr<-length(thresholds)+nper
-  df.locations[1:nper,1]<-paste0("Persons")
-  df.locations[nperp:nthr,1]<-paste0("Item thresholds")
+  nper <- nrow(dfin)
+  nperp <- nper + 1
+  nthr <- length(thresholds) + nper
+  df.locations[1:nper, 1] <- paste0("Persons")
+  df.locations[nperp:nthr, 1] <- paste0("Item thresholds")
   # insert data from vectors with thetas and thresholds
-  df.locations$locations<-c(pthetas,thresholds)
+  df.locations$locations <- c(pthetas, thresholds)
   # change type to class factor
-  df.locations$type<-as.factor(df.locations$type)
+  df.locations$type <- as.factor(df.locations$type)
 
   # get mean/SD for item/person locations
   pi.locations <- data.frame(matrix(ncol = 3, nrow = 3))
 
-  item.mean <- round(mean(item_difficulty$Location),2)
-  item.sd <- round(sd(item_difficulty$Location),2)
+  item.mean <- round(mean(item_difficulty$Location), 2)
+  item.sd <- round(sd(item_difficulty$Location), 2)
   item.thresh.sd <- item_difficulty %>%
     select(starts_with("Threshold")) %>%
     pivot_longer(everything()) %>%
     pull() %>%
-    na.omit() %>% sd() %>% round(2)
-  person.mean <- round(mean(pthetas),2)
-  person.sd <- round(sd(pthetas),2)
+    na.omit() %>%
+    sd() %>%
+    round(2)
+  person.mean <- round(mean(pthetas), 2)
+  person.sd <- round(sd(pthetas), 2)
   #provide column names
   colnames(pi.locations) <- c('','Mean', 'SD')
   pi.locations[1,1] <- "Items"
@@ -990,7 +995,7 @@ RItargeting <- function(dfin, dich) {
     ) +
     xlab("") +
     ylab("Persons") +
-    scale_x_continuous(limits = c(-5, 6), breaks = scales::pretty_breaks(n = 10)) +
+    scale_x_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
     geom_vline(xintercept = person.mean, color = RISEcompGreenDark, linetype = 2) +
     annotate("rect", ymin = 0, ymax = Inf, xmin = (person.mean - person.sd), xmax = (person.mean + person.sd), alpha = .2) +
     geom_text(hjust = 1.1, vjust = 1) +
@@ -1008,7 +1013,7 @@ RItargeting <- function(dfin, dich) {
     ) +
     xlab("") +
     ylab("Thresholds") +
-    scale_x_continuous(limits = c(-5, 6), breaks = scales::pretty_breaks(n = 10)) +
+    scale_x_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
     scale_y_reverse() +
     geom_vline(xintercept = item.mean, color = RISEprimRed, linetype = 2) +
     annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean - item.thresh.sd), xmax = (item.mean + item.thresh.sd), alpha = .2) +
@@ -1022,7 +1027,7 @@ RItargeting <- function(dfin, dich) {
     geom_text(hjust = 1.1, vjust = 1) +
     ylab("Location (logit scale)") +
     xlab("Items") +
-    scale_y_continuous(limits = c(-5, 6), breaks = scales::pretty_breaks(n = 10)) +
+    scale_y_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
     theme_bw() +
     theme(legend.position = "none") +
     coord_flip() +
@@ -1098,7 +1103,7 @@ RItargeting <- function(dfin, dich) {
       geom_text(hjust = 1.1, vjust = 1) +
       ylab('Location (logit scale)') +
       xlab('Items') +
-      scale_y_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) +
+      scale_y_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
       theme_bw() +
       theme(legend.position = 'none') +
       coord_flip() +
@@ -1112,7 +1117,7 @@ RItargeting <- function(dfin, dich) {
                      aes(locations, fill="Persons", y= after_stat(count))) +
       xlab('') +
       ylab('Persons') +
-      scale_x_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) +
+      scale_x_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
       geom_vline(xintercept = person.mean, color = RISEcompGreenDark, linetype = 2) +
       annotate("rect", ymin = 0, ymax = Inf, xmin = (person.mean-person.sd), xmax = (person.mean+person.sd), alpha = .2) +
       geom_text(hjust = 1.1, vjust = 1) +
@@ -1126,7 +1131,7 @@ RItargeting <- function(dfin, dich) {
                      aes(locations, y= after_stat(count))) +
       xlab('') +
       ylab('Items aggregated') +
-      scale_x_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) +
+      scale_x_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
       scale_y_reverse() +
       geom_vline(xintercept = item.mean, color = RISEprimRed, linetype = 2) +
       annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean-item.sd), xmax = (item.mean+item.sd), alpha = .2) +
