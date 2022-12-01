@@ -8,9 +8,9 @@ First, install the [`devtools`](https://devtools.r-lib.org/) package:
 install.packages('devtools')
 ```
 
-Then install the package: 
+Then install the package and its dependencies: 
 ```r
-devtools::install_github("pgmj/RISEkbmRasch")
+devtools::install_github("pgmj/RISEkbmRasch", dependencies = TRUE)
 ```
 
 And, while not necessary, it is highly recommended to install Quarto (and update your Rstudio installation if needed):
