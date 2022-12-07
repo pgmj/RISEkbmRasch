@@ -1819,6 +1819,88 @@ RIdifFigure <- function(dfin, dif.var) {
   }
 }
 
+#' Create a DIF line graph over time, showing groups' PCM item locations
+#'
+#' This function is specifically intended for examining DIF over time, to
+#' create a figure that follows each item location on the y axis
+#' with time on the x axis.
+#'
+#' @param dfin Dataframe with item data only
+#' @param dif.var DIF variable
+#' @export
+RIdifFigTime <- function(dfin, dif.var) {
+  df.tree <- data.frame(matrix(ncol = 0, nrow = nrow(dfin))) # we need to make a new dataframe
+  df.tree$difdata <- as.matrix(dfin) # containing item data in a nested dataframe
+  # and DIF variables:
+  df.tree$dif.var<-dif.var
+  pctree.out<-pctree(difdata ~ dif.var, data = df.tree)
+
+  if(nrow(itempar(pctree.out) %>% as.data.frame() %>% t()) > 1) {
+    # create dataframe for ggplot
+    pctree.par <- itempar(pctree.out) %>%
+      as.data.frame() %>%
+      t() %>%
+      as.data.frame()
+    pctree.par$Item<-names(dfin)
+    pctree.par$item <- NULL
+    rownames(pctree.par)<-NULL
+    pctree.par <- melt(pctree.par, id.vars = "Item")
+    names(pctree.par)<-c("Item", "Group", "Logits")
+    # make plot
+    ggplot(pctree.par, aes(x=Group, y=Logits, color=Item, group = Item)) +
+      geom_line(linewidth = 1.5) +
+      geom_point(size = 3) +
+      xlab("DIF node/Time point (see DIF table)")
+  } else {
+    print("No significant DIF found.")
+  }
+}
+
+#' Create a DIF line graph for item PCM thresholds
+#'
+#' Produces a panel of linegraphs showing item thresholds over DIF nodes.
+#'
+#' @param dfin Dataframe with item data only
+#' @param dif.var DIF variable
+#' @export
+RIdifFigThresh <- function(dfin, dif.var) {
+  df.tree <- data.frame(matrix(ncol = 0, nrow = nrow(dfin))) # we need to make a new dataframe
+  df.tree$difdata <- as.matrix(dfin) # containing item data in a nested dataframe
+  # and DIF variables:
+  df.tree$dif.var <- dif.var
+  pctree.out <- pctree(difdata ~ dif.var, data = df.tree)
+
+  if (nrow(itempar(pctree.out) %>% as.data.frame() %>% t()) > 1) {
+    # create dataframe for ggplot
+    unidif <- threshpar(pctree.out) %>%
+      as.data.frame() %>%
+      t() %>%
+      as.data.frame() %>%
+      rownames_to_column("Threshh") %>%
+      pivot_longer(where(is.numeric)) %>%
+      separate(Threshh, c("Item", "Threshold"), sep = "-") %>%
+      separate(Item, c(NA, "Item"), sep = "ata") %>%
+      rename(
+        "DIF node" = name,
+        Location = value
+      )
+
+    ggplot(unidif, (aes(
+      x = `DIF node`,
+      y = Location,
+      group = Threshold,
+      color = Item
+    ))) +
+      geom_line() +
+      geom_point() +
+      theme(legend.position = "none") +
+      facet_wrap(~Item)
+  } else {
+    print("No significant DIF found.")
+  }
+}
+
+
 #' DIF analysis dichotomous - requires having set up dif.variables
 #'
 #' Makes use of the psychotree package, which also allows for interactions
