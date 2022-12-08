@@ -48,9 +48,11 @@ There are currently no checks on whether data input in functions are correct. Th
 
 If there is too much missingness in your data, some functions may have issues or take a lot of time to run. In the Quarto template file there is a script for choosing how many responses a participant needs to have to be included in the analysis. You can experiment with this if you run in to trouble. Currently, the `RIloadLoc()` function does not work with any missing data (due to the PCA function), and the workaround for now is to run this command with `na.omit()` around the dataframe (ie. `RIloadLoc(na.omit(df))`. Other reasons for functions taking longer time to run is having a lot of items (30+), and/or if you have a lot of response categories that are disordered (commonly happens with more than 4-5 response categories, especially if they are unlabeled in the questionnaire).
 
+The `RIitemfitPCM2()` function that makes use of multiple random subsamples to avoid inflated infit/outfit ZSTD values and runs on multiple CPU's will fail if there is a lot of missing data or very few responses in some categories. Increasing the sample size and/or decreasing the number of parallel CPUs can help, or just revert to the function `RIitemfitPCM()` that only uses one CPU.
+
 ### If you don't use the Quarto template
 
-Since this is work in progress, including structuring the package properly, you will need these lines of code in your .R-file (they are also included in the Quarto template) for all RI*-package functions to work:
+Since this is work in progress, including structuring the package properly, you will need these lines of code in your .R-file (they are also included in the Quarto template) for all RI* functions to work:
 
 ```r
 library(ggrepel)
