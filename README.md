@@ -48,7 +48,7 @@ There are currently no checks on whether data input in functions are correct. Th
 
 If there is too much missingness in your data, some functions may have issues or take a lot of time to run. In the Quarto template file there is a script for choosing how many responses a participant needs to have to be included in the analysis. You can experiment with this if you run in to trouble. Currently, the `RIloadLoc()` function does not work with any missing data (due to the PCA function), and the workaround for now is to run this command with `na.omit()` around the dataframe (ie. `RIloadLoc(na.omit(df))`. Other reasons for functions taking longer time to run is having a lot of items (30+), and/or if you have a lot of response categories that are disordered (commonly happens with more than 4-5 response categories, especially if they are unlabeled in the questionnaire).
 
-The `RIitemfitPCM2()` function that makes use of multiple random subsamples to avoid inflated infit/outfit ZSTD values and runs on multiple CPU's will fail if there is a lot of missing data or very few responses in some categories. Increasing the sample size and/or decreasing the number of parallel CPUs can help, or just revert to the function `RIitemfitPCM()` that only uses one CPU.
+The `RIitemfitPCM2()` function, that makes use of multiple random subsamples to avoid inflated infit/outfit ZSTD values and runs on multiple CPU's, will fail if there is a lot of missing data or very few responses in some categories. Increasing the sample size and/or decreasing the number of parallel CPUs can help. If that fails, revert to the function `RIitemfitPCM()` that only uses one CPU.
 
 ### If you don't use the Quarto template
 
@@ -57,10 +57,8 @@ Since this is work in progress, including structuring the package properly, you 
 ```r
 library(ggrepel)
 library(car)
-library(ggrepel)
-library(grateful)
+library(grateful) # devtools::install_github("Pakillo/grateful")
 library(kableExtra)
-library(readxl)
 library(tidyverse)
 library(eRm)
 library(mirt)
@@ -71,9 +69,11 @@ library(matrixStats)
 library(reshape)
 library(knitr)
 library(cowplot)
-library(formattable)
+library(formattable) 
+library(RISEkbmRasch) # devtools::install_github("pgmj/RISEkbmRasch")
+library(HH)
 library(glue)
-library(RISEkbmRasch)
+library(foreach)
 
 ### some commands exist in multiple packages, here we define preferred ones that are frequently used
 select <- dplyr::select
@@ -106,19 +106,14 @@ backg_color <- RISEprimGreenLight
 # set fontsize for all tables
 r.fontsize <- 15
 
-### pre-set our chosen cut-off values for some commonly used indices:
-### these are used to create highlight colors in tables
+### pre-set chosen cut-off values for commonly used indices:
+### these are used to create highlight coloring (red) in tables
 msq_min <- 0.7
 msq_max <- 1.3
 zstd_min <- -2
 zstd_max <- 2
 loc_dep <- 0.2 # above average residual correlation
 dif_dif <- 0.5 # logits difference between groups in average item location (DIF)
-
-### zstd is inflated with large samples (N > 500). Reduce sample size to jz and 
-### run analysis yz random samples to get average ZSTD
-jz = 300 # number to include in dataset
-yz = 10 # number of random samples
 ```
 
 
