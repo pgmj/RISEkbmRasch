@@ -1883,10 +1883,11 @@ RIdifFigThresh <- function(dfin, dif.var) {
       rename(
         "DIF node" = name,
         Location = value
-      )
+      ) %>%
+      mutate(`DIF node` = as.numeric(`DIF node`))
 
     ggplot(unidif, (aes(
-      x = `DIF node`,
+      x = factor(`DIF node`),
       y = Location,
       group = Threshold,
       color = Item
@@ -1894,6 +1895,7 @@ RIdifFigThresh <- function(dfin, dif.var) {
       geom_line() +
       geom_point() +
       theme(legend.position = "none") +
+      xlab("DIF node") +
       facet_wrap(~Item)
   } else {
     print("No significant DIF found.")
