@@ -1901,13 +1901,10 @@ RIdifFigThresh <- function(dfin, dif.var) {
       x = factor(`DIF node`),
       y = Location,
       group = Threshold,
-      color = Item,
-      label = Threshold
+      color = Threshold
     ))) +
       geom_line() +
       geom_point() +
-      geom_text_repel() +
-      theme(legend.position = "none") +
       xlab("DIF node") +
       facet_wrap(~Item)
   } else {
