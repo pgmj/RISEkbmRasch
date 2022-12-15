@@ -15,7 +15,8 @@ RIitemfitPCM2(dfin, jz = 300, yz = 6, cpu = 4)
 }
 \description{
 Special version of RIitemfitPCM that utilizes 4 CPU cores to improve
-performance. Requires library(doParallel)
+performance. Requires \code{library(doParallel)}. To find how many cores you
+have on your computer, use \code{parallel::detectCores()}.
 }
 \details{
 ZSTD is inflated with large samples (N > 500). Optional function to reduce
