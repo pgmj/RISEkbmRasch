@@ -657,7 +657,8 @@ RIitemfitPCM <- function(dfin, jz, yz) {
 #' Create table with Rasch PCM model item fit values for each item.
 #'
 #' Special version of RIitemfitPCM that utilizes 4 CPU cores to improve
-#' performance. Requires library(doParallel)
+#' performance. Requires `library(doParallel)`. To find how many cores you
+#' have on your computer, use `parallel::detectCores()`.
 #'
 #' ZSTD is inflated with large samples (N > 500). Optional function to reduce
 #' sample size to jz and run analysis using yz random samples to get average ZSTD
@@ -672,7 +673,7 @@ RIitemfitPCM <- function(dfin, jz, yz) {
 #' @export
 RIitemfitPCM2 <- function(dfin, jz = 300, yz = 6, cpu = 4) {
   library(doParallel)
-  registerDoParallel(cores=cpu)
+  registerDoParallel(cores = cpu)
     df.erm<-PCM(dfin) # run PCM model
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
     item.estimates <- eRm::thresholds(df.erm)
@@ -1884,16 +1885,28 @@ RIdifFigThresh <- function(dfin, dif.var) {
         "DIF node" = name,
         Location = value
       ) %>%
-      mutate(`DIF node` = as.numeric(`DIF node`))
+      mutate(`DIF node` = as.numeric(`DIF node`)) %>%
+      mutate(Threshold = dplyr::recode(Threshold,"C1"="T1",
+                                     "C2"="T2",
+                                     "C3"="T3",
+                                     "C4"="T4",
+                                     "C5"="T5",
+                                     "C6"="T6",
+                                     "C7"="T7",
+                                     "C8"="T8",
+                                     "C9"="T9",
+                                     "C10"="T10"))
 
     ggplot(unidif, (aes(
       x = factor(`DIF node`),
       y = Location,
       group = Threshold,
-      color = Item
+      color = Item,
+      label = Threshold
     ))) +
       geom_line() +
       geom_point() +
+      geom_text_repel() +
       theme(legend.position = "none") +
       xlab("DIF node") +
       facet_wrap(~Item)
