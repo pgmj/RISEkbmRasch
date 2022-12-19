@@ -2036,7 +2036,7 @@ RIitemHierarchy <- function(dfin, ci = "95"){
   # create df and recode c1 to T1, etc
   itemSE <- itemSE %>%
     separate(itemThresh, c(NA,"itemThresh"), sep = "beta ") %>%
-    separate(itemThresh, c("itemnr","threshnr")) %>%
+    separate(itemThresh, c("itemnr","threshnr"), sep = "\\.") %>%
     mutate(Threshold = dplyr::recode(threshnr, !!!Tthresh)) %>%
     select(!threshnr)
 
