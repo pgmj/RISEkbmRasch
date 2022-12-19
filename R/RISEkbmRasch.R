@@ -144,7 +144,8 @@ RIheatmap <- function(dfin) {
     arrange(persontotal) %>%
     pull(PersonID)
   item.order <- dfin %>%
-    t() %>% as.data.frame() %>%
+    t() %>%
+    as.data.frame() %>%
     mutate(itemtotal = rowSums(., na.rm = TRUE)) %>%
     rownames_to_column("ItemID") %>%
     select(ItemID, itemtotal) %>%
@@ -153,16 +154,15 @@ RIheatmap <- function(dfin) {
 
   # use order vectors to sort item responses and make tile plot
   dfin %>%
-    #  head(20) %>%
     rownames_to_column("PersonID") %>%
     mutate(PersonID = factor(PersonID, levels = person.order)) %>%
-    melt(id.vars = "PersonID") %>%
-    rename(Item = variable) %>%
+    pivot_longer(where(is.numeric)) %>%
+    rename(Item = name) %>%
     mutate(Item = factor(Item, levels = item.order)) %>%
     ggplot(aes(x = PersonID, y = Item, fill = value)) +
     geom_tile() +
     scale_fill_gradient(low = RISEprimYellowLight, high = RISEprimGreen) +
-    #scale_x_discrete(guide = guide_axis(n.dodge = 2))
+    # scale_x_discrete(guide = guide_axis(n.dodge = 2))
     theme(axis.text.x = element_text(angle = 90))
 }
 
@@ -273,14 +273,15 @@ RIbardiv <- function(dfin) {
 #' @param dfin Dataframe with item data only
 #' @export
 RIbarplot <- function(dfin) {
-  for (i in 1:ncol(df.omit.na)) {
-    barplot(table(df.omit.na[, i]),
-            col = "#8dc8c7",
-            main = names(df.omit.na[i]),
-            ylab = "Number of responses",
-            xlab = (itemlabels %>%
-                      filter(itemnr %in% names(df.omit.na))
-                    %>% .[i,2]))
+  for (i in 1:ncol(dfin)) {
+    barplot(table(dfin[, i]),
+      col = "#8dc8c7",
+      main = names(dfin[i]),
+      ylab = "Number of responses",
+      xlab = (itemlabels %>%
+        filter(itemnr %in% names(dfin))
+        %>% .[i, 2])
+    )
   }
 }
 
@@ -1813,8 +1814,8 @@ RIdifFigure <- function(dfin, dif.var) {
   names(pctree.par)<-c("Item", "Group", "Logits")
   # make plot
   ggplot(pctree.par, aes(x=Item, y=Logits, color=Group, group = Group)) +
-    geom_line(size = 1.5) +
-    geom_point(size = 2, color = "black")
+    geom_line(linewidth = 1.5) +
+    geom_point(size = 2.5)
   } else {
     print("No significant DIF found.")
   }
@@ -1985,8 +1986,8 @@ RIdifFigureRM <- function(dfin, dif.var) {
     names(pctree.par)<-c("Item", "Group", "Logits")
     #pctree.par$Item<-str_remove_all(pctree.par$Item, "[difdata]") # remove IF from item labels
     ggplot(pctree.par, aes(x=Item, y=Logits, color=Group, group = Group)) +
-      geom_line(size = 1.5) +
-      geom_point(size = 2, color = "black")
+      geom_line(linewidth = 1.5) +
+      geom_point(size = 2.5)
   } else {
     print("No significant DIF found.")
   }
