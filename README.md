@@ -1,7 +1,7 @@
 # RISEkbmRasch
 R package for Rasch Measurement Theory based psychometric analysis. Intended for use with [Quarto](https://quarto.org) for documentation and presentation of analysis process and results. This package uses other packages for the Rasch analyses, such as [eRm](https://cran.r-project.org/web/packages/eRm/), [mirt](https://cran.r-project.org/web/packages/mirt/) and [psychotree](https://cran.r-project.org/web/packages/psychotree/), and aims to simplify the steps in Rasch analysis to provide tables and figures with functions that have few options.
 
-There is now a [vignette](https://pgmj.github.io/raschrvignette/) that is intended to be the next step after you skimmed this README. You can find a sample Rasch analysis there, complete with output from most of the package functions.
+There is now a [vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html) that is intended to be the next step after you skimmed this README. You can find a sample Rasch analysis there, complete with output from most of the package functions.
 
 ## Installation
 
