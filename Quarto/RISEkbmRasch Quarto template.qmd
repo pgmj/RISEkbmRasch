@@ -139,7 +139,7 @@ df<-as.data.frame(read_excel("GNI23data v1.1.xls"))
 # url <- "https://figshare.com/ndownloader/files/27953790"
 # destfile <- "gnidata.ods"
 # download.file(url, destfile, mode="wb")
-# df <- read_ods(file = "gnidata.ods")
+# df <- read_ods("gnidata.ods")
 
 # Load item information
 itemlabels<-read_excel("WAAQitemlabels.xls")
