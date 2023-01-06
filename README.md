@@ -107,9 +107,10 @@ dif_dif <- 0.5 # logits difference between groups in average item location (DIF)
 
 ## Author
 
-[Magnus Johansson](https://www.ri.se/en/person/magnus-p-johansson) is a licensed psychologist with a PhD in behavior analysis, working at [RISE Research Institutes of Sweden](https://ri.se/en).
+[Magnus Johansson](https://www.ri.se/en/person/magnus-p-johansson) is a licensed psychologist with a PhD in behavior analysis, working as a research scientist at [RISE Research Institutes of Sweden](https://ri.se/en), Department of Measurement Science and Technology.
 - Twitter: [@pgmjoh](https://twitter.com/pgmjoh)
 - ORCID: [0000-0003-1669-592X](https://orcid.org/0000-0003-1669-592X)
+- Mastodon: [@pgmj@scicomm.xyz](https://scicomm.xyz/@pgmj)
 
 ## License
 
