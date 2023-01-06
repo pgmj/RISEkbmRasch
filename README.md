@@ -52,30 +52,16 @@ If there is too much missingness in your data, some functions may have issues or
 
 The `RIitemfitPCM2()` function, that makes use of multiple random subsamples to avoid inflated infit/outfit ZSTD values and runs on multiple CPU's, will fail if there is a lot of missing data or very few responses in some categories. Increasing the sample size and/or decreasing the number of parallel CPUs can help. If that fails, revert to the function `RIitemfitPCM()` that only uses one CPU.
 
+### For the curious
+
+For those new to R, it may be useful to know that you can easily access the code in each function by using the base R `View()` function. For example, `View(RItargeting)` shows the code for the `RItargeting()` function that creates a Wright map style figure (after installing and loading the RISEkbmRasch package).
+
 ### If you don't use the Quarto template
 
 Since this is work in progress, including structuring the package properly, you will need these lines of code in your .R-file (they are also included in the Quarto template) for all RI* functions to work:
 
 ```r
-library(ggrepel)
-library(car)
-library(grateful) # devtools::install_github("Pakillo/grateful")
-library(kableExtra)
-library(tidyverse)
-library(eRm)
-library(mirt)
-library(psych)
-library(ggplot2)
-library(psychotree)
-library(matrixStats)
-library(reshape)
-library(knitr)
-library(cowplot)
-library(formattable) 
-library(RISEkbmRasch) # devtools::install_github("pgmj/RISEkbmRasch")
-library(HH)
-library(glue)
-library(foreach)
+library(RISEkbmRasch)
 
 ### some commands exist in multiple packages, here we define preferred ones that are frequently used
 select <- dplyr::select
