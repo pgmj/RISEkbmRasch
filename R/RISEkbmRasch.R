@@ -7,13 +7,6 @@
 ### See .qmd files at https://github.com/pgmj/pgmj for use cases
 ### Link to vignette is available at the GitHub page.
 
-### some commands exist in multiple packages, here we define preferred ones that are preferred
-# in the package functions
-select <- dplyr::select
-count <- dplyr::count
-recode <- car::recode
-rename <- dplyr::rename
-
 #' Show items based on itemlabels file
 #'
 #' Requires a dataframe with two columns, labeled "itemnr" and "item",
@@ -118,7 +111,7 @@ RIheatmap <- function(dfin) {
   person.order <- dfin %>%
     mutate(persontotal = rowSums(., na.rm = TRUE)) %>%
     rownames_to_column("PersonID") %>%
-    select(PersonID, persontotal) %>%
+    dplyr::select(PersonID, persontotal) %>%
     arrange(persontotal) %>%
     pull(PersonID)
   item.order <- dfin %>%
@@ -126,7 +119,7 @@ RIheatmap <- function(dfin) {
     as.data.frame() %>%
     mutate(itemtotal = rowSums(., na.rm = TRUE)) %>%
     rownames_to_column("ItemID") %>%
-    select(ItemID, itemtotal) %>%
+    dplyr::select(ItemID, itemtotal) %>%
     arrange(itemtotal) %>%
     pull(ItemID)
 
@@ -135,7 +128,7 @@ RIheatmap <- function(dfin) {
     rownames_to_column("PersonID") %>%
     mutate(PersonID = factor(PersonID, levels = person.order)) %>%
     pivot_longer(where(is.numeric)) %>%
-    rename(Item = name) %>%
+    dplyr::rename(Item = name) %>%
     mutate(Item = factor(Item, levels = item.order)) %>%
     ggplot(aes(x = PersonID, y = Item, fill = value)) +
     geom_tile() +
@@ -236,7 +229,7 @@ RIbardiv <- function(dfin) {
   dfin %>%
     na.omit() %>%
     pivot_longer(everything()) %>%
-    rename(
+    dplyr::rename(
       Item = name,
       Response = value
     ) %>%
@@ -285,7 +278,7 @@ RIallresp <- function(dfin, pdf.out, fontsize = 15) {
       pivot_longer(everything()) %>%
       dplyr::count(value) %>%
       mutate(percent = (100 * n / sum(n)) %>% round(digits = 1)) %>%
-      rename(
+      dplyr::rename(
         "Response category" = "value",
         "Number of responses" = "n",
         "Percent" = "percent"
@@ -303,7 +296,7 @@ RIallresp <- function(dfin, pdf.out, fontsize = 15) {
       pivot_longer(everything()) %>%
       dplyr::count(value) %>%
       mutate(percent = (100 * n / sum(n)) %>% round(digits = 1)) %>%
-      rename(
+      dplyr::rename(
         "Response category" = "value",
         "Number of responses" = "n",
         "Percent" = "percent"
@@ -349,7 +342,7 @@ RIpcmPCA <- function(dfin, no.table, fontsize = 15) {
       round(2) %>%
       head(5) %>%
       as_tibble() %>%
-      rename("Eigenvalues" = "value") %>%
+      dplyr::rename("Eigenvalues" = "value") %>%
       kbl(booktabs = T, escape = F, table.attr = "style='width:25%;'") %>%
       # options for HTML output
       kable_styling(
@@ -408,7 +401,7 @@ RIrmPCA <- function(dfin, no.table, fontsize = 15) {
       round(2) %>%
       head(5) %>%
       as_tibble() %>%
-      rename("Eigenvalues" = "value") %>%
+      dplyr::rename("Eigenvalues" = "value") %>%
       kbl(booktabs = T, escape = F, table.attr = "style='width:25%;'") %>%
       # options for HTML output
       kable_styling(
@@ -492,16 +485,16 @@ RIrawdist <- function(dfin) {
 
   # get the number of thresholds above 0, to calculate max total raw score
   rawMax <- item_difficulty %>%
-    select(starts_with("Threshold")) %>%
+    dplyr::select(starts_with("Threshold")) %>%
     pivot_longer(everything()) %>%
     na.omit() %>%
-    count() %>%
+    dplyr::count() %>%
     pull()
 
   # what is the lowest score in the sample?
   rawMinX <- dfin %>%
     mutate(rowsums = rowSums(.,na.rm = T)) %>%
-    count(rowsums) %>%
+    dplyr::count(rowsums) %>%
     arrange(rowsums) %>%
     head(1) %>%
     pull(rowsums)
@@ -512,7 +505,7 @@ RIrawdist <- function(dfin) {
   } else { # if lowest participant score is 0, how many participants have scored 0?
     rawMinN <- dfin %>%
       mutate(rowsums = rowSums(.,na.rm = T)) %>%
-      count(rowsums) %>%
+      dplyr::count(rowsums) %>%
       arrange(rowsums) %>%
       head(1) %>%
       pull(n)
@@ -521,7 +514,7 @@ RIrawdist <- function(dfin) {
   # what is the highest score in the sample?
   rawMaxX <- dfin %>%
     mutate(rowsums = rowSums(.,na.rm = T)) %>%
-    count(rowsums) %>%
+    dplyr::count(rowsums) %>%
     arrange(desc(rowsums)) %>%
     head(1) %>%
     pull(rowsums)
@@ -532,7 +525,7 @@ RIrawdist <- function(dfin) {
   } else {
     rawMaxN <- dfin %>%
       mutate(rowsums = rowSums(.,na.rm = T)) %>%
-      count(rowsums) %>%
+      dplyr::count(rowsums) %>%
       arrange(desc(rowsums)) %>%
       head(1) %>%
       pull(n)
@@ -1009,7 +1002,7 @@ RItargeting <- function(dfin, dich, xlim = c(-5,6)) {
   item.mean <- round(mean(item_difficulty$Location), 2)
   item.sd <- round(sd(item_difficulty$Location), 2)
   item.thresh.sd <- item_difficulty %>%
-    select(starts_with("Threshold")) %>%
+    dplyr::select(starts_with("Threshold")) %>%
     pivot_longer(everything()) %>%
     pull() %>%
     na.omit() %>%
@@ -1242,13 +1235,13 @@ RItif <- function(dfin, lo, hi) {
   psimatrix$psX <- seq(-6, 6, length.out = 1001L)
 
   # check if TIF goes above 3.3
-  peak.tif <- psimatrix %>% slice(which.max(psY)) %>% select(psY) %>% pull()
+  peak.tif <- psimatrix %>% slice(which.max(psY)) %>% dplyr::select(psY) %>% pull()
 
   if (peak.tif > 3.32) {
     # now find where the cutoff points are for 3.33 on the theta (x) variable
     # this provides the highest and lowest value into two variables
-    psep_min <- psimatrix %>% filter(psX < 0) %>% slice(which.min(abs(psY - 3.33))) %>% select(psX) %>% pull()
-    psep_max <- psimatrix %>% filter(psX > 0) %>%  slice(which.min(abs(psY - 3.33))) %>% select(psX) %>% pull()
+    psep_min <- psimatrix %>% filter(psX < 0) %>% slice(which.min(abs(psY - 3.33))) %>% dplyr::select(psX) %>% pull()
+    psep_max <- psimatrix %>% filter(psX > 0) %>%  slice(which.min(abs(psY - 3.33))) %>% dplyr::select(psX) %>% pull()
     # calculate how many participants cross the cutoffs
     nCeilingRel<-length(which(pthetas > psep_max))
     nFloorRel<-length(which(pthetas < psep_min))
@@ -1344,13 +1337,13 @@ RItif <- function(dfin, lo, hi) {
     psimatrix$psX <- seq(lo, hi, length.out = 1001L)
 
     # check if TIF goes above 3.3
-    peak.tif <- psimatrix %>% slice(which.max(psY)) %>% select(psY) %>% pull()
+    peak.tif <- psimatrix %>% slice(which.max(psY)) %>% dplyr::select(psY) %>% pull()
 
     if (peak.tif > 3.32) {
       # now find where the cutoff points are for 3.33 on the theta (x) variable
       # this provides the highest and lowest value into two variables
-      psep_min <- psimatrix %>% filter(psX < 0) %>% slice(which.min(abs(psY - 3.33))) %>% select(psX) %>% pull()
-      psep_max <- psimatrix %>% filter(psX > 0) %>%  slice(which.min(abs(psY - 3.33))) %>% select(psX) %>% pull()
+      psep_min <- psimatrix %>% filter(psX < 0) %>% slice(which.min(abs(psY - 3.33))) %>% dplyr::select(psX) %>% pull()
+      psep_max <- psimatrix %>% filter(psX > 0) %>%  slice(which.min(abs(psY - 3.33))) %>% dplyr::select(psX) %>% pull()
       # calculate how many participants cross the cutoffs
       nCeilingRel<-length(which(pthetas > psep_max))
       nFloorRel<-length(which(pthetas < psep_min))
@@ -1480,7 +1473,7 @@ RIitemparams <- function(dfin, filename = "itemParameters.csv", fontsize = 15) {
   item_difficulty <- item.estimates[["threshtable"]][["1"]]
   item_difficulty<-as.data.frame(item_difficulty)
   item_difficulty %>%
-    select(!Location) %>%
+    dplyr::select(!Location) %>%
     mutate(across(where(is.numeric), round, 4)) %>%
     write_csv(., file = filename)
 
@@ -1927,7 +1920,7 @@ RIdifFigThresh <- function(dfin, dif.var) {
       pivot_longer(where(is.numeric)) %>%
       separate(Threshh, c("Item", "Threshold"), sep = "-") %>%
       separate(Item, c(NA, "Item"), sep = "ata") %>%
-      rename(
+      dplyr::rename(
         "DIF node" = name,
         Location = value
       ) %>%
@@ -2042,7 +2035,8 @@ RIdifFigureRM <- function(dfin, dif.var) {
 #'
 #' Items are sorted by item location.
 #'
-#' Only works for PCM models currently.
+#' Only works for PCM models currently. For dichotomous data, use
+#' `df.erm<-RM(data)` followed by `plotPImap(df.erm, sorted = T)`
 #'
 #' @param dfin Dataframe with item data only
 #' @param ci Show 95% CI (default) around each threshold location, or "none"
@@ -2071,7 +2065,7 @@ RIitemHierarchy <- function(dfin, ci = "95"){
   # get SEM estimates for each threshold
   itemSE <- as.data.frame(item.estimates[["se.thresh"]]) %>%
     rownames_to_column(var = 'itemThresh') %>%
-    rename(ThreshSEM = 'item.estimates[["se.thresh"]]')
+    dplyr::rename(ThreshSEM = 'item.estimates[["se.thresh"]]')
   # long format dataframe with separate variables for item and threshold
 
   # vector of threshold names as "T1" etc
@@ -2083,15 +2077,15 @@ RIitemHierarchy <- function(dfin, ci = "95"){
     separate(itemThresh, c(NA,"itemThresh"), sep = "beta ") %>%
     separate(itemThresh, c("itemnr","threshnr"), sep = "\\.") %>%
     mutate(Threshold = dplyr::recode(threshnr, !!!Tthresh)) %>%
-    select(!threshnr)
+    dplyr::select(!threshnr)
 
   # join all dataframes together
   itemLocs <- item_difficulty %>%
     rownames_to_column(var = "itemnr") %>%
-    select(!any_of(starts_with("Thresh"))) %>%
+    dplyr::select(!any_of(starts_with("Thresh"))) %>%
     left_join(itemloc.long, ., by = "itemnr") %>%
     left_join(., itemlabels, by = "itemnr") %>%
-    rename(itemDescr = item) %>%
+    dplyr::rename(itemDescr = item) %>%
     left_join(., itemSE, by = c("itemnr","Threshold"))
 
   # get order of items
@@ -2165,8 +2159,8 @@ RIscoreSE <- function(dfin) {
   sink()
 
   ppar %>%
-    #select(!X1.Raw.Score) %>%
-    rename('Logit score' = 'X1.Estimate',
+    #dplyr::select(!X1.Raw.Score) %>%
+    dplyr::rename('Logit score' = 'X1.Estimate',
            'Logit std.error' = 'X1.Std.Error',
            'Ordinal sum score' = 'X1.Raw.Score') %>%
     remove_rownames() %>%
