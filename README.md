@@ -56,20 +56,6 @@ The `RIitemfitPCM2()` function, that makes use of multiple random subsamples to 
 
 For those new to R, it may be useful to know that you can easily access the code in each function by using the base R `View()` function. For example, `View(RItargeting)` shows the code for the `RItargeting()` function that creates a Wright map style figure (after installing and loading the RISEkbmRasch package).
 
-### If you don't use the Quarto template
-
-Since this is work in progress, including structuring the package properly, you will need these lines of code in your .R-file (they are also included in the Quarto template) for all RI* functions to work:
-
-```r
-library(RISEkbmRasch)
-
-### some commands exist in multiple packages, here we define preferred ones that are frequently used
-select <- dplyr::select
-count <- dplyr::count
-recode <- car::recode
-rename <- dplyr::rename
-```
-
 
 ## Author
 
