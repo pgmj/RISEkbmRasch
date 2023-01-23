@@ -15,5 +15,6 @@ RIitemHierarchy(dfin, ci = "95")
 Items are sorted by item location.
 }
 \details{
-Only works for PCM models currently.
+Only works for PCM models currently. For dichotomous data, use
+\code{df.erm<-RM(data)} followed by \code{plotPImap(df.erm, sorted = T)}
 }
