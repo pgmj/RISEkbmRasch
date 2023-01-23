@@ -5,40 +5,7 @@
 ### https://creativecommons.org/licenses/by/4.0/
 
 ### See .qmd files at https://github.com/pgmj/pgmj for use cases
-### Further documentation will be created at some point :)
-
-### set up color palette based on RISE guidelines
-RISEprimGreen <- "#009ca6"
-RISEprimRed <- "#e83c63"
-RISEprimYellow <- "#ffe500"
-RISEprimGreenMid <- "#8dc8c7"
-RISEprimRedMid <- "#f5a9ab"
-RISEprimYellowMid <- "#ffee8d"
-RISEprimGreenLight <- "#ebf5f0"
-RISEprimRedLight <- "#fde8df"
-RISEprimYellowLight <- "#fff7dd"
-RISEcompPurple <- "#482d55"
-RISEcompGreenDark <- "#0e4e65"
-RISEgrey1 <- "#f0f0f0"
-RISEgrey2 <- "#c8c8c8"
-RISEgrey3 <- "#828282"
-RISEgrey4 <- "#555555"
-
-# set some colors used later
-cutoff_line <- RISEprimRed
-dot_color <- "black"
-backg_color <- RISEprimGreenLight
-
-# set fontsize for all tables
-r.fontsize <- 15
-
-### we pre-set our chosen cut-off values for some commonly used indices:
-msq_min <- 0.7
-msq_max <- 1.3
-zstd_min <- -2
-zstd_max <- 2
-loc_dep <- 0.2 # above average residual correlation
-dif_dif <- 0.5 # logits difference between groups in average item location (DIF)
+### Link to vignette is available at the GitHub page.
 
 ### some commands exist in multiple packages, here we define preferred ones that are preferred
 # in the package functions
@@ -64,18 +31,23 @@ rename <- dplyr::rename
 #' @return A table with items used in dataframe
 #' @export
 RIlistitems <- function(dfin, all.items) {
-  if(missing(all.items)) {
+  if (missing(all.items)) {
     itemlabels %>%
       filter(itemnr %in% names(dfin)) %>%
-    formattable(align=c("c","l"), list(
-      `itemnr` = formatter("span", style = ~ style(color = "grey",font.weight = "bold"))),
-      table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 75%"')
+      formattable(
+        align = c("c", "l"), list(
+          `itemnr` = formatter("span", style = ~ style(color = "grey", font.weight = "bold"))
+        ),
+        table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 75%"'
+      )
   } else {
     itemlabels %>%
-      #filter(itemnr %in% names(dfin)) %>%
-      formattable(align=c("c","l"), list(
-        `itemnr` = formatter("span", style = ~ style(color = "grey",font.weight = "bold"))),
-        table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 75%"')
+      formattable(
+        align = c("c", "l"), list(
+          `itemnr` = formatter("span", style = ~ style(color = "grey", font.weight = "bold"))
+        ),
+        table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 75%"'
+      )
   }
 }
 
@@ -95,14 +67,20 @@ RIlistitems <- function(dfin, all.items) {
 #' @return A table with items used in dataframe
 #' @export
 RIcolorlistitems <- function(items, color) {
-  if(missing(color)) {
-    formattable(itemlabels, align=c("r","l"), list(
-      formattable::area(row = items) ~ color_tile("lightblue", "lightpink")),
-      table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato"')
+  if (missing(color)) {
+    formattable(itemlabels,
+      align = c("r", "l"), list(
+        formattable::area(row = items) ~ color_tile("lightblue", "lightpink")
+      ),
+      table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato"'
+    )
   } else {
-    formattable(itemlabels, align=c("r","l"), list(
-      formattable::area(row = items) ~ color_tile(color, "lightpink")),
-      table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato"')
+    formattable(itemlabels,
+      align = c("r", "l"), list(
+        formattable::area(row = items) ~ color_tile(color, "lightpink")
+      ),
+      table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato"'
+    )
   }
 }
 
@@ -115,7 +93,7 @@ RIcolorlistitems <- function(items, color) {
 #' @param dfin Dataframe with item data only
 #' @param fontsize Defaults to 11, optimize if desired
 #' @export
-RIlistItemsMargin <- function(dfin, fontsize = 11){
+RIlistItemsMargin <- function(dfin, fontsize = 11) {
   itemlabels %>%
     filter(itemnr %in% names(dfin)) %>%
     formattable(align = c(
@@ -161,7 +139,7 @@ RIheatmap <- function(dfin) {
     mutate(Item = factor(Item, levels = item.order)) %>%
     ggplot(aes(x = PersonID, y = Item, fill = value)) +
     geom_tile() +
-    scale_fill_gradient(low = RISEprimYellowLight, high = RISEprimGreen) +
+    scale_fill_gradient(low = "#fff7dd", high = "#009ca6") +
     # scale_x_discrete(guide = guide_axis(n.dodge = 2))
     theme(axis.text.x = element_text(angle = 90))
 }
@@ -175,24 +153,27 @@ RIheatmap <- function(dfin) {
 #'
 #' @param dif.var A vector with a demographic variable
 #' @param diflabel What the variable represents (sex/age/etc)
+#' @param fontsize Defaults to 15
 #' @export
-RIdemographics <- function(dif.var, diflabel) {
+RIdemographics <- function(dif.var, diflabel, fontsize = 15) {
   dif.var %>%
     table() %>%
     as_tibble() %>%
-    mutate('Percent' = (round((100 * n / sum(n)),1))) %>%
-    dplyr::rename(!!quo_name(diflabel) := '.') %>%
+    mutate("Percent" = (round((100 * n / sum(n)), 1))) %>%
+    dplyr::rename(!!quo_name(diflabel) := ".") %>%
     kbl(booktabs = T, escape = F, table.attr = "style='width:40%;'") %>%
     # options for HTML output
-    kable_styling(bootstrap_options = c("striped", "hover"),
-                  position = "left",
-                  full_width = T,
-                  font_size = r.fontsize,
-                  fixed_thead = T) %>%
+    kable_styling(
+      bootstrap_options = c("striped", "hover"),
+      position = "left",
+      full_width = T,
+      font_size = fontsize,
+      fixed_thead = T
+    ) %>%
     column_spec(1, bold = T) %>%
     kable_classic(html_font = "Lato") %>%
     # latex_options are for PDF output
-    kable_styling(latex_options = c("striped","scale_down"))
+    kable_styling(latex_options = c("striped", "scale_down"))
 }
 
 #' Create tile plot for all items, also showing the count of
@@ -212,7 +193,7 @@ RItileplot <- function(dfin) {
     ggtitle("Items") +
     ylab("") +
     theme(axis.text.x = element_text(size = 8)) +
-    geom_text(aes(label=n), colour = "orange")
+    geom_text(aes(label = n), colour = "orange")
 }
 
 #' Create a stacked bar graph to show response distribution
@@ -223,7 +204,7 @@ RItileplot <- function(dfin) {
 RIbarstack <- function(dfin, omit.na = T) {
   if (omit.na) {
     dfin %>%
-      na.omit %>%
+      na.omit() %>%
       pivot_longer(everything()) %>%
       dplyr::count(name, value) %>%
       mutate(name = factor(name, levels = rev(names(dfin)))) %>%
@@ -255,17 +236,23 @@ RIbardiv <- function(dfin) {
   dfin %>%
     na.omit() %>%
     pivot_longer(everything()) %>%
-    rename(Item = name,
-           Response = value) %>%
+    rename(
+      Item = name,
+      Response = value
+    ) %>%
     dplyr::count(Item, Response) %>%
     group_by(Item) %>%
     mutate(Percent = (100 * n / sum(n)) %>% round(digits = 1)) %>%
     pivot_wider(id_cols = Item, names_from = Response, values_from = Percent) %>%
-    relocate('0', .after = Item) %>%
-    likert(horizontal = TRUE, aspect=1.5,
-           main="Distribution of responses",
-           auto.key=list(space="right", columns=1,
-                         reverse=FALSE, padding.text=2))
+    relocate("0", .after = Item) %>%
+    likert(
+      horizontal = TRUE, aspect = 1.5,
+      main = "Distribution of responses",
+      auto.key = list(
+        space = "right", columns = 1,
+        reverse = FALSE, padding.text = 2
+      )
+    )
 }
 
 #' Create individual bar plots for all items.
@@ -290,56 +277,67 @@ RIbarplot <- function(dfin) {
 #'
 #' @param dfin Dataframe with item data only
 #' @param pdf.out Set to TRUE to get PDF-compatible table (kableExtra)
+#' @param fontsize Set font size for PDF-compatible table
 #' @export
-RIallresp <- function(dfin, pdf.out) {
-  if(missing(pdf.out)) {
+RIallresp <- function(dfin, pdf.out, fontsize = 15) {
+  if (missing(pdf.out)) {
     dfin %>%
       pivot_longer(everything()) %>%
       dplyr::count(value) %>%
       mutate(percent = (100 * n / sum(n)) %>% round(digits = 1)) %>%
-      rename('Response category' = 'value',
-             'Number of responses' = 'n',
-             'Percent' = 'percent') %>%
-      formattable(list(
-        `Response category` = formatter("span", style = ~ style(font.weight = "bold"))),
+      rename(
+        "Response category" = "value",
+        "Number of responses" = "n",
+        "Percent" = "percent"
+      ) %>%
+      formattable(
+        list(
+          `Response category` = formatter("span", style = ~ style(font.weight = "bold"))
+        ),
         table.attr =
-                    'class=\"table table-striped\" style="font-size: 15px;
-                  font-family: Lato; width: 50%"')
+          'class=\"table table-striped\" style="font-size: 15px;
+                  font-family: Lato; width: 50%"'
+      )
   } else {
     dfin %>%
       pivot_longer(everything()) %>%
       dplyr::count(value) %>%
       mutate(percent = (100 * n / sum(n)) %>% round(digits = 1)) %>%
-      rename('Response category' = 'value',
-             'Number of responses' = 'n',
-             'Percent' = 'percent') %>%
+      rename(
+        "Response category" = "value",
+        "Number of responses" = "n",
+        "Percent" = "percent"
+      ) %>%
       kbl(booktabs = T, escape = F, table.attr = "style='width:40%;'") %>%
       # options for HTML output
-      kable_styling(bootstrap_options = c("striped", "hover"),
-                    position = "left",
-                    full_width = F,
-                    font_size = r.fontsize,
-                    fixed_thead = T) %>%
+      kable_styling(
+        bootstrap_options = c("striped", "hover"),
+        position = "left",
+        full_width = F,
+        font_size = fontsize,
+        fixed_thead = T
+      ) %>%
       column_spec(1, bold = T) %>%
       kable_classic(html_font = "Lato") %>%
       # latex_options are for PDF output
-      kable_styling(latex_options = c("striped","scale_down"))
+      kable_styling(latex_options = c("striped", "scale_down"))
   }
 }
 
-#' Running the Rasch PCM model using eRm, and
-#' conducting a PCA of residuals to get eigenvalues.
+#' Fits the Rasch PCM model using eRm, and
+#' conducts a PCA of residuals to get eigenvalues.
 #'
 #' @param dfin Dataframe with item data only
 #' @param no.table Set to TRUE to avoid output of table
+#' @param fontsize Set font size
 #' @export
-RIpcmPCA <- function(dfin, no.table) {
-  if(missing(no.table)) {
-    df.erm<-PCM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+RIpcmPCA <- function(dfin, no.table, fontsize = 15) {
+  if (missing(no.table)) {
+    df.erm <- PCM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
     item.estimates <- eRm::thresholds(df.erm)
     item_difficulty <- item.estimates[["threshtable"]][["1"]]
-    item_difficulty<-as.data.frame(item_difficulty)
+    item_difficulty <- as.data.frame(item_difficulty)
     item.se <- item.estimates$se.thresh
     person.locations.estimate <- person.parameter(df.erm)
     item.fit <- eRm::itemfit(person.locations.estimate)
@@ -351,24 +349,26 @@ RIpcmPCA <- function(dfin, no.table) {
       round(2) %>%
       head(5) %>%
       as_tibble() %>%
-      rename('Eigenvalues' = 'value') %>%
+      rename("Eigenvalues" = "value") %>%
       kbl(booktabs = T, escape = F, table.attr = "style='width:25%;'") %>%
       # options for HTML output
-      kable_styling(bootstrap_options = c("striped", "hover"),
-                    position = "left",
-                    full_width = T,
-                    font_size = r.fontsize,
-                    fixed_thead = F) %>%
+      kable_styling(
+        bootstrap_options = c("striped", "hover"),
+        position = "left",
+        full_width = T,
+        font_size = fontsize,
+        fixed_thead = F
+      ) %>%
       column_spec(1, bold = T) %>%
       kable_classic(html_font = "Lato") %>%
       # latex_options are for PDF output
-      kable_styling(latex_options = c("striped","scale_down"))
+      kable_styling(latex_options = c("striped", "scale_down"))
   } else {
-    df.erm<-PCM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+    df.erm <- PCM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
     item.estimates <- eRm::thresholds(df.erm)
     item_difficulty <- item.estimates[["threshtable"]][["1"]]
-    item_difficulty<-as.data.frame(item_difficulty)
+    item_difficulty <- as.data.frame(item_difficulty)
     item.se <- item.estimates$se.thresh
     person.locations.estimate <- person.parameter(df.erm)
     item.fit <- eRm::itemfit(person.locations.estimate)
@@ -382,23 +382,24 @@ RIpcmPCA <- function(dfin, no.table) {
   }
 }
 
-#' Running the Rasch model for dichotomous using eRm, and
-#' conducting a PCA of residuals to get eigenvalues.
+#' Fits the Rasch model for dichotomous data using eRm, and
+#' conducts a PCA of residuals to get eigenvalues.
 #'
 #' @param dfin Dataframe with item data only
 #' @param no.table Set to TRUE to avoid output of table
+#' @param fontsize Set font size
 #' @export
-RIrmPCA <- function(dfin, no.table) {
-  if(missing(no.table)) {
-    df.erm<-RM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+RIrmPCA <- function(dfin, no.table, fontsize = 15) {
+  if (missing(no.table)) {
+    df.erm <- RM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
     person.locations.estimate <- person.parameter(df.erm)
     item.estimates <- coef(df.erm, "eta") # item coefficients
     item.fit <- eRm::itemfit(person.locations.estimate)
     # item parameter CI's
-    item.confint<-confint(df.erm, "eta") # difficulty (not easiness)
+    item.confint <- confint(df.erm, "eta") # difficulty (not easiness)
     # person parameter CI's
-    pp.confint<-confint(person.locations.estimate)
+    pp.confint <- confint(person.locations.estimate)
     std.resids <- item.fit$st.res
     # PCA of Rasch residuals
     pca <- pca(std.resids, nfactors = ncol(dfin), rotate = "oblimin")
@@ -407,28 +408,30 @@ RIrmPCA <- function(dfin, no.table) {
       round(2) %>%
       head(5) %>%
       as_tibble() %>%
-      rename('Eigenvalues' = 'value') %>%
+      rename("Eigenvalues" = "value") %>%
       kbl(booktabs = T, escape = F, table.attr = "style='width:25%;'") %>%
       # options for HTML output
-      kable_styling(bootstrap_options = c("striped", "hover"),
-                    position = "left",
-                    full_width = T,
-                    font_size = r.fontsize,
-                    fixed_thead = F) %>%
+      kable_styling(
+        bootstrap_options = c("striped", "hover"),
+        position = "left",
+        full_width = T,
+        font_size = fontsize,
+        fixed_thead = F
+      ) %>%
       column_spec(1, bold = T) %>%
       kable_classic(html_font = "Lato") %>%
       # latex_options are for PDF output
-      kable_styling(latex_options = c("striped","scale_down"))
+      kable_styling(latex_options = c("striped", "scale_down"))
   } else {
-    df.erm<-RM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+    df.erm <- RM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
     person.locations.estimate <- person.parameter(df.erm)
     item.estimates <- coef(df.erm, "eta") # item coefficients
     item.fit <- eRm::itemfit(person.locations.estimate)
     # item parameter CI's
-    item.confint<-confint(df.erm, "eta") # difficulty (not easiness)
+    item.confint <- confint(df.erm, "eta") # difficulty (not easiness)
     # person parameter CI's
-    pp.confint<-confint(person.locations.estimate)
+    pp.confint <- confint(person.locations.estimate)
     std.resids <- item.fit$st.res
     std.resids <- item.fit$st.res
     # PCA of Rasch residuals
@@ -454,13 +457,14 @@ RIrespCats <- function(dfin) {
 
 #' Individual ICC plots.
 #' @param dfin Dataframe with item data only
-#' @param items A single item (e.g. "q4"), or a vector with multiple items (e.g. c("q4","q2")).
+#' @param items A single item (e.g. "q4"), or a vector with multiple items (e.g. c("q4","q2"))
+#' @param xlims Start/end point for x-axis
 #' @export
-RIitemCats <- function(dfin, items) {
+RIitemCats <- function(dfin, items, xlims = c(-6,6)) {
   # individual plots for those two items:
   df.erm <- PCM(dfin) # run PCM, partial credit model
   plotICC(df.erm,
-    xlim = c(-6, 6), # change the theta interval to display
+    xlim = xlims, # change the theta interval to display
     legpos = FALSE, # change legpos to TRUE if you want the legend displayed
     ylab = "Probability",
     xlab = "Person location",
@@ -470,7 +474,8 @@ RIitemCats <- function(dfin, items) {
 #make this escape the "hit return to see next plot"
 
 
-#' Floor/ceiling effects based on raw data (ordinal scores)
+#' Floor/ceiling effects based on raw data (ordinal scores). Needs at least one
+#' data point in each response category to produce correct footnote text.
 #'
 #' @param dfin Dataframe with item data only
 #' @return A barplot with descriptives in footnote
@@ -547,7 +552,7 @@ RIrawdist <- function(dfin) {
             sub = paste0("Min score: ", floor_eff, "% , max score: ", ceiling_eff, "%."),
             xlim = c(0, rawMax),
             space = 0,
-            col = RISEprimGreen)
+            col = "#009ca6")
 
 }
 
@@ -555,204 +560,238 @@ RIrawdist <- function(dfin) {
 #' Create table with Rasch PCM model item fit values for each item.
 #'
 #' ZSTD is inflated with large samples (N > 500). Optional function to reduce
-#' sample size to jz and run analysis using yz random samples to get average ZSTD
-#' If you are using Quarto/Rmarkdown, "cache: yes" will be a useful chunk option to
-#' speed things up. 50 samples seems to give stable output, but 10 is probably
-#' sufficient for a quick look at the approximate ZSTD statistics. It is recommended
-#' to use sample size 250-500, based on Hagell & Westergren, 2016.
+#' sample size and run analysis using multiple random samples to get average ZSTD
+#' If you are using Quarto, the YAML execute setting "cache: yes" will be a
+#' useful chunk option to speed things up. 50 samples seems to give stable
+#' output, but 10 is probably sufficient for a quick look at the approximate
+#' ZSTD statistics. It is recommended to use sample size 250-500, based on
+#' Hagell & Westergren, 2016.
 #'
 #' @param dfin Dataframe with item data only
-#' @param jz Desired sample size in multisampling (recommended range 250-500)
-#' @param yz Desired number of samples (recommended range 10-30)
+#' @param samplesize Desired sample size in multisampling (recommended range 250-500)
+#' @param nsamples Desired number of samples (recommended range 10-50)
+#' @param zstd_min Lower cutoff level for ZSTD
+#' @param zstd_max Upper cutoff level for ZSTD
+#' @param msq_min Lower cutoff level for MSQ
+#' @param msq_max Upper cutoff level for MSQ
+#' @param fontsize Set fontsize for table
 #' @export
-RIitemfitPCM <- function(dfin, jz, yz) {
-  if(missing(jz)) {
-    df.erm<-PCM(dfin) # run PCM model
+RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
+                         msq_min = 0.7, msq_max = 1.3, fontsize = 15) {
+  if (missing(samplesize)) {
+    df.erm <- PCM(dfin) # run PCM model
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
     item.estimates <- eRm::thresholds(df.erm)
     item_difficulty <- item.estimates[["threshtable"]][["1"]]
-    item_difficulty<-as.data.frame(item_difficulty)
+    item_difficulty <- as.data.frame(item_difficulty)
     item.se <- item.estimates$se.thresh
     person.locations.estimate <- person.parameter(df.erm)
     item.fit <- eRm::itemfit(person.locations.estimate)
     # collect data to df
-    item.fit.table<-as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, item.fit$i.outfitZ, item.fit$i.infitZ))
-    colnames(item.fit.table)<-c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+    item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, item.fit$i.outfitZ, item.fit$i.infitZ))
+    colnames(item.fit.table) <- c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
 
     # create table that highlights cutoff values in red
     item.fit.table %>%
       mutate(across(where(is.numeric), round, 3)) %>%
       mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
-                                                               ifelse(OutfitZSTD > zstd_max, "red", "black")))) %>%
+        ifelse(OutfitZSTD > zstd_max, "red", "black")
+      ))) %>%
       mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
-                                                             ifelse(InfitZSTD > zstd_max, "red", "black")))) %>%
+        ifelse(InfitZSTD > zstd_max, "red", "black")
+      ))) %>%
       mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
-                                                             ifelse(OutfitMSQ > msq_max, "red", "black")))) %>%
+        ifelse(OutfitMSQ > msq_max, "red", "black")
+      ))) %>%
       mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
-                                                           ifelse(InfitMSQ > msq_max, "red", "black")))) %>%
+        ifelse(InfitMSQ > msq_max, "red", "black")
+      ))) %>%
       kbl(booktabs = T, escape = F) %>%
       # bootstrap options are for HTML output
-      kable_styling(bootstrap_options = c("striped", "hover"),
-                    position = "left",
-                    full_width = F,
-                    font_size = r.fontsize,
-                    fixed_thead = T) %>% # when there is a long list in the table
-      #  column_spec(c(2:3), color = "red") %>%
-      #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>%
+      kable_styling(
+        bootstrap_options = c("striped", "hover"),
+        position = "left",
+        full_width = F,
+        font_size = fontsize,
+        fixed_thead = T
+      ) %>%
       column_spec(1, bold = T) %>%
       kable_classic(html_font = "Lato") %>%
       # latex_options are for PDF output
-      kable_styling(latex_options = c("striped","scale_down"))
+      kable_styling(latex_options = c("striped", "scale_down"))
   } else {
-    df.erm<-PCM(dfin) # run PCM model
+    df.erm <- PCM(dfin) # run PCM model
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
     item.estimates <- eRm::thresholds(df.erm)
     item_difficulty <- item.estimates[["threshtable"]][["1"]]
-    item_difficulty<-as.data.frame(item_difficulty)
+    item_difficulty <- as.data.frame(item_difficulty)
     item.se <- item.estimates$se.thresh
     person.locations.estimate <- person.parameter(df.erm)
     item.fit <- eRm::itemfit(person.locations.estimate)
 
     # ZSTD multisample
-    outfitZ<-c()
-    infitZ<-c()
-    for (i in 1:yz) {
-      df.new <- dfin[sample(1:nrow(dfin), jz), ]
+    outfitZ <- c()
+    infitZ <- c()
+    for (i in 1:nsamples) {
+      df.new <- dfin[sample(1:nrow(dfin), samplesize), ]
       df.new <- na.omit(df.new)
       df.z <- PCM(df.new)
       ple <- person.parameter(df.z)
       item.fit.z <- eRm::itemfit(ple)
-      outfitZ<-cbind(outfitZ,item.fit.z$i.outfitZ)
-      infitZ<-cbind(infitZ,item.fit.z$i.infitZ)
+      outfitZ <- cbind(outfitZ, item.fit.z$i.outfitZ)
+      infitZ <- cbind(infitZ, item.fit.z$i.infitZ)
     }
-    item.fit.table<-as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, rowMeans(outfitZ), rowMeans(infitZ)))
-    colnames(item.fit.table)<-c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+    item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, rowMeans(outfitZ), rowMeans(infitZ)))
+    colnames(item.fit.table) <- c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
 
     # create table that highlights cutoff values in red
     item.fit.table %>%
       mutate(across(where(is.numeric), round, 3)) %>%
       mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
-                                                               ifelse(OutfitZSTD > zstd_max, "red", "black")))) %>%
+        ifelse(OutfitZSTD > zstd_max, "red", "black")
+      ))) %>%
       mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
-                                                             ifelse(InfitZSTD > zstd_max, "red", "black")))) %>%
+        ifelse(InfitZSTD > zstd_max, "red", "black")
+      ))) %>%
       mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
-                                                             ifelse(OutfitMSQ > msq_max, "red", "black")))) %>%
+        ifelse(OutfitMSQ > msq_max, "red", "black")
+      ))) %>%
       mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
-                                                           ifelse(InfitMSQ > msq_max, "red", "black")))) %>%
+        ifelse(InfitMSQ > msq_max, "red", "black")
+      ))) %>%
       kbl(booktabs = T, escape = F) %>%
       # bootstrap options are for HTML output
-      kable_styling(bootstrap_options = c("striped", "hover"),
-                    position = "left",
-                    full_width = F,
-                    font_size = r.fontsize,
-                    fixed_thead = T) %>% # when there is a long list in the table
-      #  column_spec(c(2:3), color = "red") %>%
-      #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>%
+      kable_styling(
+        bootstrap_options = c("striped", "hover"),
+        position = "left",
+        full_width = F,
+        font_size = fontsize,
+        fixed_thead = T
+      ) %>%
       column_spec(1, bold = T) %>%
       kable_classic(html_font = "Lato") %>%
       # latex_options are for PDF output
-      kable_styling(latex_options = c("striped","scale_down"))
+      kable_styling(latex_options = c("striped", "scale_down"))
   }
 }
 
 #' Create table with Rasch PCM model item fit values for each item.
 #'
-#' Special version of RIitemfitPCM that utilizes 4 CPU cores to improve
+#' Special version of RIitemfitPCM that utilizes multiple CPU cores to improve
 #' performance. Requires `library(doParallel)`. To find how many cores you
-#' have on your computer, use `parallel::detectCores()`.
+#' have on your computer, use `parallel::detectCores()`, but remember to keep
+#' some cores free.
 #'
 #' ZSTD is inflated with large samples (N > 500). Optional function to reduce
-#' sample size to jz and run analysis using yz random samples to get average ZSTD
+#' sample size and run analysis using multiple random samples to get average ZSTD
 #' 25 samples seems to give a stable output, but 10 is probably
 #' sufficient for a reliable look at the approximate ZSTD statistics.
 #' It is recommended #' to use sample size 250-500, based on
 #' Hagell & Westergren, 2016.
 #'
 #' @param dfin Dataframe with item data only
-#' @param jz Desired sample size in multisampling (recommended range 250-500)
-#' @param yz Desired number of samples (recommended range 10-30)
+#' @param samplesize Desired sample size in multisampling (recommended range 250-500)
+#' @param nsamples Desired number of samples (recommended range 10-50)
+#' @param zstd_min Lower cutoff level for ZSTD
+#' @param zstd_max Upper cutoff level for ZSTD
+#' @param msq_min Lower cutoff level for MSQ
+#' @param msq_max Upper cutoff level for MSQ
+#' @param cpu Number of CPU cores to utilize (default = 4)
+#' @param fontsize Set fontsize for table
 #' @export
-RIitemfitPCM2 <- function(dfin, jz = 300, yz = 6, cpu = 4) {
+RIitemfitPCM2 <- function(dfin, samplesize = 300, nsamples = 10, cpu = 4,
+                          zstd_min = -2, zstd_max = 2, msq_min = 0.7,
+                          msq_max = 1.3, fontsize = 15) {
   library(doParallel)
   registerDoParallel(cores = cpu)
-    df.erm<-PCM(dfin) # run PCM model
-    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-    item.estimates <- eRm::thresholds(df.erm)
-    item_difficulty <- item.estimates[["threshtable"]][["1"]]
-    item_difficulty<-as.data.frame(item_difficulty)
-    item.se <- item.estimates$se.thresh
-    person.locations.estimate <- person.parameter(df.erm)
-    item.fit <- eRm::itemfit(person.locations.estimate)
+  df.erm <- PCM(dfin) # run PCM model
+  # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+  item.estimates <- eRm::thresholds(df.erm)
+  item_difficulty <- item.estimates[["threshtable"]][["1"]]
+  item_difficulty <- as.data.frame(item_difficulty)
+  item.se <- item.estimates$se.thresh
+  person.locations.estimate <- person.parameter(df.erm)
+  item.fit <- eRm::itemfit(person.locations.estimate)
 
-    # ZSTD multisample
-    outfitZ<-c()
-    infitZ<-c()
+  # ZSTD multisample
+  outfitZ <- c()
+  infitZ <- c()
 
-    infitZ <- foreach(icount(yz), .combine = cbind) %dopar% {
-      library(eRm)
-      df.new <- dfin[sample(1:nrow(dfin), jz), ]
-      df.new <- na.omit(df.new)
-      df.z <- PCM(df.new)
-      ple <- person.parameter(df.z)
-      item.fit.z <- eRm::itemfit(ple)
-      item.fit.z$i.infitZ
-    }
+  infitZ <- foreach(icount(nsamples), .combine = cbind) %dopar% {
+    library(eRm)
+    df.new <- dfin[sample(1:nrow(dfin), samplesize), ]
+    df.new <- na.omit(df.new)
+    df.z <- PCM(df.new)
+    ple <- person.parameter(df.z)
+    item.fit.z <- eRm::itemfit(ple)
+    item.fit.z$i.infitZ
+  }
 
-    outfitZ <- foreach(icount(yz), .combine = cbind) %dopar% {
-      library(eRm)
-      df.new <- dfin[sample(1:nrow(dfin), jz), ]
-      df.new <- na.omit(df.new)
-      df.z <- PCM(df.new)
-      ple <- person.parameter(df.z)
-      item.fit.z <- eRm::itemfit(ple)
-      item.fit.z$i.outfitZ
-    }
+  outfitZ <- foreach(icount(nsamples), .combine = cbind) %dopar% {
+    library(eRm)
+    df.new <- dfin[sample(1:nrow(dfin), samplesize), ]
+    df.new <- na.omit(df.new)
+    df.z <- PCM(df.new)
+    ple <- person.parameter(df.z)
+    item.fit.z <- eRm::itemfit(ple)
+    item.fit.z$i.outfitZ
+  }
 
-    item.fit.table<-as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, rowMeans(outfitZ), rowMeans(infitZ)))
-    colnames(item.fit.table)<-c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+  item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, rowMeans(outfitZ), rowMeans(infitZ)))
+  colnames(item.fit.table) <- c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
 
-    # create table that highlights cutoff values in red
-    item.fit.table %>%
-      mutate(across(where(is.numeric), round, 3)) %>%
-      mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
-                                                               ifelse(OutfitZSTD > zstd_max, "red", "black")))) %>%
-      mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
-                                                             ifelse(InfitZSTD > zstd_max, "red", "black")))) %>%
-      mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
-                                                             ifelse(OutfitMSQ > msq_max, "red", "black")))) %>%
-      mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
-                                                           ifelse(InfitMSQ > msq_max, "red", "black")))) %>%
-      kbl(booktabs = T, escape = F) %>%
-      # bootstrap options are for HTML output
-      kable_styling(bootstrap_options = c("striped", "hover"),
-                    position = "left",
-                    full_width = F,
-                    font_size = r.fontsize,
-                    fixed_thead = T) %>% # when there is a long list in the table
-      #  column_spec(c(2:3), color = "red") %>%
-      #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>%
-      column_spec(1, bold = T) %>%
-      kable_classic(html_font = "Lato") %>%
-      # latex_options are for PDF output
-      kable_styling(latex_options = c("striped","scale_down"))
+  # create table that highlights cutoff values in red
+  item.fit.table %>%
+    mutate(across(where(is.numeric), round, 3)) %>%
+    mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
+      ifelse(OutfitZSTD > zstd_max, "red", "black")
+    ))) %>%
+    mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
+      ifelse(InfitZSTD > zstd_max, "red", "black")
+    ))) %>%
+    mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
+      ifelse(OutfitMSQ > msq_max, "red", "black")
+    ))) %>%
+    mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
+      ifelse(InfitMSQ > msq_max, "red", "black")
+    ))) %>%
+    kbl(booktabs = T, escape = F) %>%
+    # bootstrap options are for HTML output
+    kable_styling(
+      bootstrap_options = c("striped", "hover"),
+      position = "left",
+      full_width = F,
+      font_size = fontsize,
+      fixed_thead = T
+    ) %>%
+    column_spec(1, bold = T) %>%
+    kable_classic(html_font = "Lato") %>%
+    # latex_options are for PDF output
+    kable_styling(latex_options = c("striped", "scale_down"))
 }
 
 
 #' Create table with Rasch dichotomous model item fit values for each item.
 #'
 #' ZSTD is inflated with large samples (N > 500). Optional function to reduce
-#' sample size to jz and run analysis using yz random samples to get average ZSTD
+#' sample size and run analysis using multiple random samples to get average ZSTD
 #' If you are using Quarto/Rmarkdown, "cache: yes" will be a useful chunk option to
 #' speed things up. 50 samples seems to give stable output, but 10 is probably
 #' sufficient for a quick look at the approximate ZSTD statistics. It is recommended
 #' to use sample size 250-500, based on Hagell & Westergren, 2016.
 #'
 #' @param dfin Dataframe with item data only
-#' @param jz Desired sample size in multisampling
-#' @param yz Desired number of samples (recommended range 10-50)
+#' @param samplesize Desired sample size in multisampling (recommended range 250-500)
+#' @param nsamples Desired number of samples (recommended range 10-50)
+#' @param zstd_min Lower cutoff level for ZSTD
+#' @param zstd_max Upper cutoff level for ZSTD
+#' @param msq_min Lower cutoff level for MSQ
+#' @param msq_max Upper cutoff level for MSQ
+#' @param fontsize Set font size for table
 #' @export
-RIitemfitRM <- function(dfin, jz, yz) {
-  if(missing(jz)) {
+RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
+                        msq_min = 0.7, msq_max = 1.3, fontsize = 15) {
+  if(missing(samplesize)) {
     df.erm<-RM(dfin) # run Rasch model
     # get estimates
     item.estimates <- coef(df.erm, "eta") # item coefficients
@@ -778,7 +817,7 @@ RIitemfitRM <- function(dfin, jz, yz) {
       kable_styling(bootstrap_options = c("striped", "hover"),
                     position = "left",
                     full_width = F,
-                    font_size = r.fontsize,
+                    font_size = fontsize,
                     fixed_thead = T) %>% # when there is a long list in the table
       #  column_spec(c(2:3), color = "red") %>%
       #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>%
@@ -796,8 +835,8 @@ RIitemfitRM <- function(dfin, jz, yz) {
     # ZSTD multisample
     outfitZ<-c()
     infitZ<-c()
-    for (i in 1:yz) {
-      df.new <- dfin[sample(1:nrow(dfin), jz), ]
+    for (i in 1:nsamples) {
+      df.new <- dfin[sample(1:nrow(dfin), samplesize), ]
       df.new <- na.omit(df.new)
       df.z <- RM(df.new)
       ple <- person.parameter(df.z)
@@ -824,7 +863,7 @@ RIitemfitRM <- function(dfin, jz, yz) {
       kable_styling(bootstrap_options = c("striped", "hover"),
                     position = "left",
                     full_width = F,
-                    font_size = r.fontsize,
+                    font_size = fontsize,
                     fixed_thead = T) %>% # when there is a long list in the table
       column_spec(1, bold = T) %>%
       kable_classic(html_font = "Lato") %>%
@@ -841,8 +880,9 @@ RIitemfitRM <- function(dfin, jz, yz) {
 #'
 #' @param dfin Dataframe with item data only
 #' @param cutoff Relative value above the average of all item residual correlations
+#' @param fontsize Set font size for table
 #' @export
-RIresidcorr <- function(dfin, cutoff) {
+RIresidcorr <- function(dfin, cutoff, fontsize = 15) {
 
   sink(nullfile()) # suppress output from the rows below
 
@@ -872,7 +912,7 @@ RIresidcorr <- function(dfin, cutoff) {
       kable_styling(bootstrap_options = c("striped", "hover"),
                     position = "left",
                     full_width = F,
-                    font_size = r.fontsize,
+                    font_size = fontsize,
                     fixed_thead = T) %>% # when there is a long list in the table
       column_spec(1, bold = T) %>%
       kable_classic(html_font = "Lato") %>%
@@ -888,7 +928,7 @@ RIresidcorr <- function(dfin, cutoff) {
       kable_styling(bootstrap_options = c("striped", "hover"),
                     position = "left",
                     full_width = F,
-                    font_size = r.fontsize,
+                    font_size = fontsize,
                     fixed_thead = T) %>% # when there is a long list in the table
       column_spec(1, bold = T) %>%
       kable_classic(html_font = "Lato") %>%
@@ -911,7 +951,7 @@ RIresidcorr <- function(dfin, cutoff) {
 #'
 #' @param dfin Dataframe with item data only
 #' @param dich Set to TRUE if your data is dichotomous
-#' @param xlim Optionally, set lower/upper limits for x axis, c(-5,6) is default
+#' @param xlim Optionally, set lower/upper limits for x axis
 #' @export
 RItargeting <- function(dfin, dich, xlim = c(-5,6)) {
   if(missing(dich)) {
@@ -998,7 +1038,7 @@ RItargeting <- function(dfin, dich, xlim = c(-5,6)) {
     xlab("") +
     ylab("Persons") +
     scale_x_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
-    geom_vline(xintercept = person.mean, color = RISEcompGreenDark, linetype = 2) +
+    geom_vline(xintercept = person.mean, color = "#0e4e65", linetype = 2) +
     annotate("rect", ymin = 0, ymax = Inf, xmin = (person.mean - person.sd), xmax = (person.mean + person.sd), alpha = .2) +
     geom_text(hjust = 1.1, vjust = 1) +
     theme_bw() +
@@ -1017,7 +1057,7 @@ RItargeting <- function(dfin, dich, xlim = c(-5,6)) {
     ylab("Thresholds") +
     scale_x_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
     scale_y_reverse() +
-    geom_vline(xintercept = item.mean, color = RISEprimRed, linetype = 2) +
+    geom_vline(xintercept = item.mean, color = "#e83c63", linetype = 2) +
     annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean - item.thresh.sd), xmax = (item.mean + item.thresh.sd), alpha = .2) +
     geom_text(hjust = 1.1, vjust = 1) +
     theme_bw() +
@@ -1120,7 +1160,7 @@ RItargeting <- function(dfin, dich, xlim = c(-5,6)) {
       xlab('') +
       ylab('Persons') +
       scale_x_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
-      geom_vline(xintercept = person.mean, color = RISEcompGreenDark, linetype = 2) +
+      geom_vline(xintercept = person.mean, color = "#0e4e65", linetype = 2) +
       annotate("rect", ymin = 0, ymax = Inf, xmin = (person.mean-person.sd), xmax = (person.mean+person.sd), alpha = .2) +
       geom_text(hjust = 1.1, vjust = 1) +
       theme_bw() +
@@ -1135,7 +1175,7 @@ RItargeting <- function(dfin, dich, xlim = c(-5,6)) {
       ylab('Items aggregated') +
       scale_x_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
       scale_y_reverse() +
-      geom_vline(xintercept = item.mean, color = RISEprimRed, linetype = 2) +
+      geom_vline(xintercept = item.mean, color = "#e83c63", linetype = 2) +
       annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean-item.sd), xmax = (item.mean+item.sd), alpha = .2) +
       geom_text(hjust = 1.1, vjust = 1) +
       theme_bw() +
@@ -1243,17 +1283,17 @@ RItif <- function(dfin, lo, hi) {
   }
 
   ggplot(psimatrix) +
-    geom_point(aes(x=psX, y=psY), size = 0.1, color = dot_color) +
-    geom_hline(yintercept = 3.33, color = cutoff_line, linetype = 2, size = 0.5) +
-    geom_hline(yintercept = 5, color = cutoff_line, linetype = 2, size = 0.7) +
+    geom_point(aes(x=psX, y=psY), size = 0.1, color = "black") +
+    geom_hline(yintercept = 3.33, color = "#e83c63", linetype = 2, size = 0.5) +
+    geom_hline(yintercept = 5, color = "#e83c63", linetype = 2, size = 0.7) +
     scale_y_continuous(breaks=seq(0, 8, by = 1)) +
     scale_x_continuous(breaks=seq(-6, 6, by = 1)) +
     labs(x = "Logits", y = "Test information") +
     labs(caption = paste0(psep_caption)) +
     theme(plot.caption = element_text(hjust = 0, face = "italic")) +
     theme(
-      panel.background = element_rect(fill = backg_color,
-                                      colour = backg_color,
+      panel.background = element_rect(fill = "#ebf5f0",
+                                      colour = "#ebf5f0",
                                       size = 0.5, linetype = "solid"),
       panel.grid.major = element_line(size = 0.5, linetype = 'solid',
                                       colour = "white"),
@@ -1345,17 +1385,17 @@ RItif <- function(dfin, lo, hi) {
     }
 
     ggplot(psimatrix) +
-      geom_point(aes(x=psX, y=psY), size = 0.1, color = dot_color) +
-      geom_hline(yintercept = 3.33, color = cutoff_line, linetype = 2, size = 0.5) +
-      geom_hline(yintercept = 5, color = cutoff_line, linetype = 2, size = 0.7) +
+      geom_point(aes(x=psX, y=psY), size = 0.1, color = "black") +
+      geom_hline(yintercept = 3.33, color = "#e83c63", linetype = 2, size = 0.5) +
+      geom_hline(yintercept = 5, color = "#e83c63", linetype = 2, size = 0.7) +
       scale_y_continuous(breaks=seq(0, 8, by = 1)) +
       scale_x_continuous(breaks=seq(lo, hi, by = 1)) +
       labs(x = "Logits", y = "Test information") +
       labs(caption = paste0(psep_caption)) +
       theme(plot.caption = element_text(hjust = 0, face = "italic")) +
       theme(
-        panel.background = element_rect(fill = backg_color,
-                                        colour = backg_color,
+        panel.background = element_rect(fill = "#ebf5f0",
+                                        colour = "#ebf5f0",
                                         size = 0.5, linetype = "solid"),
         panel.grid.major = element_line(size = 0.5, linetype = 'solid',
                                         colour = "white"),
@@ -1387,7 +1427,7 @@ RIpfit <- function(dfin) {
   nFloorPfit<-length(which(person.fit$p.infitZ < -2))
   nPgoodfit<-(nPfit-(nCeilingPfit+nFloorPfit))
 
-  hist(person.fit$p.infitZ, col = RISEprimGreen, xlim = c(-4,6), xlab = "Person infit ZSTD", main = "Histogram of Person infit ZSTD")
+  hist(person.fit$p.infitZ, col = "#009ca6", xlim = c(-4,6), xlab = "Person infit ZSTD", main = "Histogram of Person infit ZSTD")
 
   # check whether there are excluded observations, and if found, adjust thetas2 df
   if (length(person.fit$excl_obs_num) > 0L) {
@@ -1403,17 +1443,17 @@ RIpfit <- function(dfin) {
   # figure
   df.pfit %>%
     ggplot(aes(x=`Person infit ZSTD`, y=`Person locations`, label="")) +
-    geom_point(size = 1, color = dot_color) +
-    geom_vline(xintercept = -2, color = cutoff_line, linetype = 2, size = 0.7) +
-    geom_vline(xintercept = 2, color = cutoff_line, linetype = 2, size = 0.7) +
+    geom_point(size = 1, color = "black") +
+    geom_vline(xintercept = -2, color = "#e83c63", linetype = 2, size = 0.7) +
+    geom_vline(xintercept = 2, color = "#e83c63", linetype = 2, size = 0.7) +
     scale_y_continuous(breaks=seq(-5, 5, by = 1)) +
     scale_x_continuous(breaks=seq(-5, 7, by = 1)) +
     labs(caption = paste0(round(nCeilingPfit/nPfit*100,1), "% of participants have person infit ZSTD below -2.0, and ",
                           round(nFloorPfit/nPfit*100,1), "% are above 2.0. \nThus, ", round(nPgoodfit/nPfit*100,1), "% are within +/- 2 infit ZSTD.")) +
     theme(plot.caption = element_text(hjust = 0, face = "italic")) +
     theme(
-      panel.background = element_rect(fill = backg_color,
-                                      colour = backg_color,
+      panel.background = element_rect(fill = "#ebf5f0",
+                                      colour = "#ebf5f0",
                                       size = 0.5, linetype = "solid"),
       panel.grid.major = element_line(size = 0.5, linetype = 'solid',
                                       colour = "white"),
@@ -1432,8 +1472,9 @@ RIpfit <- function(dfin) {
 #'
 #' @param dfin Dataframe with item data only
 #' @param filename Optional specification of filename for item parameters output
+#' @param fontsize Set font size for table
 #' @export
-RIitemparams <- function(dfin, filename = "itemParameters.csv") {
+RIitemparams <- function(dfin, filename = "itemParameters.csv", fontsize = 15) {
   df.erm <- PCM(dfin)
   item.estimates <- eRm::thresholds(df.erm)
   item_difficulty <- item.estimates[["threshtable"]][["1"]]
@@ -1453,7 +1494,7 @@ RIitemparams <- function(dfin, filename = "itemParameters.csv") {
     kable_styling(bootstrap_options = c("striped", "hover"),
                   position = "left",
                   full_width = F,
-                  font_size = r.fontsize,
+                  font_size = fontsize,
                   fixed_thead = T) %>% # when there is a long list in the table
     #  column_spec(c(2:3), color = "red") %>%
     #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>%
@@ -1471,11 +1512,11 @@ RIitemparams <- function(dfin, filename = "itemParameters.csv") {
 #' for options
 #'
 #' @param dfin Dataframe with item data only
-#' @param jz Desired sample size in multisampling (recommended 250-500)
-#' @param yz Desired number of samples (recommended range 10-30)
+#' @param samplesize Desired sample size in multisampling (recommended 250-500)
+#' @param nsamples Desired number of samples (recommended range 10-30)
 #' @export
-RIinfitLoc <- function(dfin, jz, yz) {
-  if(missing(jz)) {
+RIinfitLoc <- function(dfin, samplesize, nsamples) {
+  if(missing(samplesize)) {
     df.erm<-PCM(dfin) # run PCM model
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
     item.estimates <- eRm::thresholds(df.erm)
@@ -1502,16 +1543,16 @@ RIinfitLoc <- function(dfin, jz, yz) {
     item.fit.table %>%
       rownames_to_column() %>%
       ggplot(aes(x=InfitZSTD, y=Location, label = rowname)) +
-      geom_point(size = 3, color = dot_color) +
-      geom_vline(xintercept = -2, color = cutoff_line, linetype = 2) +
-      geom_vline(xintercept = 2, color = cutoff_line, linetype = 2) +
+      geom_point(size = 3, color = "black") +
+      geom_vline(xintercept = -2, color = "#e83c63", linetype = 2) +
+      geom_vline(xintercept = 2, color = "#e83c63", linetype = 2) +
       scale_y_continuous(limits = ylims, breaks = ybreaks,
                          minor_breaks = waiver(), n.breaks = ydiff) +
       scale_x_continuous(limits = xlims, breaks = xbreaks) +
       geom_text(hjust=1.5) +
       theme(
-        panel.background = element_rect(fill = backg_color,
-                                        colour = backg_color,
+        panel.background = element_rect(fill = "#ebf5f0",
+                                        colour = "#ebf5f0",
                                         size = 0.5, linetype = "solid"),
         panel.grid.major = element_line(size = 0.5, linetype = 'solid',
                                         colour = "white"),
@@ -1531,8 +1572,8 @@ RIinfitLoc <- function(dfin, jz, yz) {
     # ZSTD multisample
     outfitZ<-c()
     infitZ<-c()
-    for (i in 1:yz) {
-      df.new <- dfin[sample(1:nrow(dfin), jz), ]
+    for (i in 1:nsamples) {
+      df.new <- dfin[sample(1:nrow(dfin), samplesize), ]
       df.new <- na.omit(df.new)
       df.z <- PCM(df.new)
       ple <- person.parameter(df.z)
@@ -1557,16 +1598,16 @@ RIinfitLoc <- function(dfin, jz, yz) {
     item.fit.table %>%
       rownames_to_column() %>%
       ggplot(aes(x=InfitZSTD, y=Location, label = rowname)) +
-      geom_point(size = 3, color = dot_color) +
-      geom_vline(xintercept = -2, color = cutoff_line, linetype = 2) +
-      geom_vline(xintercept = 2, color = cutoff_line, linetype = 2) +
+      geom_point(size = 3, color = "black") +
+      geom_vline(xintercept = -2, color = "#e83c63", linetype = 2) +
+      geom_vline(xintercept = 2, color = "#e83c63", linetype = 2) +
       scale_y_continuous(limits = ylims, breaks = ybreaks,
                          minor_breaks = waiver(), n.breaks = ydiff) +
       scale_x_continuous(limits = xlims, breaks = xbreaks) +
       geom_text(hjust=1.5) +
       theme(
-        panel.background = element_rect(fill = backg_color,
-                                        colour = backg_color,
+        panel.background = element_rect(fill = "#ebf5f0",
+                                        colour = "#ebf5f0",
                                         size = 0.5, linetype = "solid"),
         panel.grid.major = element_line(size = 0.5, linetype = 'solid',
                                         colour = "white"),
@@ -1581,11 +1622,11 @@ RIinfitLoc <- function(dfin, jz, yz) {
 #' ZSTD is sample size sensitive, see "RIitemfitPCM"
 #'
 #' @param dfin Dataframe with item data only
-#' @param jz Desired sample size in multisampling
-#' @param yz Desired number of samples (recommended range 10-50)
+#' @param samplesize Desired sample size in multisampling
+#' @param nsamples Desired number of samples (recommended range 10-50)
 #' @export
-RIoutfitLoc <- function(dfin, jz, yz) {
-  if(missing(jz)) {
+RIoutfitLoc <- function(dfin, samplesize, nsamples) {
+  if(missing(samplesize)) {
     df.erm<-PCM(dfin) # run PCM model
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
     item.estimates <- eRm::thresholds(df.erm)
@@ -1612,16 +1653,16 @@ RIoutfitLoc <- function(dfin, jz, yz) {
     item.fit.table %>%
       rownames_to_column() %>%
       ggplot(aes(x=OutfitZSTD, y=Location, label = rowname)) +
-      geom_point(size = 3, color = dot_color) +
-      geom_vline(xintercept = -2, color = cutoff_line, linetype = 2) +
-      geom_vline(xintercept = 2, color = cutoff_line, linetype = 2) +
+      geom_point(size = 3, color = "black") +
+      geom_vline(xintercept = -2, color = "#e83c63", linetype = 2) +
+      geom_vline(xintercept = 2, color = "#e83c63", linetype = 2) +
       scale_y_continuous(limits = ylims, breaks = ybreaks,
                          minor_breaks = waiver(), n.breaks = ydiff) +
       scale_x_continuous(limits = xlims, breaks = xbreaks) +
       geom_text(hjust=1.5) +
       theme(
-        panel.background = element_rect(fill = backg_color,
-                                        colour = backg_color,
+        panel.background = element_rect(fill = "#ebf5f0",
+                                        colour = "#ebf5f0",
                                         size = 0.5, linetype = "solid"),
         panel.grid.major = element_line(size = 0.5, linetype = 'solid',
                                         colour = "white"),
@@ -1641,8 +1682,8 @@ RIoutfitLoc <- function(dfin, jz, yz) {
     # ZSTD multisample
     outfitZ<-c()
     infitZ<-c()
-    for (i in 1:yz) {
-      df.new <- dfin[sample(1:nrow(dfin), jz), ]
+    for (i in 1:nsamples) {
+      df.new <- dfin[sample(1:nrow(dfin), samplesize), ]
       df.new <- na.omit(df.new)
       df.z <- PCM(df.new)
       ple <- person.parameter(df.z)
@@ -1667,16 +1708,16 @@ RIoutfitLoc <- function(dfin, jz, yz) {
     item.fit.table %>%
       rownames_to_column() %>%
       ggplot(aes(x=OutfitZSTD, y=Location, label = rowname)) +
-      geom_point(size = 3, color = dot_color) +
-      geom_vline(xintercept = -2, color = cutoff_line, linetype = 2) +
-      geom_vline(xintercept = 2, color = cutoff_line, linetype = 2) +
+      geom_point(size = 3, color = "black") +
+      geom_vline(xintercept = -2, color = "#e83c63", linetype = 2) +
+      geom_vline(xintercept = 2, color = "#e83c63", linetype = 2) +
       scale_y_continuous(limits = ylims, breaks = ybreaks,
                          minor_breaks = waiver(), n.breaks = ydiff) +
       scale_x_continuous(limits = xlims, breaks = xbreaks) +
       geom_text(hjust=1.5) +
       theme(
-        panel.background = element_rect(fill = backg_color,
-                                        colour = backg_color,
+        panel.background = element_rect(fill = "#ebf5f0",
+                                        colour = "#ebf5f0",
                                         size = 0.5, linetype = "solid"),
         panel.grid.major = element_line(size = 0.5, linetype = 'solid',
                                         colour = "white"),
@@ -1689,6 +1730,10 @@ RIoutfitLoc <- function(dfin, jz, yz) {
 
 #' Generates a plot showing the first residual contrast loadings based on a PCA
 #' of Rasch model residuals vs item locations.
+#'
+#' Note. This function does not work with missing responses in the dataset.
+#' You can temporarily remove respondents with missing data when running the
+#' function, ie. `RIloadLoc(na.omit(df))`
 #'
 #' @param dfin Dataframe with item data only
 #' @export
@@ -1722,17 +1767,17 @@ RIloadLoc <- function(dfin) {
   pcaloadings %>%
     rownames_to_column() %>%
     ggplot(aes(x=PC1, y=Location, label = rowname)) +
-    geom_point(size = 3, color = dot_color) +
+    geom_point(size = 3, color = "black") +
     xlab("Loadings on first residual contrast") +
     ylab("Item location") +
-    geom_vline(xintercept = 0, color = cutoff_line, linetype = 2) +
-    geom_hline(yintercept = 0, color = cutoff_line, linetype = 2) +
+    geom_vline(xintercept = 0, color = "#e83c63", linetype = 2) +
+    geom_hline(yintercept = 0, color = "#e83c63", linetype = 2) +
     scale_x_continuous(limits = c(-1,1), breaks = seq(-1,1, by = 0.25)) +
     scale_y_continuous(limits = ylims, breaks = ybreaks) +
     geom_text_repel() +
     theme(
-      panel.background = element_rect(fill = backg_color,
-                                      colour = backg_color,
+      panel.background = element_rect(fill = "#ebf5f0",
+                                      colour = "#ebf5f0",
                                       size = 0.5, linetype = "solid"),
       panel.grid.major = element_line(size = 0.5, linetype = 'solid',
                                       colour = "white"),
