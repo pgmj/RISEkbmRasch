@@ -68,40 +68,6 @@ select <- dplyr::select
 count <- dplyr::count
 recode <- car::recode
 rename <- dplyr::rename
-
-### set up color palette based on RISE guidelines
-RISEprimGreen <- "#009ca6"
-RISEprimRed <- "#e83c63"
-RISEprimYellow <- "#ffe500"
-RISEprimGreenMid <- "#8dc8c7"
-RISEprimRedMid <- "#f5a9ab"
-RISEprimYellowMid <- "#ffee8d"
-RISEprimGreenLight <- "#ebf5f0"
-RISEprimRedLight <- "#fde8df"
-RISEprimYellowLight <- "#fff7dd"
-RISEcompPurple <- "#482d55"
-RISEcompGreenDark <- "#0e4e65"
-RISEgrey1 <- "#f0f0f0"
-RISEgrey2 <- "#c8c8c8"
-RISEgrey3 <- "#828282"
-RISEgrey4 <- "#555555"
-
-# set some colors used later
-cutoff_line <- RISEprimRed
-dot_color <- "black"
-backg_color <- RISEprimGreenLight
-
-# set fontsize for all tables
-r.fontsize <- 15
-
-### pre-set chosen cut-off values for commonly used indices:
-### these are used to create highlight coloring (red) in tables
-msq_min <- 0.7
-msq_max <- 1.3
-zstd_min <- -2
-zstd_max <- 2
-loc_dep <- 0.2 # above average residual correlation
-dif_dif <- 0.5 # logits difference between groups in average item location (DIF)
 ```
 
 
