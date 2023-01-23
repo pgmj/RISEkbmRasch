@@ -2,7 +2,8 @@
 % Please edit documentation in R/RISEkbmRasch.R
 \name{RIrawdist}
 \alias{RIrawdist}
-\title{Floor/ceiling effects based on raw data (ordinal scores)}
+\title{Floor/ceiling effects based on raw data (ordinal scores). Needs at least one
+data point in each response category to produce correct footnote text.}
 \usage{
 RIrawdist(dfin)
 }
@@ -13,5 +14,6 @@ RIrawdist(dfin)
 A barplot with descriptives in footnote
 }
 \description{
-Floor/ceiling effects based on raw data (ordinal scores)
+Floor/ceiling effects based on raw data (ordinal scores). Needs at least one
+data point in each response category to produce correct footnote text.
 }

@@ -14,6 +14,7 @@ RIloadLoc(dfin)
 A plot with item locations (y) and loadings (x)
 }
 \description{
-Generates a plot showing the first residual contrast loadings based on a PCA
-of Rasch model residuals vs item locations.
+Note. This function does not work with missing responses in the dataset.
+You can temporarily remove respondents with missing data when running the
+function, ie. \code{RIloadLoc(na.omit(df))}
 }

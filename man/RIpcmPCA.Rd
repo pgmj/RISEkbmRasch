@@ -2,17 +2,19 @@
 % Please edit documentation in R/RISEkbmRasch.R
 \name{RIpcmPCA}
 \alias{RIpcmPCA}
-\title{Running the Rasch PCM model using eRm, and
-conducting a PCA of residuals to get eigenvalues.}
+\title{Fits the Rasch PCM model using eRm, and
+conducts a PCA of residuals to get eigenvalues.}
 \usage{
-RIpcmPCA(dfin, no.table)
+RIpcmPCA(dfin, no.table, fontsize = 15)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
 \item{no.table}{Set to TRUE to avoid output of table}
+
+\item{fontsize}{Set font size}
 }
 \description{
-Running the Rasch PCM model using eRm, and
-conducting a PCA of residuals to get eigenvalues.
+Fits the Rasch PCM model using eRm, and
+conducts a PCA of residuals to get eigenvalues.
 }

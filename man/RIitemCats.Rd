@@ -4,12 +4,14 @@
 \alias{RIitemCats}
 \title{Individual ICC plots.}
 \usage{
-RIitemCats(dfin, items)
+RIitemCats(dfin, items, xlims = c(-6, 6))
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
-\item{items}{A single item (e.g. "q4"), or a vector with multiple items (e.g. c("q4","q2")).}
+\item{items}{A single item (e.g. "q4"), or a vector with multiple items (e.g. c("q4","q2"))}
+
+\item{xlims}{Start/end point for x-axis}
 }
 \description{
 Individual ICC plots.

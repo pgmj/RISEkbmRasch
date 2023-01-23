@@ -5,14 +5,14 @@
 \title{Plot with outfit ZSTD and item location
 ZSTD is sample size sensitive, see "RIitemfitPCM"}
 \usage{
-RIoutfitLoc(dfin, jz, yz)
+RIoutfitLoc(dfin, samplesize, nsamples)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
-\item{jz}{Desired sample size in multisampling}
+\item{samplesize}{Desired sample size in multisampling}
 
-\item{yz}{Desired number of samples (recommended range 10-50)}
+\item{nsamples}{Desired number of samples (recommended range 10-50)}
 }
 \description{
 Plot with outfit ZSTD and item location

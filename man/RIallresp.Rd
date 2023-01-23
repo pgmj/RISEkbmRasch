@@ -4,12 +4,14 @@
 \alias{RIallresp}
 \title{Create table with summarized responses across all items.}
 \usage{
-RIallresp(dfin, pdf.out)
+RIallresp(dfin, pdf.out, fontsize = 15)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
 \item{pdf.out}{Set to TRUE to get PDF-compatible table (kableExtra)}
+
+\item{fontsize}{Set font size for PDF-compatible table}
 }
 \description{
 Create table with summarized responses across all items.

@@ -2,17 +2,19 @@
 % Please edit documentation in R/RISEkbmRasch.R
 \name{RIrmPCA}
 \alias{RIrmPCA}
-\title{Running the Rasch model for dichotomous using eRm, and
-conducting a PCA of residuals to get eigenvalues.}
+\title{Fits the Rasch model for dichotomous data using eRm, and
+conducts a PCA of residuals to get eigenvalues.}
 \usage{
-RIrmPCA(dfin, no.table)
+RIrmPCA(dfin, no.table, fontsize = 15)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
 \item{no.table}{Set to TRUE to avoid output of table}
+
+\item{fontsize}{Set font size}
 }
 \description{
-Running the Rasch model for dichotomous using eRm, and
-conducting a PCA of residuals to get eigenvalues.
+Fits the Rasch model for dichotomous data using eRm, and
+conducts a PCA of residuals to get eigenvalues.
 }

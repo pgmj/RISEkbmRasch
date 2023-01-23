@@ -11,7 +11,7 @@ RItargeting(dfin, dich, xlim = c(-5, 6))
 
 \item{dich}{Set to TRUE if your data is dichotomous}
 
-\item{xlim}{Optionally, set lower/upper limits for x axis, c(-5,6) is default}
+\item{xlim}{Optionally, set lower/upper limits for x axis}
 }
 \description{
 Outputs a figure consisting of three figures with the

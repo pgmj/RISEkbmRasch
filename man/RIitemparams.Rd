@@ -4,12 +4,14 @@
 \alias{RIitemparams}
 \title{Item parameters summary}
 \usage{
-RIitemparams(dfin, filename = "itemParameters.csv")
+RIitemparams(dfin, filename = "itemParameters.csv", fontsize = 15)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
 \item{filename}{Optional specification of filename for item parameters output}
+
+\item{fontsize}{Set font size for table}
 }
 \description{
 Displays a table with item threshold locations

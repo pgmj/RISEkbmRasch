@@ -6,14 +6,14 @@
 ZSTD is sample size sensitive, see "RIitemfitPCM"
 for options}
 \usage{
-RIinfitLoc(dfin, jz, yz)
+RIinfitLoc(dfin, samplesize, nsamples)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
-\item{jz}{Desired sample size in multisampling (recommended 250-500)}
+\item{samplesize}{Desired sample size in multisampling (recommended 250-500)}
 
-\item{yz}{Desired number of samples (recommended range 10-30)}
+\item{nsamples}{Desired number of samples (recommended range 10-30)}
 }
 \description{
 Plot with infit ZSTD and item location
