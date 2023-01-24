@@ -4,12 +4,14 @@
 \alias{RIdifTable}
 \title{DIF PCM analysis - requires having set up dif.variables previously}
 \usage{
-RIdifTable(dfin, dif.var)
+RIdifTable(dfin, dif.var, cutoff = 0.5)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
 \item{dif.var}{DIF variable}
+
+\item{cutoff}{Cutoff in item location logit difference for table highlighting}
 }
 \description{
 Makes use of the psychotree package, which also allows for interactions
