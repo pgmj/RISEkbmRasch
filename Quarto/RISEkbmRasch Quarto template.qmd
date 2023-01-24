@@ -2,6 +2,7 @@
 title: "Rasch in R and Quarto"
 subtitle: "Template file"
 title-block-banner: "#009ca6"
+title-block-banner-color: "#FFFFFF"
 author: 
   name: Magnus Johansson
   affiliation: RISE Research Institutes of Sweden
@@ -12,6 +13,8 @@ always_allow_html: true
 format: 
   html:
     toc: true
+    toc-depth: 3
+    toc-title: "Table of contents"
     embed-resources: true
     standalone: true
     page-layout: full
@@ -22,9 +25,9 @@ format:
     code-tools: true
     code-fold: true
     number-sections: true
-    fig-dpi: 250
+    fig-dpi: 96
     layout-align: left
-    linestretch: 1.7
+    linestretch: 1.6
     theme: materia
   pdf:
     papersize: a4
@@ -67,9 +70,10 @@ editor_options:
 # first install devtools by
 # install.packages('devtools')
 
+library(RISEkbmRasch) # devtools::install_github("pgmj/RISEkbmRasch")
+library(grateful) # devtools::install_github("Pakillo/grateful")
 library(ggrepel)
 library(car)
-library(grateful) # devtools::install_github("Pakillo/grateful")
 library(kableExtra)
 library(readxl)
 library(tidyverse)
@@ -83,71 +87,26 @@ library(reshape)
 library(knitr)
 library(cowplot)
 library(formattable) 
-library(RISEkbmRasch) # devtools::install_github("pgmj/RISEkbmRasch")
 library(HH)
 library(glue)
 
-### some commands exist in multiple packages, here we define preferred ones that are frequently used
-select <- dplyr::select
-count <- dplyr::count
-recode <- car::recode
-rename <- dplyr::rename
-
-### set up color palette based on RISE guidelines
-RISEprimGreen <- "#009ca6"
-RISEprimRed <- "#e83c63"
-RISEprimYellow <- "#ffe500"
-RISEprimGreenMid <- "#8dc8c7"
-RISEprimRedMid <- "#f5a9ab"
-RISEprimYellowMid <- "#ffee8d"
-RISEprimGreenLight <- "#ebf5f0"
-RISEprimRedLight <- "#fde8df"
-RISEprimYellowLight <- "#fff7dd"
-RISEcompPurple <- "#482d55"
-RISEcompGreenDark <- "#0e4e65"
-RISEgrey1 <- "#f0f0f0"
-RISEgrey2 <- "#c8c8c8"
-RISEgrey3 <- "#828282"
-RISEgrey4 <- "#555555"
-
-# set some colors used later
-cutoff_line <- RISEprimRed
-dot_color <- "black"
-backg_color <- RISEprimGreenLight
-
-# set fontsize for all tables
-r.fontsize <- 15
-
-### first we pre-set our chosen cut-off values for some commonly used indices:
-msq_min <- 0.7
-msq_max <- 1.3
-zstd_min <- -2
-zstd_max <- 2
-loc_dep <- 0.2 # above average residual correlation
-dif_dif <- 0.5 # logits difference between groups in average item location (DIF)
-
-### zstd is inflated with large samples (N > 500). Reduce sample size to jz and 
-### run analysis yz random samples to get average ZSTD
-jz = 300 # number to include in dataset
-yz = 10 # number of random samples
-
 #---- Load data----
-df<-as.data.frame(read_excel("GNI23data v1.1.xls"))
+df <- as.data.frame(read_excel("GNI23data v1.1.xls"))
 
 ### if you need to download the datafile:
 # library(readODS)
 # url <- "https://figshare.com/ndownloader/files/27953790"
 # destfile <- "gnidata.ods"
 # download.file(url, destfile, mode="wb")
-# df <- read_ods("gnidata.ods")
+# df <- read_ods(file = "gnidata.ods")
 
 # Load item information
-itemlabels<-read_excel("WAAQitemlabels.xls")
-#responseOptions<-read_excel("/Users/magnuspjo/Library/CloudStorage/OneDrive-SharedLibraries-RISE/KP Centrum för Kategoriskt Baserade Mätningar - Documents/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls", sheet = 2)
-#introText<-read_excel("/Users/magnuspjo/Library/CloudStorage/OneDrive-SharedLibraries-RISE/KP Centrum för Kategoriskt Baserade Mätningar - Documents/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls", sheet = 3)
+itemlabels <- read_excel("WAAQitemlabels.xls")
+# responseOptions<-read_excel("/Users/magnuspjo/Library/CloudStorage/OneDrive-SharedLibraries-RISE/KP Centrum för Kategoriskt Baserade Mätningar - Documents/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls", sheet = 2)
+# introText<-read_excel("/Users/magnuspjo/Library/CloudStorage/OneDrive-SharedLibraries-RISE/KP Centrum för Kategoriskt Baserade Mätningar - Documents/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls", sheet = 3)
 
-# Make a backup of the dataframe
-df.all<-df
+# Make a backup of the dataframe, in case you need to revert changes at some point
+df.all <- df
 
 #---- Create a vector with variables names----
 scale.items <- itemlabels$itemnr
@@ -159,7 +118,7 @@ scale.items <- df %>%
 
 #---- recode responses to WAAQ items to 0-6 (instead of 1-7)----
 for (i in scale.items) {
-  df[[i]]<-recode(df[[i]],"1=0;2=1;3=2;4=3;5=4;6=5;7=6",as.factor=FALSE)
+  df[[i]] <- recode(df[[i]], "1=0;2=1;3=2;4=3;5=4;6=5;7=6", as.factor = FALSE)
 }
 
 
@@ -211,10 +170,10 @@ df.omit.na$Age <- NULL
 ##### The important thing is that variable names in the data match the variablenames in the itemlabels dataframe
 #names(df.omit.na) <- paste0("q", c(1:ncol(df.omit.na)))
 
-# label gender variable
+### label gender variable as factor
 # dif.gender <- factor(dif.gender,
 #                       levels = c(1,2,3),
-#                       labels = c("Flicka", "Pojke", "Annat/vill ej svara"))
+#                       labels = c("Female", "Male", "Other/missing response"))
 
 ```
 
@@ -226,15 +185,15 @@ RIlistitems(df.omit.na)
 ## Demographics
 ```{r}
 #| layout-ncol: 2
-RIdemographics(dif.gender, "Kön")
+RIdemographics(dif.gender, "Gender")
 # if you want to recode a numerical variable to text for the table (or vice versa), you can use this line of code instead:
 #dplyr::recode(dif.gender, '1' = "Male", '2' = "Female") %>% RIdemographics("Gender")
-RIdemographics(dif.age, "Ålder")
+RIdemographics(dif.age, "Age")
 ```
 
 ### Descriptives of raw data
 
-Responses to all items are summarized below.
+Response distribution for all items are summarized below.
 
 ```{r}
 #| tbl-cap: "Total number of responses for all items"
@@ -243,6 +202,16 @@ RIallresp(df.omit.na)
 
 ### Descriptives - item level
 
+```{r}
+#| column: margin
+
+# this code chunk creates a small table in the margin beside the panel-tabset output below,
+# showing all items currently in the df.omit.na dataframe
+# the chunk option "#| column: margin" is necessary for the layout to work as intended
+RIlistItemsMargin(df.omit.na, fontsize = 12)
+```
+
+:::: column-page-left
 ::: panel-tabset
 #### Tile plot
 ```{r}
@@ -258,6 +227,7 @@ RIbarstack(df.omit.na)
 RIbarplot(df.omit.na)
 ```
 :::
+::::
 
 ### Floor/ceiling effects - raw data {.smaller}
 ```{r}
@@ -274,11 +244,7 @@ Credit Model will be used.
 
 ```{r}
 #| column: margin
-
-# this code chunk creates a small table in the margin beside the panel-tabset output below,
-# showing all items currently in the df.omit.na dataframe
-# the chunk option "#| column: margin" is necessary for the layout to work as intended
-RIlistItemsMargin(df.omit.na)
+RIlistItemsMargin(df.omit.na, fontsize = 13)
 ```
 
 :::: column-page-left
@@ -311,23 +277,13 @@ plot(mirt.rasch, type="trace")
 ### Targeting
 ```{r}
 #| fig-height: 5
-
 # increase fig-height above as needed, if you have many items
 RItargeting(df.omit.na)
 ```
 ### Item hierarchy
 ```{r}
 #| fig-height: 5
-
-# increase fig-height above as needed, if you have many items
 RIitemHierarchy(df.omit.na)
-# or use:
-#df.erm<-PCM(df.omit.na)
-#plotPImap(df.erm, sorted = T)
-```
-### Items
-```{r}
-RIlistitems(df.omit.na)
 ```
 :::
 ::::
@@ -351,21 +307,29 @@ RIitemparams(df.omit.na)
 ```
 
 ## DIF-analysis
+```{r}
+#| column: margin
+RIlistItemsMargin(df.omit.na, fontsize = 13)
+```
 
+### Gender
+
+:::: column-page-left
 ::: panel-tabset
-### Tabell
+#### Table
 ```{r}
 RIdifTable(df.omit.na, dif.gender)
 ```
-### Figur
+#### Locations
 ```{r}
 RIdifFigure(df.omit.na, dif.gender)
 ```
-### Items
+#### Thresholds
 ```{r}
-RIlistitems(df.omit.na)
+RIdifFigThresh(df.omit.na, dif.gender)
 ```
 :::
+::::
 
 ## Reliability
 ```{r}
