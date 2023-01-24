@@ -60,7 +60,7 @@ If you are new to R, [Hadley Wickham's book "R for data science"](https://r4ds.h
 
 ## Author
 
-[Magnus Johansson](https://www.ri.se/en/person/magnus-p-johansson) is a licensed psychologist with a PhD in behavior analysis. He works as a research scientist at [RISE Research Institutes of Sweden](https://ri.se/en), Department of Measurement Science and Technology.
+[Magnus Johansson](https://www.ri.se/en/person/magnus-p-johansson) is a licensed psychologist with a PhD in behavior analysis. He works as a research scientist at [RISE Research Institutes of Sweden](https://ri.se/en), Department of Measurement Science and Technology, and is an affiliated researcher at [Karolinska Institutet](https://medarbetare.ki.se/orgid/52082137).
 - Twitter: [@pgmjoh](https://twitter.com/pgmjoh)
 - ORCID: [0000-0003-1669-592X](https://orcid.org/0000-0003-1669-592X)
 - Mastodon: [@pgmj@scicomm.xyz](https://scicomm.xyz/@pgmj)
