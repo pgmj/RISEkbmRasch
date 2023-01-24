@@ -56,7 +56,7 @@ The `RIitemfitPCM2()` function, that makes use of multiple random subsamples to 
 
 For those new to R, it may be useful to know that you can easily access the code in each function by using the base R `View()` function. For example, `View(RItargeting)` shows the code for the `RItargeting()` function that creates a Wright map style figure (after installing and loading the RISEkbmRasch package).
 
-If you are new to R, [https://r4ds.hadley.nz/](Hadley Wickham's book "R for data science") is a great place to start.
+If you are new to R, [https://r4ds.hadley.nz/](Hadley Wickham's book R for data science) is a great place to start.
 
 ## Author
 
