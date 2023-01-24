@@ -1965,8 +1965,9 @@ RIdifFigThresh <- function(dfin, dif.var) {
 #'
 #' @param dfin Dataframe with item data only
 #' @param dif.var DIF variable
+#' @param cutoff Cutoff in item location logit difference for table highlighting
 #' @export
-RIdifTableRM <- function(dfin, dif.var) {
+RIdifTableRM <- function(dfin, dif.var, cutoff = 0.5) {
   df.tree <- data.frame(matrix(ncol = 0, nrow = nrow(dfin))) # we need to make a new dataframe
   df.tree$difdata <- as.matrix(dfin) # containing item data in a nested dataframe
   # and DIF variables:
@@ -1990,8 +1991,8 @@ RIdifTableRM <- function(dfin, dif.var) {
       relocate(MaxDiff, .after = last_col()) %>%
       formattable(list(
         'MaxDiff' =
-          formatter("span", style = ~ style(color = ifelse(MaxDiff < -0.5, "red",
-                                                           ifelse(MaxDiff > 0.5, "red",  "black"))))),
+          formatter("span", style = ~ style(color = ifelse(MaxDiff < -cutoff, "red",
+                                                           ifelse(MaxDiff > cutoff, "red",  "black"))))),
         table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato"')
 
   } else {
