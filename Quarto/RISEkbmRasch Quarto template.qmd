@@ -90,6 +90,12 @@ library(formattable)
 library(HH)
 library(glue)
 
+### some functions exist in multiple packages, here we define preferred ones that are frequently used
+select <- dplyr::select
+count <- dplyr::count
+recode <- car::recode
+rename <- dplyr::rename
+
 #---- Load data----
 df <- as.data.frame(read_excel("GNI23data v1.1.xls"))
 
