@@ -36,7 +36,7 @@ There are two basic data structure requirements:
   - the **second one** named `item`, containing either the questionnaire item or a description of it (or description of a task)
 - the data you want to analyze needs to be in a dataframe with participants as rows and items as columns/variables
   - the lowest response category needs to be zero (0). Recode as needed, the Quarto template file contains code for this.
-  - during data import, you will need to separate any demographic variables into vectors, for analysis of differential item functioning (DIF), and then remove them from the dataframe with item data. **The dataframe with item data can only contain item data for the analysis functions to work** (no ID variable or other demographic variables).
+  - during data import, you will need to separate any demographic variables into vectors (preferrably as labeled factors), for analysis of differential item functioning (DIF), and then remove them from the dataframe with item data. **The dataframe with item data can only contain item data for the analysis functions to work** (no ID variable or other demographic variables).
 
 For most Rasch-related functions in the package, there are separate functions for polytomous data (more than two response options for each item) and dichotomous data, except `RItargeting()` which defaults to polytomous data and has the option `dich = TRUE` for dichotomous data. For instance, `RIitemfitPCM()` for the Partial Credit Model and `RIitemfitRM()` for the dichotomous Rasch Model. The Rating Scale Model (RSM) for polytomous data has not been implemented in any of the functions.
 
