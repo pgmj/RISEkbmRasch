@@ -8,7 +8,7 @@ author:
   affiliation: RISE Research Institutes of Sweden
   affiliation-url: https://www.ri.se/en/vad-vi-gor/expertiser/kategoriskt-baserade-matningar
   orcid: 0000-0003-1669-592X
-date: '2023-01-25'
+date: last-modified
 always_allow_html: true
 format: 
   html:
@@ -29,6 +29,7 @@ format:
     layout-align: left
     linestretch: 1.6
     theme: materia
+    license: CC BY
   pdf:
     papersize: a4
     documentclass: article #article, report or book
@@ -51,7 +52,7 @@ format:
     author: "Magnus Johansson"
 #    reference-doc: RISEmallMJv6.dotx
 execute:
-  echo: false
+  echo: true
   warning: false
   message: false
   cache: true
@@ -89,12 +90,6 @@ library(cowplot)
 library(formattable) 
 library(HH)
 library(glue)
-
-### some functions exist in multiple packages, here we define preferred ones that are frequently used
-select <- dplyr::select
-count <- dplyr::count
-recode <- car::recode
-rename <- dplyr::rename
 
 #---- Load data----
 df <- as.data.frame(read_excel("GNI23data v1.1.xls"))
@@ -250,6 +245,7 @@ Credit Model will be used.
 
 ```{r}
 #| column: margin
+#| echo: false
 RIlistItemsMargin(df.omit.na, fontsize = 13)
 ```
 
@@ -313,12 +309,13 @@ RIitemparams(df.omit.na)
 ```
 
 ## DIF-analysis
-```{r}
-#| column: margin
-RIlistItemsMargin(df.omit.na, fontsize = 13)
-```
 
 ### Gender
+```{r}
+#| column: margin
+#| echo: false
+RIlistItemsMargin(df.omit.na, fontsize = 13)
+```
 
 :::: column-page-left
 ::: panel-tabset
