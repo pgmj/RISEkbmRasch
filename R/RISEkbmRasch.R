@@ -1935,7 +1935,8 @@ RIdifFigThresh <- function(dfin, dif.var) {
                                      "C7"="T7",
                                      "C8"="T8",
                                      "C9"="T9",
-                                     "C10"="T10"))
+                                     "C10"="T10")) %>%
+      mutate(Item = factor(Item, levels = names(dfin)))
 
     ggplot(unidif, (aes(
       x = factor(`DIF node`),
