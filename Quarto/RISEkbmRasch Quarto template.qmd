@@ -92,7 +92,8 @@ library(HH)
 library(glue)
 
 #---- Load data----
-df <- as.data.frame(read_excel("GNI23data v1.1.xls"))
+df <- as.data.frame(read_excel("GNI23data v1.1.xls")) %>%
+  mutate_at(vars(starts_with("WAAQ")), funs(str_replace(., "NULL", NA_character_) %>% as.numeric))
 
 ### if you need to download the datafile:
 # library(readODS)
