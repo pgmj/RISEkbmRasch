@@ -91,6 +91,12 @@ library(formattable)
 library(HH)
 library(glue)
 
+### some commands exist in multiple packages, here we define preferred ones that are frequently used
+select <- dplyr::select
+count <- dplyr::count
+recode <- car::recode
+rename <- dplyr::rename
+
 #---- Load data----
 df <- as.data.frame(read_excel("GNI23data v1.1.xls")) %>%
   mutate_at(vars(starts_with("WAAQ")), funs(str_replace(., "NULL", NA_character_) %>% as.numeric))
@@ -104,19 +110,12 @@ df <- as.data.frame(read_excel("GNI23data v1.1.xls")) %>%
 
 # Load item information
 itemlabels <- read_excel("WAAQitemlabels.xls")
-# responseOptions<-read_excel("/Users/magnuspjo/Library/CloudStorage/OneDrive-SharedLibraries-RISE/KP Centrum för Kategoriskt Baserade Mätningar - Documents/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls", sheet = 2)
-# introText<-read_excel("/Users/magnuspjo/Library/CloudStorage/OneDrive-SharedLibraries-RISE/KP Centrum för Kategoriskt Baserade Mätningar - Documents/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls", sheet = 3)
 
 # Make a backup of the dataframe, in case you need to revert changes at some point
 df.all <- df
 
 #---- Create a vector with variables names----
 scale.items <- itemlabels$itemnr
-
-# If desired, you can instead create the scale.items object from the dataframe variable names:
-scale.items <- df %>%
-  select(starts_with("WAAQ")) %>% # this selects all columns/variables that start with WAAQ
-  names()
 
 #---- recode responses to WAAQ items to 0-6 (instead of 1-7)----
 for (i in scale.items) {
