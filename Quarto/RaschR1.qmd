@@ -54,7 +54,7 @@ editor_options:
     wrap: 72
   chunk_output_type: inline
 bibliography: 
-- references.bib
+# - references.bib # file not found in /resources, produces error on quarto render
 - grateful-refs.bib
 ---
 
@@ -213,7 +213,7 @@ jz = 300 # number to include in dataset
 yz = 10 # number of random samples
 
 # Load data
-df<-as.data.frame(read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/GNI23data v1.1.xls"))
+df<-as.data.frame(read_excel("GNI23data v1.1.xls"))
 
 ### if you need to download the datafile:
 # library(readODS)
@@ -223,9 +223,9 @@ df<-as.data.frame(read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategorisk
 # df <- read_ods(file = "gnidata.ods")
 
 # Load item information
-itemlabels<-read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/WAAQitemlabels.xls")
-#responseOptions<-read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls", sheet = 2)
-#introText<-read_excel("C:/Users/magnuspjo/RISE/KP Centrum för Kategoriskt Baserade Mätningar - Dokument/Kunskapsutveckling/RaschR/data/PSS10itemlabels.xls", sheet = 3)
+itemlabels<-read_excel("WAAQitemlabels.xls")
+#responseOptions<-read_excel("PSS10itemlabels.xls", sheet = 2)
+#introText<-read_excel("PSS10itemlabels.xls", sheet = 3)
 
 # our datafile contains miscoded variable, the code below makes all variables numeric
 # this is not needed/desirable for all datasets, so use with care
@@ -429,7 +429,7 @@ df.omit.na$WAAQ_1<-recode(df.omit.na$WAAQ_1,"1=0;2=1;3=2;4=3;5=4",as.factor=FALS
 df.omit.na$WAAQ_5<-recode(df.omit.na$WAAQ_5,"1=0;2=1;3=2;4=3;5=4",as.factor=FALSE)
 
 # individual plots for those two items:
-RIitemcats(df.omit.na, items = c("WAAQ_1","WAAQ_5"))
+RIitemCats(df.omit.na, items = c("WAAQ_1","WAAQ_5"))
 
 ```
 
