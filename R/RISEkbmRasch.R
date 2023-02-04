@@ -2250,6 +2250,7 @@ RIestThetas <- function(dfin, itemParams, model = "PCM", method = "WL") {
 #' @param cpu Number of CPUs/cores to utilize (default is 4)
 #' @export
 RIestThetas2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4) {
+  library(furrr)
   plan(multisession, workers = cpu)
   # define function to call from purrr::map_dbl later.
   estTheta <- function(personResponse, itemParameters = itemParams, rmod = model, est = method) {
