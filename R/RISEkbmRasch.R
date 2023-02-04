@@ -2187,7 +2187,7 @@ RIscoreSE <- function(dfin) {
 #' @param model Rasch model to use (use NULL for dichotomous data)
 #' @param method Estimation method (defaults to "WL")
 #' @export
-estimateThetas <- function(dfin, itemParams, model = "PCM", method = "WL") {
+RIestThetas <- function(dfin, itemParams, model = "PCM", method = "WL") {
 
   # define function to call from purrr::map_dbl later.
   estTheta <- function(personResponse, itemParameters = itemParams, rmod = model, est = method) {
@@ -2249,7 +2249,7 @@ estimateThetas <- function(dfin, itemParams, model = "PCM", method = "WL") {
 #' @param method Estimation method (defaults to "WL")
 #' @param cpu Number of CPUs/cores to utilize (default is 4)
 #' @export
-estimateThetas2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4) {
+RIestThetas2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4) {
   plan(multisession, workers = cpu)
   # define function to call from purrr::map_dbl later.
   estTheta <- function(personResponse, itemParameters = itemParams, rmod = model, est = method) {
