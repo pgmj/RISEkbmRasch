@@ -1,6 +1,6 @@
 Package: RISEkbmRasch
 Title: Psychometric Analysis in R with Rasch Measurement Theory
-Version: 0.1.8.3
+Version: 0.1.8.4
 Date: 2023-02-04
 URL: https://github.com/pgmj/RISEkbmRasch
 Authors@R:
@@ -27,10 +27,11 @@ Depends:
     cowplot,
     ggrepel,
     glue,
+    catR
 Suggests:
     HH,
     foreach,
-    furrr,
+    furrr
 License: `use_ccby_license()`
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
