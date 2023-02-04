@@ -2170,3 +2170,124 @@ RIscoreSE <- function(dfin) {
     mutate(across(where(is.numeric), round, 2)) %>%
     formattable(., table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 80%"')
 }
+
+#' Person location estimation
+#'
+#' NOTE: Does not yet work with dichotomous data
+#'
+#' Outputs a vector of person locations, one for each row in the dataframe.
+#'
+#' Uses thetaEst function from catR package to estimate person locations
+#' (thetas) for a dataframe with item data as columns and persons as rows.
+#' Defaults to use WL estimation (lower bias than ML) and PCM.
+#' See ?thetaEst for options available.
+#'
+#' @param dfin Dataframe with response data only (no demographics etc), items as columns
+#' @param itemParams Optional item (threshold) location matrix
+#' @param model Rasch model to use (use NULL for dichotomous data)
+#' @param method Estimation method (defaults to "WL")
+#' @export
+estimateThetas <- function(dfin, itemParams, model = "PCM", method = "WL") {
+
+  # define function to call from purrr::map_dbl later.
+  estTheta <- function(personResponse, itemParameters = itemParams, rmod = model, est = method) {
+    thetaEst(itemParameters, as.numeric(as.vector(personResponse)), model = rmod, method = est)
+  }
+  # if no itemParams are given, calculate them based on input dataframe
+  if (missing(itemParams) & model == "PCM") {
+    df.erm <- PCM(dfin)
+    item.estimates <- eRm::thresholds(df.erm)
+    item_difficulty <- as.data.frame(item.estimates[["threshtable"]][["1"]])
+    item_difficulty$Location <- NULL
+    itemParams <- item_difficulty %>%
+      mutate_if(is.character, as.numeric) %>%
+      as.matrix()
+
+    # Transpose dataframe to make persons to columns, then output a vector with thetas
+    dfin %>%
+      t() %>%
+      as_tibble() %>%
+      map_dbl(., estTheta)
+
+  } else if (missing(itemParams) & is.null(model)) {
+    df.erm <- RM(dfin)
+    itemParams <- as.matrix(coef(df.erm, "eta"))
+
+    # Transpose dataframe to make persons to columns, then output a vector with thetas
+    dfin %>%
+      t() %>%
+      as_tibble() %>%
+      map_dbl(., estTheta)
+
+  } else {
+
+# Transpose dataframe to make persons to columns, then output a vector with thetas
+  dfin %>%
+    t() %>%
+    as_tibble() %>%
+    map_dbl(., estTheta)
+  }
+}
+
+#' Person location estimation with parallel processing
+#'
+#' Yields about 2-3x speed increase when using 4-8 CPU cores.
+#' Requires `library(furrr)`
+#'
+#' NOTE: Does not yet work with dichotomous data
+#'
+#' Outputs a vector of person locations, one for each row in the dataframe.
+#'
+#' Uses thetaEst function from catR package to estimate person locations
+#' (thetas) for a dataframe with item data as columns and persons as rows.
+#' Defaults to use WL estimation (lower bias than ML) and PCM.
+#' See ?thetaEst for options available.
+#'
+#' @param dfin Dataframe with response data only (no demographics etc), items as columns
+#' @param itemParams Optional item (threshold) location matrix
+#' @param model Rasch model to use (use NULL for dichotomous data)
+#' @param method Estimation method (defaults to "WL")
+#' @param cpu Number of CPUs/cores to utilize (default is 4)
+#' @export
+estimateThetas2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4) {
+  plan(multisession, workers = cpu)
+  # define function to call from purrr::map_dbl later.
+  estTheta <- function(personResponse, itemParameters = itemParams, rmod = model, est = method) {
+    thetaEst(itemParameters, as.numeric(as.vector(personResponse)), model = rmod, method = est)
+  }
+  # if no itemParams are given, calculate them based on input dataframe
+  if (missing(itemParams) & model == "PCM") {
+    df.erm <- PCM(dfin)
+    item.estimates <- eRm::thresholds(df.erm)
+    item_difficulty <- as.data.frame(item.estimates[["threshtable"]][["1"]])
+    item_difficulty$Location <- NULL
+    itemParams <- item_difficulty %>%
+      mutate_if(is.character, as.numeric) %>%
+      as.matrix()
+
+    # Transpose dataframe to make persons to columns, then output a vector with thetas
+    dfin %>%
+      t() %>%
+      as_tibble() %>%
+      future_map_dbl(., estTheta)
+
+  } else if (missing(itemParams) & is.null(model)) {
+    df.erm <- RM(dfin)
+    itemParams <- as.matrix(coef(df.erm, "eta"))
+
+    # Transpose dataframe to make persons to columns, then output a vector with thetas
+    dfin %>%
+      t() %>%
+      as_tibble() %>%
+      future_map_dbl(., estTheta)
+
+  } else {
+
+    # Transpose dataframe to make persons to columns, then output a vector with thetas
+    dfin %>%
+      t() %>%
+      as_tibble() %>%
+      future_map_dbl(., estTheta)
+  }
+}
+
