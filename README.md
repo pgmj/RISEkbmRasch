@@ -3,6 +3,8 @@ R package for Rasch Measurement Theory based psychometric analysis. Intended for
 
 There is now a [vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html) that is intended to be the next step after you skimmed this README. You will find a sample Rasch analysis in the vignette, with output from most of the package functions. The vignette is produced using Quarto, and its source code is of course also [available](https://github.com/pgmj/pgmj.github.io/blob/main/raschrvignette/RaschRvign.qmd).
 
+Most functions have been developed with polytomous data analysis in mind, using the partial credit model. Also, the choice was made to rely primarily on conditional maximum likelihood estimation for item parameters, since it is robust under various conditions and enables "person-free assessment".
+
 ## Installation
 
 First, install the [`devtools`](https://devtools.r-lib.org/) package:
