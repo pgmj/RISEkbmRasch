@@ -7,6 +7,52 @@
 ### See .qmd files at https://github.com/pgmj/pgmj for use cases
 ### Link to vignette is available at the GitHub page.
 
+#' A simple ggplot theme for RISE formatting
+#'
+#' Use is optional :)
+#'
+#' See ?element_text for more details on available settings
+#'
+#' @param fontfamily Font family for all plot text
+#' @param axissize Font size for axis labels
+#' @param titlesize Font size for plot title
+#' @param margins Distance of axis labels to plot
+#' @param axisface Set to "bold" if you want bold axis labels
+#' @return Add + theme_rise() to your ggplot or RIfunction that outputs a ggplot
+#' @export
+theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15, margins = 12, axisface = "plain") {
+  theme(
+    axis.title.x = element_text(
+      margin = margin(t = margins),
+      family = fontfamily,
+      size = axissize
+    ),
+    axis.title.y = element_text(
+      margin = margin(r = margins),
+      family = fontfamily,
+      size = axissize
+    ),
+    plot.title = element_text(
+      face = "bold",
+      family = fontfamily,
+      size = titlesize
+    ),
+    axis.title = element_text(
+      face = axisface
+    ),
+    axis.text = element_text(
+      family = fontfamily
+    ),
+    plot.caption = element_text(
+      face = "italic",
+      family = fontfamily
+    )
+  ) +
+    # these rows are for geom_text() and geom_text_repel() to match font family
+    update_geom_defaults("text", list(family = fontfamily)) +
+    update_geom_defaults("text_repel", list(family = fontfamily))
+}
+
 #' Show items based on itemlabels file
 #'
 #' Requires a dataframe with two columns, labeled "itemnr" and "item",
@@ -1851,9 +1897,10 @@ RIdifFigure <- function(dfin, dif.var) {
   rownames(pctree.par)<-NULL
   pctree.par <- melt(pctree.par, id.vars = "Item")
   names(pctree.par)<-c("Item", "Group", "Logits")
-  # make plot
+  pctree.par$Item <- factor(pctree.par$Item, levels = names(dfin)) # order items
+    # make plot
   ggplot(pctree.par, aes(x=Item, y=Logits, color=Group, group = Group)) +
-    geom_line(linewidth = 1.5) +
+    geom_line(linewidth = 1.3) +
     geom_point(size = 2.5)
   } else {
     print("No significant DIF found.")
@@ -1887,6 +1934,7 @@ RIdifFigTime <- function(dfin, dif.var) {
     rownames(pctree.par)<-NULL
     pctree.par <- melt(pctree.par, id.vars = "Item")
     names(pctree.par)<-c("Item", "Group", "Logits")
+    pctree.par$Item <- factor(pctree.par$Item, levels = names(dfin))
     # make plot
     ggplot(pctree.par, aes(x=Group, y=Logits, color=Item, group = Item)) +
       geom_line(linewidth = 1.5) +
@@ -2140,7 +2188,7 @@ RIitemHierarchy <- function(dfin, ci = "95"){
       coord_flip() +
       #scale_y_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) +
       labs(caption = str_wrap("Note. Item locations are indicated by black diamond shapes. Item threshold locations are indicated by colored dots.
-                              Brackets indicate 95% confidence intervals for threshold locations.")) +
+                              Horizontal error bars indicate 95% confidence intervals around threshold locations.")) +
       theme(plot.caption = element_text(hjust = 0, face = "italic"))
   }
 }
