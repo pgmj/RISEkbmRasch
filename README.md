@@ -16,7 +16,7 @@ Then install the package and its dependencies:
 ```r
 devtools::install_github("pgmj/RISEkbmRasch", dependencies = TRUE)
 ```
-One user has reported having to cancel and restart R several times before being able to install and load the library. This may be a local issue, but I thought it worth mentioning. If others have the same experience, please let me know.
+One user has reported having to cancel the installation and restart R several times before being able to install and load the library. This may be a local issue, but I thought it worth mentioning. If others have the same experience, please let me know.
 
 While not strictly necessary, it is highly recommended to install Quarto (and update your Rstudio and R installation if needed):
 - https://quarto.org/docs/get-started/
