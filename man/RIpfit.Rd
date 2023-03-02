@@ -4,11 +4,14 @@
 \alias{RIpfit}
 \title{Person fit}
 \usage{
-RIpfit(dfin)
+RIpfit(dfin, model = "PCM")
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
+
+\item{model}{Rasch model to use, "PCM" or "RM"}
 }
 \description{
-Person fit
+Outputs a histogram of person fit ZSTD and a plot with person fit ZSTD and
+person location/score.
 }
