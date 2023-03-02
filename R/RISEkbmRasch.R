@@ -41,7 +41,7 @@ theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15, margi
     plot.caption = element_text(
       face = "italic"
     ),
-    legend.text(element_text(family = fontfamily))
+    legend.text = element_text(family = fontfamily)
   ) +
     # these rows are for geom_text() and geom_text_repel() to match font family
     update_geom_defaults("text", list(family = fontfamily)) +
