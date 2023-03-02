@@ -22,31 +22,26 @@
 #' @export
 theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15, margins = 12, axisface = "plain") {
   theme(
+    text = element_text(family = fontfamily),
     axis.title.x = element_text(
       margin = margin(t = margins),
-      family = fontfamily,
       size = axissize
     ),
     axis.title.y = element_text(
       margin = margin(r = margins),
-      family = fontfamily,
       size = axissize
     ),
     plot.title = element_text(
       face = "bold",
-      family = fontfamily,
       size = titlesize
     ),
     axis.title = element_text(
       face = axisface
     ),
-    axis.text = element_text(
-      family = fontfamily
-    ),
     plot.caption = element_text(
-      face = "italic",
-      family = fontfamily
-    )
+      face = "italic"
+    ),
+    legend.text(element_text(family = fontfamily))
   ) +
     # these rows are for geom_text() and geom_text_repel() to match font family
     update_geom_defaults("text", list(family = fontfamily)) +
@@ -1333,10 +1328,10 @@ RItif <- function(dfin, lo, hi) {
     theme(
       panel.background = element_rect(fill = "#ebf5f0",
                                       colour = "#ebf5f0",
-                                      size = 0.5, linetype = "solid"),
-      panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                      linewidth = 0.5, linetype = "solid"),
+      panel.grid.major = element_line(linewidth = 0.5, linetype = 'solid',
                                       colour = "white"),
-      panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+      panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
                                       colour = "white")
     )
   } else {
@@ -1435,10 +1430,10 @@ RItif <- function(dfin, lo, hi) {
       theme(
         panel.background = element_rect(fill = "#ebf5f0",
                                         colour = "#ebf5f0",
-                                        size = 0.5, linetype = "solid"),
-        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        linewidth = 0.5, linetype = "solid"),
+        panel.grid.major = element_line(linewidth = 0.5, linetype = 'solid',
                                         colour = "white"),
-        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+        panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
                                         colour = "white")
       )
   }
@@ -1447,59 +1442,68 @@ RItif <- function(dfin, lo, hi) {
 
 #' Person fit
 #'
+#' Outputs a histogram of person fit ZSTD and a plot with person fit ZSTD and
+#' person location/score.
+#'
 #' @param dfin Dataframe with item data only
+#' @param model Rasch model to use, "PCM" or "RM"
 #' @export
-RIpfit <- function(dfin) {
-  df.erm <- PCM(dfin)
-  item.estimates <- eRm::thresholds(df.erm)
-  item_difficulty <- item.estimates[["threshtable"]][["1"]]
-  item_difficulty<-as.data.frame(item_difficulty)
-  item.se <- item.estimates$se.thresh
+RIpfit <- function(dfin, model = "PCM") {
+  if (model == "PCM") {
+    df.erm <- PCM(dfin)
+  } else {
+    df.erm <- RM(dfin)
+  }
   person.locations.estimate <- person.parameter(df.erm)
-  item.fit <- eRm::itemfit(person.locations.estimate)
-
   person.fit <- eRm::personfit(person.locations.estimate)
-  thetas2<-as.data.frame(person.locations.estimate$theta.table)
+  thetas2 <- as.data.frame(person.locations.estimate$theta.table)
 
   nPfit <- length(person.fit$p.infitZ)
-  nCeilingPfit<-length(which(person.fit$p.infitZ > 2))
-  nFloorPfit<-length(which(person.fit$p.infitZ < -2))
-  nPgoodfit<-(nPfit-(nCeilingPfit+nFloorPfit))
+  nCeilingPfit <- length(which(person.fit$p.infitZ > 2))
+  nFloorPfit <- length(which(person.fit$p.infitZ < -2))
+  nPgoodfit <- (nPfit - (nCeilingPfit + nFloorPfit))
 
-  hist(person.fit$p.infitZ, col = "#009ca6", xlim = c(-4,6), xlab = "Person infit ZSTD", main = "Histogram of Person infit ZSTD")
+  hist(person.fit$p.infitZ, col = "#009ca6", xlim = c(-4, 6), xlab = "Person infit ZSTD", main = "Histogram of Person infit ZSTD")
 
   # check whether there are excluded observations, and if found, adjust thetas2 df
   if (length(person.fit$excl_obs_num) > 0L) {
-    thetas2[person.fit$excl_obs_num,] <- NA
+    thetas2[person.fit$excl_obs_num, ] <- NA
     thetas2 <- na.omit(thetas2)
   }
   df.pfit <- data.frame(matrix(ncol = 2, nrow = nrow(thetas2)))
-  #provide column names
-  colnames(df.pfit) <- c('Person locations', 'Person infit ZSTD')
+  # provide column names
+  colnames(df.pfit) <- c("Person locations", "Person infit ZSTD")
   df.pfit$`Person locations` <- thetas2$`Person Parameter`
   df.pfit$`Person infit ZSTD` <- person.fit$p.infitZ
 
   # figure
   df.pfit %>%
-    ggplot(aes(x=`Person infit ZSTD`, y=`Person locations`, label="")) +
+    ggplot(aes(x = `Person infit ZSTD`, y = `Person locations`, label = "")) +
     geom_point(size = 1, color = "black") +
     geom_vline(xintercept = -2, color = "#e83c63", linetype = 2, size = 0.7) +
     geom_vline(xintercept = 2, color = "#e83c63", linetype = 2, size = 0.7) +
-    scale_y_continuous(breaks=seq(-5, 5, by = 1)) +
-    scale_x_continuous(breaks=seq(-5, 7, by = 1)) +
-    labs(caption = paste0(round(nCeilingPfit/nPfit*100,1), "% of participants have person infit ZSTD below -2.0, and ",
-                          round(nFloorPfit/nPfit*100,1), "% are above 2.0. \nThus, ", round(nPgoodfit/nPfit*100,1), "% are within +/- 2 infit ZSTD.")) +
+    scale_y_continuous(breaks = seq(-5, 5, by = 1)) +
+    scale_x_continuous(breaks = seq(-5, 7, by = 1)) +
+    labs(caption = paste0(
+      round(nFloorPfit / nPfit * 100, 1), "% of participants have person infit ZSTD below -2.0, and ",
+      round(nCeilingPfit / nPfit * 100, 1), "% are above 2.0. \nThus, ", round(nPgoodfit / nPfit * 100, 1), "% are within +/- 2 infit ZSTD."
+    )) +
     theme(plot.caption = element_text(hjust = 0, face = "italic")) +
     theme(
-      panel.background = element_rect(fill = "#ebf5f0",
-                                      colour = "#ebf5f0",
-                                      size = 0.5, linetype = "solid"),
-      panel.grid.major = element_line(size = 0.5, linetype = 'solid',
-                                      colour = "white"),
-      panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
-                                      colour = "white")
+      panel.background = element_rect(
+        fill = "#ebf5f0",
+        colour = "#ebf5f0",
+        linewidth = 0.5, linetype = "solid"
+      ),
+      panel.grid.major = element_line(
+        linewidth = 0.5, linetype = "solid",
+        colour = "white"
+      ),
+      panel.grid.minor = element_line(
+        linewidth = 0.25, linetype = "solid",
+        colour = "white"
+      )
     )
-
 }
 
 
@@ -1592,10 +1596,10 @@ RIinfitLoc <- function(dfin, samplesize, nsamples) {
       theme(
         panel.background = element_rect(fill = "#ebf5f0",
                                         colour = "#ebf5f0",
-                                        size = 0.5, linetype = "solid"),
-        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        linewidth = 0.5, linetype = "solid"),
+        panel.grid.major = element_line(linewidth = 0.5, linetype = 'solid',
                                         colour = "white"),
-        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+        panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
                                         colour = "white")
       )
   } else {
@@ -1647,10 +1651,10 @@ RIinfitLoc <- function(dfin, samplesize, nsamples) {
       theme(
         panel.background = element_rect(fill = "#ebf5f0",
                                         colour = "#ebf5f0",
-                                        size = 0.5, linetype = "solid"),
-        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        linewidth = 0.5, linetype = "solid"),
+        panel.grid.major = element_line(linewidth = 0.5, linetype = 'solid',
                                         colour = "white"),
-        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+        panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
                                         colour = "white")
       )
   }
@@ -1702,10 +1706,10 @@ RIoutfitLoc <- function(dfin, samplesize, nsamples) {
       theme(
         panel.background = element_rect(fill = "#ebf5f0",
                                         colour = "#ebf5f0",
-                                        size = 0.5, linetype = "solid"),
-        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        linewidth = 0.5, linetype = "solid"),
+        panel.grid.major = element_line(linewidth = 0.5, linetype = 'solid',
                                         colour = "white"),
-        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+        panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
                                         colour = "white")
       )
   } else {
@@ -1757,10 +1761,10 @@ RIoutfitLoc <- function(dfin, samplesize, nsamples) {
       theme(
         panel.background = element_rect(fill = "#ebf5f0",
                                         colour = "#ebf5f0",
-                                        size = 0.5, linetype = "solid"),
-        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        linewidth = 0.5, linetype = "solid"),
+        panel.grid.major = element_line(linewidth = 0.5, linetype = 'solid',
                                         colour = "white"),
-        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+        panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
                                         colour = "white")
       )
   }
@@ -1817,10 +1821,10 @@ RIloadLoc <- function(dfin) {
     theme(
       panel.background = element_rect(fill = "#ebf5f0",
                                       colour = "#ebf5f0",
-                                      size = 0.5, linetype = "solid"),
-      panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                      linewidth = 0.5, linetype = "solid"),
+      panel.grid.major = element_line(linewidth = 0.5, linetype = 'solid',
                                       colour = "white"),
-      panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+      panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
                                       colour = "white")
     )
 }
