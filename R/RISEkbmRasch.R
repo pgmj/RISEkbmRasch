@@ -1043,8 +1043,8 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato") {
 #' @param dich Set to TRUE if your data is dichotomous
 #' @param xlim Optionally, set lower/upper limits for x axis
 #' @export
-RItargeting <- function(dfin, dich, xlim = c(-5,6)) {
-  if(missing(dich)) {
+RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
+  if(dich == FALSE) {
   df.erm <- PCM(dfin) # run PCM model
   # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
   item.estimates <- eRm::thresholds(df.erm)
@@ -1052,7 +1052,7 @@ RItargeting <- function(dfin, dich, xlim = c(-5,6)) {
   item_difficulty <- as.data.frame(item_difficulty)
   item.se <- item.estimates$se.thresh
   person.locations.estimate <- person.parameter(df.erm)
-  item.fit <- eRm::itemfit(person.locations.estimate)
+  #item.fit <- eRm::itemfit(person.locations.estimate)
 
   item.locations <- item_difficulty[, 2:ncol(item_difficulty)]
   names(item.locations) <- paste0("T", c(1:ncol(item.locations))) # re-number items
@@ -1172,13 +1172,13 @@ RItargeting <- function(dfin, dich, xlim = c(-5,6)) {
   # combine plots together to create Wright map, and let the individual item threshold plot have some more space
   plot_grid(p2,p3,p1, labels=NULL, nrow = 3, align ="hv", rel_heights = c(1,1,1.4))
   } else {
-    df.erm<-RM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+    df.erm <- RM(dfin) # run RM model
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
     person.locations.estimate <- person.parameter(df.erm)
-    item.estimates <- coef(df.erm, "eta") # item coefficients
-    item.fit <- eRm::itemfit(person.locations.estimate)
+    item.estimates <- coef(df.erm, "beta")*-1 # item coefficients
+    #item.fit <- eRm::itemfit(person.locations.estimate)
 
-    item.locations<-as.data.frame(item.estimates)
+    item.locations <- as.data.frame(item.estimates)
     #names(item.locations) <- paste0("T", c(1:ncol(item.locations))) #re-number items
     itemloc.long <- item.locations %>%
       rownames_to_column() %>%
