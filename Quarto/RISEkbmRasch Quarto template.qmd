@@ -213,6 +213,8 @@ RIallresp(df.omit.na)
 RIlistItemsMargin(df.omit.na, fontsize = 12)
 ```
 
+See [https://quarto.org/docs/authoring/article-layout.html](https://quarto.org/docs/authoring/article-layout.html) for Quarto layout options.
+
 :::: column-page-left
 ::: panel-tabset
 #### Tile plot
