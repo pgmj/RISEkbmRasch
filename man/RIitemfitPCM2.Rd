@@ -13,7 +13,9 @@ RIitemfitPCM2(
   zstd_max = 2,
   msq_min = 0.7,
   msq_max = 1.3,
-  fontsize = 15
+  fontsize = 15,
+  fontfamily = "Lato",
+  table = TRUE
 )
 }
 \arguments{
@@ -34,6 +36,10 @@ RIitemfitPCM2(
 \item{msq_max}{Upper cutoff level for MSQ}
 
 \item{fontsize}{Set fontsize for table}
+
+\item{fontfamily}{Set font family for table}
+
+\item{table}{Set to FALSE if you want a dataframe instead of a table output}
 }
 \description{
 Special version of RIitemfitPCM that utilizes multiple CPU cores to improve

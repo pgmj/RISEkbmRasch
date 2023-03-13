@@ -4,7 +4,7 @@
 \alias{RIlistitems}
 \title{Show items based on itemlabels file}
 \usage{
-RIlistitems(dfin, all.items)
+RIlistitems(dfin, all.items = FALSE, ...)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}

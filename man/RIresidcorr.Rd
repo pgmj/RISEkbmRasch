@@ -4,7 +4,7 @@
 \alias{RIresidcorr}
 \title{Correlation matrix of Rasch residuals}
 \usage{
-RIresidcorr(dfin, cutoff, fontsize = 15)
+RIresidcorr(dfin, cutoff, fontsize = 15, fontfamily = "Lato")
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
@@ -12,6 +12,8 @@ RIresidcorr(dfin, cutoff, fontsize = 15)
 \item{cutoff}{Relative value above the average of all item residual correlations}
 
 \item{fontsize}{Set font size for table}
+
+\item{fontfamily}{Set font family for table}
 }
 \description{
 Mandatory option to set relative cutoff-value over

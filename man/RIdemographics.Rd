@@ -9,7 +9,7 @@ RIdemographics(dif.var, diflabel, fontsize = 15)
 \arguments{
 \item{dif.var}{A vector with a demographic variable}
 
-\item{diflabel}{What the variable represents (sex/age/etc)}
+\item{diflabel}{What the variable represents (sex/age/etc), in quotes}
 
 \item{fontsize}{Defaults to 15}
 }

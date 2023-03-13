@@ -12,7 +12,9 @@ RIitemfitRM(
   zstd_max = 2,
   msq_min = 0.7,
   msq_max = 1.3,
-  fontsize = 15
+  fontsize = 15,
+  fontfamily = "Lato",
+  table = TRUE
 )
 }
 \arguments{
@@ -31,6 +33,10 @@ RIitemfitRM(
 \item{msq_max}{Upper cutoff level for MSQ}
 
 \item{fontsize}{Set font size for table}
+
+\item{fontfamily}{Set font family for table}
+
+\item{table}{Set to FALSE if you want a dataframe instead of a table output}
 }
 \description{
 ZSTD is inflated with large samples (N > 500). Optional function to reduce
