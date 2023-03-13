@@ -98,8 +98,9 @@ recode <- car::recode
 rename <- dplyr::rename
 
 #---- Load data----
+# The excel file sometimes provides numerical data coded as characters. The lines below will recode to numerics for the WAAQ* items.
 df <- as.data.frame(read_excel("GNI23data v1.1.xls")) %>%
-  mutate_at(vars(starts_with("WAAQ")), funs(str_replace(., "NULL", NA_character_) %>% as.numeric))
+  mutate(across(starts_with("WAAQ"), ~ as.numeric(.x)))
 
 ### if you need to download the datafile:
 # library(readODS)
