@@ -48,6 +48,25 @@ theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15, margi
     update_geom_defaults("text_repel", list(family = fontfamily))
 }
 
+#' A kableExtra function to simplify table code
+#'
+#' @param data Dataframe/tibble to create table from
+#' @param width Width of table (0-100)
+#' @param fontsize Font size
+#' @param fontfamily Font family
+#' @export
+kbl_rise <- function(data, width = 75, fontsize = 14, fontfamily = "Lato",
+                     options = c("striped", "hover")) {
+  kbl(data, booktabs = T, escape = F, table.attr = glue("style='width:{width}%;'")) %>%
+    kable_styling(
+      bootstrap_options = options, position = "left",
+      full_width = T, font_size = fontsize, fixed_thead = T,
+      latex_options = c("striped", "scale_down")
+    ) %>%
+    row_spec(0, bold = T) %>%
+    kable_classic(html_font = fontfamily)
+}
+
 #' Show items based on itemlabels file
 #'
 #' Requires a dataframe with two columns, labeled "itemnr" and "item",
@@ -64,24 +83,16 @@ theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15, margi
 #' @param all.items Set to TRUE to list all items in 'itemlabels' df
 #' @return A table with items used in dataframe
 #' @export
-RIlistitems <- function(dfin, all.items) {
-  if (missing(all.items)) {
+RIlistitems <- function(dfin, all.items = FALSE, ...) {
+  if (all.items == FALSE) {
+
     itemlabels %>%
       filter(itemnr %in% names(dfin)) %>%
-      formattable(
-        align = c("c", "l"), list(
-          `itemnr` = formatter("span", style = ~ style(color = "grey", font.weight = "bold"))
-        ),
-        table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 75%"'
-      )
+      kbl_rise(...)
+
   } else {
     itemlabels %>%
-      formattable(
-        align = c("c", "l"), list(
-          `itemnr` = formatter("span", style = ~ style(color = "grey", font.weight = "bold"))
-        ),
-        table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 75%"'
-      )
+      kbl_rise(...)
   }
 }
 
@@ -186,7 +197,7 @@ RIheatmap <- function(dfin) {
 #' Sample use: RIdemographics(dif.gender, "Gender")
 #'
 #' @param dif.var A vector with a demographic variable
-#' @param diflabel What the variable represents (sex/age/etc)
+#' @param diflabel What the variable represents (sex/age/etc), in quotes
 #' @param fontsize Defaults to 15
 #' @export
 RIdemographics <- function(dif.var, diflabel, fontsize = 15) {
@@ -502,7 +513,8 @@ RIitemCats <- function(dfin, items, xlims = c(-6,6)) {
     legpos = FALSE, # change legpos to TRUE if you want the legend displayed
     ylab = "Probability",
     xlab = "Person location",
-    item.subset = items
+    item.subset = items,
+    ask = FALSE
   )
 }
 #make this escape the "hit return to see next plot"
@@ -515,11 +527,11 @@ RIitemCats <- function(dfin, items, xlims = c(-6,6)) {
 #' @return A barplot with descriptives in footnote
 #' @export
 RIrawdist <- function(dfin) {
-  df.erm<-PCM(dfin) # run PCM model
+  df.erm <- PCM(dfin) # run PCM model
   # get info on thresholds
   item.estimates <- eRm::thresholds(df.erm)
   item_difficulty <- item.estimates[["threshtable"]][["1"]]
-  item_difficulty<-as.data.frame(item_difficulty)
+  item_difficulty <- as.data.frame(item_difficulty)
 
   # all items should have lowest category 0, making 0 the lowest total score
   rawMin <- 0
@@ -609,25 +621,29 @@ RIrawdist <- function(dfin) {
 #' @param msq_min Lower cutoff level for MSQ
 #' @param msq_max Upper cutoff level for MSQ
 #' @param fontsize Set fontsize for table
+#' @param fontfamily Set font family for table
+#' @param table Set to FALSE if you want a dataframe instead of a table output
 #' @export
 RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
-                         msq_min = 0.7, msq_max = 1.3, fontsize = 15) {
+                         msq_min = 0.7, msq_max = 1.3, fontsize = 15, fontfamily = "Lato",
+                         table = TRUE) {
   if (missing(samplesize)) {
     df.erm <- PCM(dfin) # run PCM model
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-    item.estimates <- eRm::thresholds(df.erm)
-    item_difficulty <- item.estimates[["threshtable"]][["1"]]
-    item_difficulty <- as.data.frame(item_difficulty)
-    item.se <- item.estimates$se.thresh
     person.locations.estimate <- person.parameter(df.erm)
     item.fit <- eRm::itemfit(person.locations.estimate)
     # collect data to df
-    item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, item.fit$i.outfitZ, item.fit$i.infitZ))
+    item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ,
+                                          item.fit$i.infitMSQ,
+                                          item.fit$i.outfitZ,
+                                          item.fit$i.infitZ)) %>%
+      mutate(across(where(is.numeric), ~ round(.x, 3)))
+
     colnames(item.fit.table) <- c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
 
+    if (table == TRUE) {
     # create table that highlights cutoff values in red
     item.fit.table %>%
-      mutate(across(where(is.numeric), round, 3)) %>%
       mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
         ifelse(OutfitZSTD > zstd_max, "red", "black")
       ))) %>%
@@ -640,26 +656,26 @@ RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2
       mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
         ifelse(InfitMSQ > msq_max, "red", "black")
       ))) %>%
-      kbl(booktabs = T, escape = F) %>%
-      # bootstrap options are for HTML output
-      kable_styling(
-        bootstrap_options = c("striped", "hover"),
-        position = "left",
-        full_width = F,
-        font_size = fontsize,
-        fixed_thead = T
-      ) %>%
-      column_spec(1, bold = T) %>%
-      kable_classic(html_font = "Lato") %>%
-      # latex_options are for PDF output
-      kable_styling(latex_options = c("striped", "scale_down"))
+        kbl(booktabs = T, escape = F) %>%
+        # bootstrap options are for HTML output
+        kable_styling(
+          bootstrap_options = c("striped", "hover"),
+          position = "left",
+          full_width = F,
+          font_size = fontsize,
+          fixed_thead = T
+        ) %>%
+        column_spec(1, bold = T) %>%
+        row_spec(0, bold = T) %>%
+        kable_classic(html_font = fontfamily) %>%
+        # latex_options are for PDF output
+        kable_styling(latex_options = c("striped", "scale_down"))
+    } else {
+      itemFitPCM <<- item.fit.table
+    }
   } else {
     df.erm <- PCM(dfin) # run PCM model
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-    item.estimates <- eRm::thresholds(df.erm)
-    item_difficulty <- item.estimates[["threshtable"]][["1"]]
-    item_difficulty <- as.data.frame(item_difficulty)
-    item.se <- item.estimates$se.thresh
     person.locations.estimate <- person.parameter(df.erm)
     item.fit <- eRm::itemfit(person.locations.estimate)
 
@@ -675,12 +691,17 @@ RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2
       outfitZ <- cbind(outfitZ, item.fit.z$i.outfitZ)
       infitZ <- cbind(infitZ, item.fit.z$i.infitZ)
     }
-    item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, rowMeans(outfitZ), rowMeans(infitZ)))
+    item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ,
+                                          item.fit$i.infitMSQ,
+                                          rowMeans(outfitZ),
+                                          rowMeans(infitZ))) %>%
+      mutate(across(where(is.numeric), ~ round(.x, 3)))
+
     colnames(item.fit.table) <- c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
 
+    if (table == TRUE) {
     # create table that highlights cutoff values in red
     item.fit.table %>%
-      mutate(across(where(is.numeric), round, 3)) %>%
       mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
         ifelse(OutfitZSTD > zstd_max, "red", "black")
       ))) %>%
@@ -693,19 +714,23 @@ RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2
       mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
         ifelse(InfitMSQ > msq_max, "red", "black")
       ))) %>%
-      kbl(booktabs = T, escape = F) %>%
-      # bootstrap options are for HTML output
-      kable_styling(
-        bootstrap_options = c("striped", "hover"),
-        position = "left",
-        full_width = F,
-        font_size = fontsize,
-        fixed_thead = T
-      ) %>%
-      column_spec(1, bold = T) %>%
-      kable_classic(html_font = "Lato") %>%
-      # latex_options are for PDF output
-      kable_styling(latex_options = c("striped", "scale_down"))
+        kbl(booktabs = T, escape = F) %>%
+        # bootstrap options are for HTML output
+        kable_styling(
+          bootstrap_options = c("striped", "hover"),
+          position = "left",
+          full_width = F,
+          font_size = fontsize,
+          fixed_thead = T
+        ) %>%
+        column_spec(1, bold = T) %>%
+        row_spec(0, bold = T) %>%
+        kable_classic(html_font = fontfamily) %>%
+        # latex_options are for PDF output
+        kable_styling(latex_options = c("striped", "scale_down"))
+      } else {
+        itemFitPCM <<- item.fit.table
+      }
   }
 }
 
@@ -732,18 +757,17 @@ RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2
 #' @param msq_max Upper cutoff level for MSQ
 #' @param cpu Number of CPU cores to utilize (default = 4)
 #' @param fontsize Set fontsize for table
+#' @param fontfamily Set font family for table
+#' @param table Set to FALSE if you want a dataframe instead of a table output
 #' @export
 RIitemfitPCM2 <- function(dfin, samplesize = 300, nsamples = 10, cpu = 4,
                           zstd_min = -2, zstd_max = 2, msq_min = 0.7,
-                          msq_max = 1.3, fontsize = 15) {
+                          msq_max = 1.3, fontsize = 15, fontfamily = "Lato",
+                          table = TRUE) {
   library(doParallel)
   registerDoParallel(cores = cpu)
   df.erm <- PCM(dfin) # run PCM model
   # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-  item.estimates <- eRm::thresholds(df.erm)
-  item_difficulty <- item.estimates[["threshtable"]][["1"]]
-  item_difficulty <- as.data.frame(item_difficulty)
-  item.se <- item.estimates$se.thresh
   person.locations.estimate <- person.parameter(df.erm)
   item.fit <- eRm::itemfit(person.locations.estimate)
 
@@ -771,12 +795,17 @@ RIitemfitPCM2 <- function(dfin, samplesize = 300, nsamples = 10, cpu = 4,
     item.fit.z$i.outfitZ
   }
 
-  item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, rowMeans(outfitZ), rowMeans(infitZ)))
+  item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ,
+                                        item.fit$i.infitMSQ,
+                                        rowMeans(outfitZ),
+                                        rowMeans(infitZ))) %>%
+    mutate(across(where(is.numeric), ~ round(.x, 3)))
+
   colnames(item.fit.table) <- c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
 
+  if (table == TRUE) {
   # create table that highlights cutoff values in red
   item.fit.table %>%
-    mutate(across(where(is.numeric), round, 3)) %>%
     mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
       ifelse(OutfitZSTD > zstd_max, "red", "black")
     ))) %>%
@@ -799,11 +828,14 @@ RIitemfitPCM2 <- function(dfin, samplesize = 300, nsamples = 10, cpu = 4,
       fixed_thead = T
     ) %>%
     column_spec(1, bold = T) %>%
-    kable_classic(html_font = "Lato") %>%
+    row_spec(0, bold = T) %>%
+    kable_classic(html_font = fontfamily) %>%
     # latex_options are for PDF output
     kable_styling(latex_options = c("striped", "scale_down"))
+  } else {
+    itemFitPCM <<- item.fit.table
+  }
 }
-
 
 #' Create table with Rasch dichotomous model item fit values for each item.
 #'
@@ -822,22 +854,31 @@ RIitemfitPCM2 <- function(dfin, samplesize = 300, nsamples = 10, cpu = 4,
 #' @param msq_min Lower cutoff level for MSQ
 #' @param msq_max Upper cutoff level for MSQ
 #' @param fontsize Set font size for table
+#' @param fontfamily Set font family for table
+#' @param table Set to FALSE if you want a dataframe instead of a table output
 #' @export
 RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
-                        msq_min = 0.7, msq_max = 1.3, fontsize = 15) {
+                        msq_min = 0.7, msq_max = 1.3, fontsize = 15, fontfamily = "Lato",
+                        table = TRUE) {
   if(missing(samplesize)) {
-    df.erm<-RM(dfin) # run Rasch model
+    df.erm <- RM(dfin) # run Rasch model
     # get estimates
-    item.estimates <- coef(df.erm, "eta") # item coefficients
+    #item.estimates <- coef(df.erm, "eta") # item coefficients
     person.locations.estimate <- person.parameter(df.erm)
     item.fit <- eRm::itemfit(person.locations.estimate)
     # collect data to df
-    item.fit.table<-as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, item.fit$i.outfitZ, item.fit$i.infitZ))
-    colnames(item.fit.table)<-c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+    item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ,
+                                        item.fit$i.infitMSQ,
+                                        item.fit$i.outfitZ,
+                                        item.fit$i.infitZ)) %>%
+      mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+    colnames(item.fit.table) <- c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+
+    if (table == TRUE) {
 
     # create table that highlights cutoff values in red
     item.fit.table %>%
-      mutate(across(where(is.numeric), round, 3)) %>%
       mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
                                                                ifelse(OutfitZSTD > zstd_max, "red", "black")))) %>%
       mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
@@ -853,37 +894,44 @@ RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
                     full_width = F,
                     font_size = fontsize,
                     fixed_thead = T) %>% # when there is a long list in the table
-      #  column_spec(c(2:3), color = "red") %>%
-      #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>%
       column_spec(1, bold = T) %>%
-      kable_classic(html_font = "Lato") %>%
+      kable_classic(html_font = fontfamily) %>%
       # latex_options are for PDF output
       kable_styling(latex_options = c("striped","scale_down"))
+    } else {
+      itemFitRM <<- item.fit.table
+    }
   } else {
-    df.erm<-RM(dfin) # run Rasch model
+    df.erm <- RM(dfin) # run Rasch model
     # get estimates
-    item.estimates <- coef(df.erm, "eta") # item coefficients
+    #item.estimates <- coef(df.erm, "eta") # item coefficients
     person.locations.estimate <- person.parameter(df.erm)
     item.fit <- eRm::itemfit(person.locations.estimate)
 
     # ZSTD multisample
-    outfitZ<-c()
-    infitZ<-c()
+    outfitZ <- c()
+    infitZ <- c()
     for (i in 1:nsamples) {
       df.new <- dfin[sample(1:nrow(dfin), samplesize), ]
       df.new <- na.omit(df.new)
       df.z <- RM(df.new)
       ple <- person.parameter(df.z)
       item.fit.z <- eRm::itemfit(ple)
-      outfitZ<-cbind(outfitZ,item.fit.z$i.outfitZ)
-      infitZ<-cbind(infitZ,item.fit.z$i.infitZ)
+      outfitZ <- cbind(outfitZ, item.fit.z$i.outfitZ)
+      infitZ <- cbind(infitZ, item.fit.z$i.infitZ)
     }
-    item.fit.table<-as.data.frame(cbind(item.fit$i.outfitMSQ, item.fit$i.infitMSQ, rowMeans(outfitZ), rowMeans(infitZ)))
-    colnames(item.fit.table)<-c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+    item.fit.table<-as.data.frame(cbind(item.fit$i.outfitMSQ,
+                                        item.fit$i.infitMSQ,
+                                        rowMeans(outfitZ),
+                                        rowMeans(infitZ))) %>%
+      mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+    colnames(item.fit.table) <- c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+
+    if (table == TRUE) {
 
     # create table that highlights cutoff values in red
     item.fit.table %>%
-      mutate(across(where(is.numeric), round, 3)) %>%
       mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
                                                                ifelse(OutfitZSTD > zstd_max, "red", "black")))) %>%
       mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
@@ -900,9 +948,12 @@ RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
                     font_size = fontsize,
                     fixed_thead = T) %>% # when there is a long list in the table
       column_spec(1, bold = T) %>%
-      kable_classic(html_font = "Lato") %>%
+      kable_classic(html_font = fontfamily) %>%
       # latex_options are for PDF output
       kable_styling(latex_options = c("striped","scale_down"))
+    } else {
+      itemFitRM <<- item.fit.table
+    }
   }
 }
 
@@ -915,25 +966,29 @@ RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
 #' @param dfin Dataframe with item data only
 #' @param cutoff Relative value above the average of all item residual correlations
 #' @param fontsize Set font size for table
+#' @param fontfamily Set font family for table
 #' @export
-RIresidcorr <- function(dfin, cutoff, fontsize = 15) {
+RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato") {
 
   sink(nullfile()) # suppress output from the rows below
 
-  mirt.rasch <- mirt(dfin, model=1, itemtype='Rasch') # unidimensional Rasch model
-  resid=residuals(mirt.rasch, type="Q3", digits=2) # get residuals
+  mirt.rasch <- mirt(dfin, model = 1, itemtype = 'Rasch') # unidimensional Rasch model
+  resid = residuals(mirt.rasch, type = "Q3", digits = 2) # get residuals
 
   sink() # disable suppress output
 
   diag(resid) <- NA # make the diagonal of correlation matrix NA instead of 1
   resid <- as.data.frame(resid)
-  mean.resid <- resid %>% select_if(is.numeric) %>% apply(2, mean, na.rm=T) %>% mean()
+  mean.resid <- resid %>%
+    select_if(is.numeric) %>%
+    apply(2, mean, na.rm=T) %>%
+    mean()
   dyn.cutoff <- mean.resid + cutoff # create variable indicating dynamic cutoff above average correlation
 
   # table
   resid <- resid %>%
     mutate_if(is.character,as.numeric) %>%
-    mutate(across(where(is.numeric), round, 2))
+    mutate(across(where(is.numeric), ~ round(.x, 2)))
   resid[upper.tri(resid)] <- "" # remove values in upper right triangle to clean up table
   diag(resid) <- "" # same for diagonal
 
@@ -949,7 +1004,8 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15) {
                     font_size = fontsize,
                     fixed_thead = T) %>% # when there is a long list in the table
       column_spec(1, bold = T) %>%
-      kable_classic(html_font = "Lato") %>%
+      row_spec(0, bold = T) %>%
+      kable_classic(html_font = fontfamily) %>%
       # latex_options are for PDF output
       kable_styling(latex_options = c("striped","scale_down")) %>%
       footnote(general = paste0("Relative cut-off value (highlighted in red) is ", round(dyn.cutoff,3), ", which is ", cutoff, " above the average correlation."))
@@ -965,7 +1021,7 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15) {
                     font_size = fontsize,
                     fixed_thead = T) %>% # when there is a long list in the table
       column_spec(1, bold = T) %>%
-      kable_classic(html_font = "Lato") %>%
+      kable_classic(html_font = fontfamily) %>%
       # latex_options are for PDF output
       kable_styling(latex_options = c("striped","scale_down")) %>%
       footnote(general = paste0("Relative cut-off value (highlighted in red) is ", round(dyn.cutoff,3), ", which is ", cutoff, " above the average correlation."))
