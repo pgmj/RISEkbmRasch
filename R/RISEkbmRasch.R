@@ -1052,7 +1052,7 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
   item_difficulty <- as.data.frame(item_difficulty)
   item.se <- item.estimates$se.thresh
   person.locations.estimate <- person.parameter(df.erm)
-  #item.fit <- eRm::itemfit(person.locations.estimate)
+   item.fit <- eRm::itemfit(person.locations.estimate)
 
   item.locations <- item_difficulty[, 2:ncol(item_difficulty)]
   names(item.locations) <- paste0("T", c(1:ncol(item.locations))) # re-number items
@@ -1171,7 +1171,9 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
 
   # combine plots together to create Wright map, and let the individual item threshold plot have some more space
   plot_grid(p2,p3,p1, labels=NULL, nrow = 3, align ="hv", rel_heights = c(1,1,1.4))
+
   } else {
+
     df.erm <- RM(dfin) # run RM model
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
     person.locations.estimate <- person.parameter(df.erm)
@@ -1182,7 +1184,7 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
     #names(item.locations) <- paste0("T", c(1:ncol(item.locations))) #re-number items
     itemloc.long <- item.locations %>%
       rownames_to_column() %>%
-      dplyr::rename(names = 'rowname')
+      separate(rowname, c(NA, "names"), sep = " ")
 
     ### create df for ggplot histograms
     # person locations
