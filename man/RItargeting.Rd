@@ -4,7 +4,7 @@
 \alias{RItargeting}
 \title{Targeting, Wright map derivative.}
 \usage{
-RItargeting(dfin, dich, xlim = c(-5, 6))
+RItargeting(dfin, dich = FALSE, xlim = c(-5, 6))
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
