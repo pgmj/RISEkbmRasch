@@ -67,6 +67,38 @@ kbl_rise <- function(data, width = 75, fontsize = 14, fontfamily = "Lato",
     kable_classic(html_font = fontfamily)
 }
 
+#' Creates a figure with item missing data descriptives
+#'
+#' Sample use: `RImissing(df, "PSS")`
+#'
+#' @param data Dataframe/tibble to create table from
+#' @param itemStart What your variable names start with, in quotes
+#' @export
+RImissing <- function(data, itemStart, ...) {
+  data %>%
+    dplyr::select(starts_with({{ itemStart }})) %>%
+    t() %>%
+    as.data.frame() %>%
+    mutate(Missing = rowSums(is.na(.))) %>%
+    select(Missing) %>%
+    arrange(desc(Missing)) %>%
+    rownames_to_column(var = "Item") %>%
+    mutate(Percentage = Missing / nrow(df) * 100) %>%
+    mutate(Item = factor(Item, levels = rev(Item))) %>%
+    ggplot(aes(x = Item, y = Percentage)) +
+    geom_col(fill = "#009ca6") +
+    geom_text(aes(label = round(Percentage, 1)),
+      hjust = 1.5, vjust = 0.5,
+      color = "white"
+    ) +
+    coord_flip() +
+    ggtitle("Missing data per item") +
+    xlab("Items") +
+    ylab("Percentage of responses missing") +
+    theme_minimal() +
+    theme_rise(...)
+}
+
 #' Show items based on itemlabels file
 #'
 #' Requires a dataframe with two columns, labeled "itemnr" and "item",
@@ -1582,11 +1614,11 @@ RIitemparams <- function(dfin, filename = "itemParameters.csv", fontsize = 15) {
   item_difficulty<-as.data.frame(item_difficulty)
   item_difficulty %>%
     dplyr::select(!Location) %>%
-    mutate(across(where(is.numeric), round, 4)) %>%
+    mutate(across(where(is.numeric), ~ round(.x, 4))) %>%
     write_csv(., file = filename)
 
   item_difficulty %>%
-    mutate(across(where(is.numeric), round, 2)) %>%
+    mutate(across(where(is.numeric), ~ round(.x, 2))) %>%
     relocate(Location, .after = last_col()) %>%
     mutate(Location = cell_spec(Location, bold = T, align = "right")) %>%
     dplyr::rename('Item location' = Location) %>%
@@ -1891,7 +1923,7 @@ RIloadLoc <- function(dfin) {
 #' DIF PCM analysis - requires having set up dif.variables previously
 #'
 #' Makes use of the psychotree package, which also allows for interactions
-#' between DIF variables, which is not implemented in this function (yet).
+#' between DIF variables, see `RIdifTable2()`.
 #'
 #' DIF variables need to be vectors with the same length as the number of rows
 #' in the dataset.
@@ -1920,7 +1952,7 @@ RIdifTable <- function(dfin, dif.var, cutoff = 0.5) {
       rowwise() %>%
       mutate(MaxDiff = (max(c_across(c(1:(ncol(.)-2))))) - min(c_across(c(1:(ncol(.)-2))))) %>%
       ungroup() %>%
-      mutate(across(where(is.numeric), round, 3)) %>%
+      mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
       rownames_to_column(var = "Item") %>%
       mutate(Item = names(dfin)) %>%
       relocate(MaxDiff, .after = last_col()) %>%
@@ -1935,6 +1967,53 @@ RIdifTable <- function(dfin, dif.var, cutoff = 0.5) {
   }
 }
 
+#' DIF PCM interaction analysis
+#'
+#' Makes use of the psychotree package. This function is for interaction between
+#' two DIF variables
+#'
+#' DIF variables need to be vectors with the same length as the number of rows
+#' in the dataset.
+#'
+#' sample usage: `RIdifTable2(df, dif.age, dif.gender)`
+#'
+#' @param dfin Dataframe with item data only
+#' @param dif.var DIF variable
+#' @param cutoff Cutoff in item location logit difference for table highlighting
+#' @export
+RIdifTable2 <- function(dfin, dif.var1, dif.var2, cutoff = 0.5) {
+  df.tree <- data.frame(matrix(ncol = 0, nrow = nrow(dfin))) # we need to make a new dataframe
+  df.tree$difdata <- as.matrix(dfin) # containing item data in a nested dataframe
+  # and DIF variables:
+  df.tree$dif.var1 <- dif.var1
+  df.tree$dif.var2 <- dif.var2
+  pctree.out<-pctree(difdata ~ dif.var1 + dif.var2, data = df.tree)
+
+  if(nrow(itempar(pctree.out) %>% as.data.frame() %>% t()) > 1) {
+    plot(pctree.out)
+
+    itempar(pctree.out) %>% # identify the nodes to compare (see plot above)
+      as.data.frame() %>%
+      t() %>%
+      as.data.frame() %>%
+      mutate('Mean location' = rowMeans(.), StDev = rowSds(as.matrix(.))) %>%
+      rowwise() %>%
+      mutate(MaxDiff = (max(c_across(c(1:(ncol(.)-2))))) - min(c_across(c(1:(ncol(.)-2))))) %>%
+      ungroup() %>%
+      mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+      rownames_to_column(var = "Item") %>%
+      mutate(Item = names(dfin)) %>%
+      relocate(MaxDiff, .after = last_col()) %>%
+      formattable(list(
+        'MaxDiff' =
+          formatter("span", style = ~ style(color = ifelse(MaxDiff < -cutoff, "red",
+                                                           ifelse(MaxDiff > cutoff, "red",  "black"))))),
+        table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato"')
+
+  } else {
+    print("No significant DIF found.")
+  }
+}
 
 #' Create a DIF line graph, showing groups' PCM item locations
 #'
@@ -2096,7 +2175,7 @@ RIdifTableRM <- function(dfin, dif.var, cutoff = 0.5) {
       rowwise() %>%
       mutate(MaxDiff = (max(c_across(c(1:(ncol(.)-2))))) - min(c_across(c(1:(ncol(.)-2))))) %>%
       ungroup() %>%
-      mutate(across(where(is.numeric), round, 3)) %>%
+      mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
       rownames_to_column(var = "Item") %>%
       mutate(Item = names(dfin)) %>%
       relocate(MaxDiff, .after = last_col()) %>%
@@ -2277,7 +2356,7 @@ RIscoreSE <- function(dfin) {
            'Logit std.error' = 'X1.Std.Error',
            'Ordinal sum score' = 'X1.Raw.Score') %>%
     remove_rownames() %>%
-    mutate(across(where(is.numeric), round, 2)) %>%
+    mutate(across(where(is.numeric), ~ round(.x, 2))) %>%
     formattable(., table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 80%"')
 }
 
