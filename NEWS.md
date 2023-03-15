@@ -16,4 +16,4 @@ Fixes:
 
 New functions:
 
-- `RIestThetas()` and `RIestThetas2()` for estimating person locations/scores. See [example use in vignette]( https://pgmj.github.io/raschrvignette/RaschRvign.html#estimating-interval-level-person-scores).
+- `RIestThetas()` and `RIestThetas2()` for estimating person locations/scores using the `catR` package. See [example use in vignette]( https://pgmj.github.io/raschrvignette/RaschRvign.html#estimating-interval-level-person-scores).
