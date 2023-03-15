@@ -10,4 +10,4 @@ New functions:
 Fixes:
 
 - Changes to use dplyr 1.1.0 syntax for `mutate(across(), ~ function(.x))`, mostly used for rounding numbers in tables/dataframes.
-- `RItargeting(data, dich = TRUE)` bug fix when analyzing dichotomous data - now the first item is also included :)
+- `RItargeting(data, dich = TRUE)` bug fix when analyzing dichotomous data - now the first item is also included in item threshold sections.
