@@ -5,7 +5,7 @@
 New functions:
 
 - `RImissing()` to generate a figure that shows missing data per item, arranged by amount of missing data.
-- `RIdifTable2()` enables DIF interaction analysis between two variables, using the `psychotree` package.
+- `RIdifTable2()` enables DIF interaction analysis between two variables, using the [`psychotree`](https://cran.r-project.org/web/packages/psychotree/index.html) package.
 
 Fixes:
 
@@ -16,4 +16,4 @@ Fixes:
 
 New functions:
 
-- `RIestThetas()` and `RIestThetas2()` for estimating person locations/scores using the `catR` package. See [example use in vignette]( https://pgmj.github.io/raschrvignette/RaschRvign.html#estimating-interval-level-person-scores).
+- `RIestThetas()` and `RIestThetas2()` for estimating person locations/scores using the [`catR`](https://cran.r-project.org/web/packages/catR/index.html) package. See [example use in vignette]( https://pgmj.github.io/raschrvignette/RaschRvign.html#estimating-interval-level-person-scores).
