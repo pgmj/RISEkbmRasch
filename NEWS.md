@@ -10,4 +10,10 @@ New functions:
 Fixes:
 
 - Changes to use dplyr 1.1.0 syntax for `mutate(across(), ~ function(.x))`, mostly used for rounding numbers in tables/dataframes.
-- `RItargeting(data, dich = TRUE)` bug fix when analyzing dichotomous data - now the first item is also included in item threshold sections.
+- `RItargeting(data, dich = TRUE)` - bug fix when analyzing dichotomous data - now the first item is also included in item threshold sections.
+
+### 0.1.8.4
+
+New functions:
+
+- `RIestThetas()` and `RIestThetas2()` for estimating person locations/scores. See [example use in vignette]( https://pgmj.github.io/raschrvignette/RaschRvign.html#estimating-interval-level-person-scores).
