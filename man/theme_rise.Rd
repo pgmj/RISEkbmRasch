@@ -30,5 +30,8 @@ Add + theme_rise() to your ggplot or RIfunction that outputs a ggplot
 Use is optional :)
 }
 \details{
-See ?element_text for more details on available settings
+See ?element_text for more details on available settings.
+
+Please note that using this theme also updates the defaults for geom_text
+and geom_text_repel, which applies for the whole session/script.
 }
