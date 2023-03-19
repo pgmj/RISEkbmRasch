@@ -11,7 +11,10 @@
 #'
 #' Use is optional :)
 #'
-#' See ?element_text for more details on available settings
+#' See ?element_text for more details on available settings.
+#'
+#' Please note that using this theme also updates the defaults for geom_text
+#' and geom_text_repel, which applies for the whole session/script.
 #'
 #' @param fontfamily Font family for all plot text
 #' @param axissize Font size for axis labels
@@ -95,8 +98,7 @@ RImissing <- function(data, itemStart, ...) {
     ggtitle("Missing data per item") +
     xlab("Items") +
     ylab("Percentage of responses missing") +
-    theme_minimal() +
-    theme_rise(...)
+    theme_minimal(...)
 }
 
 #' Show items based on itemlabels file
