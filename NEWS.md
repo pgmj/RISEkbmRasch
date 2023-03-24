@@ -1,5 +1,15 @@
 ## Changelog
 
+### 0.1.13
+
+New option:
+
+- `RItif(samplePSI = TRUE)` is now available if you want information about your sample added to the TIF curve.
+
+Bug found:
+
+- `RIdifThresh()` does not seem to produce stable output when items have different numbers of response categories. This seems to be related to the underlying function `threshpar()`. Further investigations are coming.
+
 ### 0.1.12
 
 New functions:
