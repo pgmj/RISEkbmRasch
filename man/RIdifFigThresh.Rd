@@ -14,3 +14,8 @@ RIdifFigThresh(dfin, dif.var)
 \description{
 Produces a panel of linegraphs showing item thresholds over DIF nodes.
 }
+\details{
+NOTE: only works with PCM data where all variables have multiple thresholds,
+since the \code{threshpar()} function has problems when dichotomous data are
+included.
+}

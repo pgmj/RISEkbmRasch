@@ -2,18 +2,22 @@
 % Please edit documentation in R/RISEkbmRasch.R
 \name{RItif}
 \alias{RItif}
-\title{Reliability, overall test information}
+\title{Reliability of test}
 \usage{
-RItif(dfin, lo, hi)
+RItif(dfin, lo = -5, hi = 5, samplePSI = FALSE)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
-\item{lo}{Lower limit of x axis (default = -6)}
+\item{lo}{Lower limit of x axis (default = -5)}
 
-\item{hi}{Upper limit of x axis (default = 6)}
+\item{hi}{Upper limit of x axis (default = 5)}
+
+\item{samplePSI}{Adds information about sample characteristics}
 }
 \description{
-Note: the eRm function below will provide individual item information curves
-plotINFO(df.erm, type = "item", legpos = "topleft")
+Test information shows the reliability curve of the test (not the sample).
+Use option \code{samplePSI = TRUE} to add graphical representation of the current
+sample's theta mean/SD, mean/95\% CI test information (TIF), and Person
+Separation Index (PSI) with 95\% CI.
 }
