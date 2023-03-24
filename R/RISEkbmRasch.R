@@ -1314,24 +1314,24 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
 }
 
 
-#' Reliability, overall test information
+#' Reliability of test
 #'
-#' Note: the eRm function below will provide individual item information curves
-#' plotINFO(df.erm, type = "item", legpos = "topleft")
+#' Test information shows the reliability curve of the test (not the sample).
+#' Use option `samplePSI = TRUE` to add graphical representation of the current
+#' sample's theta mean/SD, mean/95% CI test information (TIF), and Person
+#' Separation Index (PSI) with 95% CI.
 #'
 #' @param dfin Dataframe with item data only
-#' @param lo Lower limit of x axis (default = -6)
-#' @param hi Upper limit of x axis (default = 6)
+#' @param lo Lower limit of x axis (default = -5)
+#' @param hi Upper limit of x axis (default = 5)
+#' @param samplePSI Adds information about sample characteristics
 #' @export
-RItif <- function(dfin, lo, hi) {
-  if(missing(lo)) {
+RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
   df.erm <- PCM(dfin)
   item.estimates <- eRm::thresholds(df.erm)
   item_difficulty <- item.estimates[["threshtable"]][["1"]]
-  item_difficulty<-as.data.frame(item_difficulty)
-  item.se <- item.estimates$se.thresh
+  item_difficulty <- as.data.frame(item_difficulty)
   person.locations.estimate <- person.parameter(df.erm)
-  item.fit <- eRm::itemfit(person.locations.estimate)
   # person locations
   thetas<-as.data.frame(person.locations.estimate$theta.table)
   pthetas<-thetas$`Person Parameter`
@@ -1358,14 +1358,13 @@ RItif <- function(dfin, lo, hi) {
   # change type to class factor
   df.locations$type<-as.factor(df.locations$type)
 
-
   # we need to make a new dataframe for the test information plot/curve
-  psimatrix <- data.frame(matrix(ncol = 2, nrow = 1001))
+  psimatrix <- data.frame(matrix(ncol = 2, nrow = 201))
   names(psimatrix) <- c("psY","psX")
   # this gets 1001 "dots" for the scale information variable y
-  psimatrix$psY <- test_info(df.erm, seq(-6, 6, length.out = 1001L))
+  psimatrix$psY <- test_info(df.erm, seq(lo, hi, length.out = 201L))
   # this is the x variable in the TIF figure
-  psimatrix$psX <- seq(-6, 6, length.out = 1001L)
+  psimatrix$psX <- seq(lo, hi, length.out = 201L)
 
   # check if TIF goes above 3.3
   peak.tif <- psimatrix %>% slice(which.max(psY)) %>% dplyr::select(psY) %>% pull()
@@ -1408,12 +1407,13 @@ RItif <- function(dfin, lo, hi) {
     psep_caption <- paste0("Test information is not above 3.33 (PSI 0.7) at any part of the scale.")
   }
 
-  ggplot(psimatrix) +
-    geom_point(aes(x=psX, y=psY), size = 0.1, color = "black") +
+  TIFplot <- ggplot(psimatrix) +
+    ###geom_point(aes(x=psX, y=psY), size = 0.1, color = "black") +
+    geom_line(aes(x = psX, y = psY, group = 1), color = "black", linewidth = 1) +
     geom_hline(yintercept = 3.33, color = "#e83c63", linetype = 2, size = 0.5) +
     geom_hline(yintercept = 5, color = "#e83c63", linetype = 2, size = 0.7) +
-    scale_y_continuous(breaks=seq(0, 8, by = 1)) +
-    scale_x_continuous(breaks=seq(-6, 6, by = 1)) +
+    scale_y_continuous(breaks = seq(0, 8, by = 1)) +
+    scale_x_continuous(breaks = seq(lo, hi, by = 1)) +
     labs(x = "Logits", y = "Test information") +
     labs(caption = paste0(psep_caption)) +
     theme(plot.caption = element_text(hjust = 0, face = "italic")) +
@@ -1426,111 +1426,49 @@ RItif <- function(dfin, lo, hi) {
       panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
                                       colour = "white")
     )
+  if (samplePSI == FALSE) {
+    TIFplot
   } else {
-    df.erm <- PCM(dfin)
-    item.estimates <- eRm::thresholds(df.erm)
-    item_difficulty <- item.estimates[["threshtable"]][["1"]]
-    item_difficulty<-as.data.frame(item_difficulty)
-    item.se <- item.estimates$se.thresh
-    person.locations.estimate <- person.parameter(df.erm)
-    item.fit <- eRm::itemfit(person.locations.estimate)
-    # person locations
-    thetas<-as.data.frame(person.locations.estimate$theta.table)
-    pthetas<-thetas$`Person Parameter`
-    # item locations
-    thresholds<-c()
-    for (i in 2:ncol(item_difficulty)) {
-      thresholds<-c(thresholds,item_difficulty[,i])
-    }
-    #create data frame with 0 rows and 3 columns
-    df.locations <- data.frame(matrix(ncol = 2, nrow = 0))
-    #provide column names
-    colnames(df.locations) <- c('type', 'locations')
-    # change type of data
-    df.locations$type<-as.character(df.locations$type)
-    df.locations$locations<-as.numeric(df.locations$locations)
-    # insert labels in accurate amounts (N+items)
-    nper<-nrow(dfin)
-    nperp<-nper+1
-    nthr<-length(thresholds)+nper
-    df.locations[1:nper,1]<-paste0("Persons")
-    df.locations[nperp:nthr,1]<-paste0("Item thresholds")
-    # insert data from vectors with thetas and thresholds
-    df.locations$locations<-c(pthetas,thresholds)
-    # change type to class factor
-    df.locations$type<-as.factor(df.locations$type)
+    # estimate person location/theta mean and SD
+    ple <- person.locations.estimate$theta.table %>% as_tibble()
+    pleMean <- mean(ple$`Person Parameter`)
+    pleSD <- sd(ple$`Person Parameter`)
 
+    # estimate person theta SE mean and sd
+    ple.se <- person.locations.estimate$se.theta %>% as_tibble()
+    pleSEmean <- mean(ple.se$NAgroup1)
+    pleSEsd <- sd(ple.se$NAgroup1)
+    # 1/SE^2 = test information, and PSI = 1-SE^2
+    ple.se <- ple.se %>%
+      mutate(TIF = 1/NAgroup1^2,
+             PSI = 1-NAgroup1^2)
 
-    # we need to make a new dataframe for the test information plot/curve
-    psimatrix <- data.frame(matrix(ncol = 2, nrow = 1001))
-    names(psimatrix) <- c("psY","psX")
-    # this gets 1001 "dots" for the scale information variable y
-    psimatrix$psY <- test_info(df.erm, seq(lo, hi, length.out = 1001L))
-    # this is the x variable in the TIF figure
-    psimatrix$psX <- seq(lo, hi, length.out = 1001L)
+    sampleTIFmean <- 1/pleSEmean^2
+    sampleTIFsd <- sd(ple.se$TIF)
+    sampleTIFse <- sampleTIFsd/sqrt(length(ple.se))
+    sampleTIFci95 <- sampleTIFse*1.96
+    samplePSImean <- round(1-pleSEmean^2,2)
+    samplePSIsd <- sd(ple.se$PSI)
+    samplePSIse <- samplePSIsd/sqrt(length(ple.se))
+    samplePSIci95 <- round(samplePSIse*1.96,2)
 
-    # check if TIF goes above 3.3
-    peak.tif <- psimatrix %>% slice(which.max(psY)) %>% dplyr::select(psY) %>% pull()
-
-    if (peak.tif > 3.32) {
-      # now find where the cutoff points are for 3.33 on the theta (x) variable
-      # this provides the highest and lowest value into two variables
-      psep_min <- psimatrix %>% filter(psX < 0) %>% slice(which.min(abs(psY - 3.33))) %>% dplyr::select(psX) %>% pull()
-      psep_max <- psimatrix %>% filter(psX > 0) %>%  slice(which.min(abs(psY - 3.33))) %>% dplyr::select(psX) %>% pull()
-      # calculate how many participants cross the cutoffs
-      nCeilingRel<-length(which(pthetas > psep_max))
-      nFloorRel<-length(which(pthetas < psep_min))
-      nWithinRel<-(length(pthetas)-(nCeilingRel+nFloorRel))
-      # Retrieve the lowest and highest item thresholds into vector variables
-      min_thresh <- df.locations %>%
-        filter(type == "Item thresholds") %>%
-        arrange(locations) %>%
-        slice(1) %>%
-        pull()
-      max_thresh <- df.locations %>%
-        filter(type == "Item thresholds") %>%
-        arrange(desc(locations)) %>%
-        slice(1) %>%
-        pull()
-
-      # calculate how many participants cross the cutoffs
-      nCeilingThresh<-length(which(pthetas > max_thresh))
-      nFloorThresh<-length(which(pthetas < min_thresh))
-      #PSI<-SepRel(person.locations.estimate)
-      psep_caption <- paste0("Test Information 3.33 (PSI 0.7) is reached between ", psep_min, " and ", psep_max, " logits, where ",
-                             round(nWithinRel/length(pthetas)*100,1), "% of the participants are located. \n",
-                             round(nCeilingRel/length(pthetas)*100,1), "% of participants have locations above the upper cutoff, and ",
-                             round(nFloorRel/length(pthetas)*100,1), "% are below the lower cutoff. \n",
-                             round(nCeilingThresh/length(pthetas)*100,1), "% have person locations above the highest item threshold (",
-                             round(max_thresh,2), ") and ", round(nFloorThresh/length(pthetas)*100,1), "% are below the lowest item threshold (",
-                             round(min_thresh,2), ").")
-    } else {
-      psep_min = 0
-      psep_max = 0
-      psep_caption <- paste0("Test information is not above 3.33 (PSI 0.7) at any part of the scale.")
-    }
-
-    ggplot(psimatrix) +
-      geom_point(aes(x=psX, y=psY), size = 0.1, color = "black") +
-      geom_hline(yintercept = 3.33, color = "#e83c63", linetype = 2, size = 0.5) +
-      geom_hline(yintercept = 5, color = "#e83c63", linetype = 2, size = 0.7) +
-      scale_y_continuous(breaks=seq(0, 8, by = 1)) +
-      scale_x_continuous(breaks=seq(lo, hi, by = 1)) +
-      labs(x = "Logits", y = "Test information") +
-      labs(caption = paste0(psep_caption)) +
-      theme(plot.caption = element_text(hjust = 0, face = "italic")) +
-      theme(
-        panel.background = element_rect(fill = "#ebf5f0",
-                                        colour = "#ebf5f0",
-                                        linewidth = 0.5, linetype = "solid"),
-        panel.grid.major = element_line(linewidth = 0.5, linetype = 'solid',
-                                        colour = "white"),
-        panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
-                                        colour = "white")
-      )
+    TIFplot +
+      geom_point(aes(x = pleMean, y = sampleTIFmean,),
+                 size = 4, shape = 18, alpha = 0.8, color = "orange") +
+      geom_segment(aes(x = pleMean-pleSD, xend = pleMean+pleSD, y = sampleTIFmean, yend = sampleTIFmean),
+                   alpha = 0.9, color = "darkgrey", linetype = 1) +
+      # geom_segment(aes(x = pleMean, xend = pleMean, y = sampleTIFmean-sampleTIFci95, yend = sampleTIFmean+sampleTIFci95),
+      #              linetype = 3)
+      geom_errorbar(aes(x = pleMean, ymin = sampleTIFmean-sampleTIFci95, ymax = sampleTIFmean+sampleTIFci95),
+                    width = 0.2, alpha = 0.8, linetype = 1) +
+      annotate('label', label = glue("Characteristics of current sample:\n
+                                      Person theta mean (orange dot) and standard deviation\n
+                                      shown horizontally and TIF mean and 95% CI vertically.\n
+                                      Sample Person Separation Index = {samplePSImean}, 95% CI [{samplePSImean-samplePSIci95} {samplePSImean+samplePSIci95}]"),
+               x = -2, y = 0.5, lineheight = .5, hjust = 0, vjust = 0.5,
+               label.padding = unit(0.4, "lines"), alpha = 0.7)
   }
 }
-
 
 #' Person fit
 #'
@@ -2091,6 +2029,10 @@ RIdifFigTime <- function(dfin, dif.var) {
 #' Create a DIF line graph for item PCM thresholds
 #'
 #' Produces a panel of linegraphs showing item thresholds over DIF nodes.
+#'
+#' NOTE: only works with PCM data where all variables have multiple thresholds,
+#' since the `threshpar()` function has problems when dichotomous data are
+#' included.
 #'
 #' @param dfin Dataframe with item data only
 #' @param dif.var DIF variable
