@@ -1318,8 +1318,10 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
 #'
 #' Test information shows the reliability curve of the test (not the sample).
 #' Use option `samplePSI = TRUE` to add graphical and written representation of
-#' the current sample's theta mean/SD, mean/95% CI test information (TIF), and
-#' Person Separation Index (PSI) with 95% CI.
+#' the current sample's theta mean/SD, test information (TIF) mean/SD , and
+#' Person Separation Index (PSI). According to Wright & Stone (1999), PSI is
+#' calculated as (SSD-MSE)/SSD, see ?eRm::SepRel for details. According to Embretson &
+#' Reise (2000), PSI = 1 - SEM^2, and TIF = 1/SEM^2.
 #'
 #' @param dfin Dataframe with item data only
 #' @param lo Lower limit of x axis (default = -5)
@@ -1428,15 +1430,17 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
     TIFplot
   } else {
     # estimate person location/theta mean and SD
-    ple <- person.locations.estimate$theta.table %>% as_tibble()
+    ple <- person.locations.estimate$theta.table %>%
+      as_tibble() %>%
+      filter(Interpolated == FALSE)
     pleMean <- mean(ple$`Person Parameter`)
     pleSD <- sd(ple$`Person Parameter`)
 
     # estimate person theta SE mean and sd
-    ple.se <- person.locations.estimate$se.theta %>% as_tibble()
-    pleSEmean <- mean(ple.se$NAgroup1)
-    pleSEsd <- sd(ple.se$NAgroup1)
-
+    ple.se <- person.locations.estimate$se.theta %>%
+      as_tibble()
+    pleSEmean <- round(mean(ple.se$NAgroup1),2)
+    pleSEsd <- round(sd(ple.se$NAgroup1),2)
     # test information = 1/SE^2, and PSI = 1-SE^2
     ple.se <- ple.se %>%
       mutate(TIF = 1/NAgroup1^2,
@@ -1444,24 +1448,26 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
 
     sampleTIFmean <- 1/pleSEmean^2
     sampleTIFsd <- sd(ple.se$TIF)
-    sampleTIFse <- sampleTIFsd/sqrt(length(ple.se))
+    sampleTIFse <- sampleTIFsd/sqrt(length(ple.se$NAgroup1))
     sampleTIFci95 <- sampleTIFse*1.96
-    samplePSImean <- round(1-pleSEmean^2,2)
+    samplePSImean <- round(mean(ple.se$PSI),2)
     samplePSIsd <- sd(ple.se$PSI)
-    samplePSIse <- samplePSIsd/sqrt(length(ple.se))
+    samplePSIse <- samplePSIsd/sqrt(length(ple.se$NAgroup1))
     samplePSIci95 <- round(samplePSIse*1.96,2)
+    ermpsi <- eRm::SepRel(person.locations.estimate)
 
     TIFplot +
       geom_segment(aes(x = pleMean-pleSD, xend = pleMean+pleSD, y = sampleTIFmean, yend = sampleTIFmean),
                    alpha = 0.9, color = "darkgrey", linetype = 1) +
-      geom_errorbar(aes(x = pleMean, ymin = sampleTIFmean-sampleTIFci95, ymax = sampleTIFmean+sampleTIFci95),
-                    width = 0.2, alpha = 0.8, linetype = 1) +
+      geom_errorbar(aes(x = pleMean, ymin = sampleTIFmean-sampleTIFsd, ymax = sampleTIFmean+sampleTIFsd),
+                    alpha = 0.8, color = "darkgrey", linetype = 1, width = 0.2) +
       geom_point(aes(x = pleMean, y = sampleTIFmean,),
-                 size = 4, shape = 18, alpha = 0.8, color = "orange") +
+                 size = 4, shape = 18, alpha = 0.8, color = "#e83c63") +
       annotate('label', label = glue("Characteristics of current sample:\n
-                                      Person theta mean (orange dot) and standard deviation\n
-                                      shown horizontally and TIF mean and 95% CI vertically.\n
-                                      Sample Person Separation Index = {samplePSImean}, 95% CI [{samplePSImean-samplePSIci95} {samplePSImean+samplePSIci95}]"),
+                                      Person theta mean (red dot) and standard deviation (horizontal line)\n
+                                      and TIF mean (dot) and SD (vertical line). SEM mean/SD is {pleSEmean}/{pleSEsd}.\n
+                                      Person Separation Index (Wright & Stone, 1999) = {round(ermpsi$sep.rel,2)},\n
+                                      (Embretson & Reise, 2000) = {samplePSImean}."),
                x = -2, y = 0.5, lineheight = .5, hjust = 0, vjust = 0.5,
                label.padding = unit(0.4, "lines"), alpha = 0.7)
   }
