@@ -1317,9 +1317,9 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
 #' Reliability of test
 #'
 #' Test information shows the reliability curve of the test (not the sample).
-#' Use option `samplePSI = TRUE` to add graphical representation of the current
-#' sample's theta mean/SD, mean/95% CI test information (TIF), and Person
-#' Separation Index (PSI) with 95% CI.
+#' Use option `samplePSI = TRUE` to add graphical and written representation of
+#' the current sample's theta mean/SD, mean/95% CI test information (TIF), and
+#' Person Separation Index (PSI) with 95% CI.
 #'
 #' @param dfin Dataframe with item data only
 #' @param lo Lower limit of x axis (default = -5)
@@ -1393,7 +1393,6 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
     # calculate how many participants cross the cutoffs
     nCeilingThresh<-length(which(pthetas > max_thresh))
     nFloorThresh<-length(which(pthetas < min_thresh))
-    #PSI<-SepRel(person.locations.estimate)
     psep_caption <- paste0("Test Information 3.33 (PSI 0.7) is reached between ", round(psep_min,2), " and ", round(psep_max,2), " logits, where ",
                            round(nWithinRel/length(pthetas)*100,1), "% of the participants are located. \n",
                            round(nCeilingRel/length(pthetas)*100,1), "% of participants have locations above the upper cutoff, and ",
@@ -1408,7 +1407,6 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
   }
 
   TIFplot <- ggplot(psimatrix) +
-    ###geom_point(aes(x=psX, y=psY), size = 0.1, color = "black") +
     geom_line(aes(x = psX, y = psY, group = 1), color = "black", linewidth = 1) +
     geom_hline(yintercept = 3.33, color = "#e83c63", linetype = 2, size = 0.5) +
     geom_hline(yintercept = 5, color = "#e83c63", linetype = 2, size = 0.7) +
@@ -1438,7 +1436,8 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
     ple.se <- person.locations.estimate$se.theta %>% as_tibble()
     pleSEmean <- mean(ple.se$NAgroup1)
     pleSEsd <- sd(ple.se$NAgroup1)
-    # 1/SE^2 = test information, and PSI = 1-SE^2
+
+    # test information = 1/SE^2, and PSI = 1-SE^2
     ple.se <- ple.se %>%
       mutate(TIF = 1/NAgroup1^2,
              PSI = 1-NAgroup1^2)
@@ -1453,14 +1452,12 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
     samplePSIci95 <- round(samplePSIse*1.96,2)
 
     TIFplot +
-      geom_point(aes(x = pleMean, y = sampleTIFmean,),
-                 size = 4, shape = 18, alpha = 0.8, color = "orange") +
       geom_segment(aes(x = pleMean-pleSD, xend = pleMean+pleSD, y = sampleTIFmean, yend = sampleTIFmean),
                    alpha = 0.9, color = "darkgrey", linetype = 1) +
-      # geom_segment(aes(x = pleMean, xend = pleMean, y = sampleTIFmean-sampleTIFci95, yend = sampleTIFmean+sampleTIFci95),
-      #              linetype = 3)
       geom_errorbar(aes(x = pleMean, ymin = sampleTIFmean-sampleTIFci95, ymax = sampleTIFmean+sampleTIFci95),
                     width = 0.2, alpha = 0.8, linetype = 1) +
+      geom_point(aes(x = pleMean, y = sampleTIFmean,),
+                 size = 4, shape = 18, alpha = 0.8, color = "orange") +
       annotate('label', label = glue("Characteristics of current sample:\n
                                       Person theta mean (orange dot) and standard deviation\n
                                       shown horizontally and TIF mean and 95% CI vertically.\n
