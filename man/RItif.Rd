@@ -17,7 +17,10 @@ RItif(dfin, lo = -5, hi = 5, samplePSI = FALSE)
 }
 \description{
 Test information shows the reliability curve of the test (not the sample).
-Use option \code{samplePSI = TRUE} to add graphical representation of the current
-sample's theta mean/SD, mean/95\% CI test information (TIF), and Person
-Separation Index (PSI) with 95\% CI.
+Use option \code{samplePSI = TRUE} to add graphical and written representation of
+the current sample's theta mean/SD, test information (TIF) mean/SD , and
+Person Separation Index (PSI). According to Wright & Stone (1999), PSI is
+calculated as (SSD-MSE)/SSD, see \code{?eRm::SepRel} for details. According to Embretson &
+Reise (2000), PSI = 1 - SEM^2, and TIF = 1/SEM^2, and the values reported in
+this function are based on sample average SEM.
 }
