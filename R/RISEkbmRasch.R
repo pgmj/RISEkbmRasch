@@ -1320,8 +1320,10 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
 #' Use option `samplePSI = TRUE` to add graphical and written representation of
 #' the current sample's theta mean/SD, test information (TIF) mean/SD , and
 #' Person Separation Index (PSI). According to Wright & Stone (1999), PSI is
-#' calculated as (SSD-MSE)/SSD, see ?eRm::SepRel for details. According to Embretson &
-#' Reise (2000), PSI = 1 - SEM^2, and TIF = 1/SEM^2.
+#' calculated as \eqn{\frac{\mathrm{SSD}-\mathrm{MSE}}{\mathrm{SSD}}}{(SSD-MSE)/SSD},
+#' see `?eRm::SepRel` for details. According to Embretson & Reise (2000),
+#' PSI = 1 - SEM^2, and TIF = 1/SEM^2, and the values reported in
+#' this function are based on sample average SEM.
 #'
 #' @param dfin Dataframe with item data only
 #' @param lo Lower limit of x axis (default = -5)
@@ -1468,7 +1470,7 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
                                       and TIF mean (dot) and SD (vertical line). SEM mean/SD is {pleSEmean}/{pleSEsd}.\n
                                       Person Separation Index (Wright & Stone, 1999) = {round(ermpsi$sep.rel,2)},\n
                                       (Embretson & Reise, 2000) = {samplePSImean}."),
-               x = -2, y = 0.5, lineheight = .5, hjust = 0, vjust = 0.5,
+               x = -2, y = 0.7, lineheight = .5, hjust = 0, vjust = 0.5,
                label.padding = unit(0.4, "lines"), alpha = 0.7)
   }
 }
