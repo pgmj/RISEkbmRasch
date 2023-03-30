@@ -45,10 +45,10 @@ theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15, margi
       face = "italic"
     ),
     legend.text = element_text(family = fontfamily)
-  ) +
-    # these rows are for geom_text() and geom_text_repel() to match font family
-    update_geom_defaults("text", list(family = fontfamily)) +
-    update_geom_defaults("text_repel", list(family = fontfamily))
+  )
+    # add manually for geom_text() and geom_text_repel() to match font family:
+    #update_geom_defaults("text", list(family = fontfamily))
+    #update_geom_defaults("text_repel", list(family = fontfamily))
 }
 
 #' A kableExtra function to simplify table code
@@ -62,8 +62,11 @@ kbl_rise <- function(data, width = 75, fontsize = 14, fontfamily = "Lato",
                      options = c("striped", "hover")) {
   kbl(data, booktabs = T, escape = F, table.attr = glue("style='width:{width}%;'")) %>%
     kable_styling(
-      bootstrap_options = options, position = "left",
-      full_width = T, font_size = fontsize, fixed_thead = T,
+      bootstrap_options = options,
+      position = "left",
+      full_width = T,
+      font_size = fontsize,
+      fixed_thead = T,
       latex_options = c("striped", "scale_down")
     ) %>%
     row_spec(0, bold = T) %>%
@@ -522,24 +525,12 @@ RIrmPCA <- function(dfin, no.table, fontsize = 15) {
   }
 }
 
-#' Create a figure with ICC plots for all items (not working yet)
-#'
-#' @param dfin Dataframe with item data only
-#' @export
-RIrespCats <- function(dfin) {
-  sink(nullfile()) # suppress output from the rows below
-  mirt.rasch <- mirt(dfin, model = 1, itemtype = "Rasch") # unidimensional Rasch model
-  sink()
-  plot(mirt.rasch, type = "trace") # create ICC plots for all items
-}
-
-
 #' Individual ICC plots.
 #' @param dfin Dataframe with item data only
 #' @param items A single item (e.g. "q4"), or a vector with multiple items (e.g. c("q4","q2"))
 #' @param xlims Start/end point for x-axis
 #' @export
-RIitemCats <- function(dfin, items, xlims = c(-6,6)) {
+RIitemCats <- function(dfin, items = "all", xlims = c(-6,6)) {
   # individual plots for those two items:
   df.erm <- PCM(dfin) # run PCM, partial credit model
   plotICC(df.erm,
@@ -551,8 +542,6 @@ RIitemCats <- function(dfin, items, xlims = c(-6,6)) {
     ask = FALSE
   )
 }
-#make this escape the "hit return to see next plot"
-
 
 #' Floor/ceiling effects based on raw data (ordinal scores). Needs at least one
 #' data point in each response category to produce correct footnote text.
@@ -656,7 +645,7 @@ RIrawdist <- function(dfin) {
 #' @param msq_max Upper cutoff level for MSQ
 #' @param fontsize Set fontsize for table
 #' @param fontfamily Set font family for table
-#' @param table Set to FALSE if you want a dataframe instead of a table output
+#' @param table Set to TRUE = table, and FALSE = dataframe `itemfitPCM`
 #' @export
 RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
                          msq_min = 0.7, msq_max = 1.3, fontsize = 15, fontfamily = "Lato",
@@ -763,7 +752,7 @@ RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2
         # latex_options are for PDF output
         kable_styling(latex_options = c("striped", "scale_down"))
       } else {
-        itemFitPCM <<- item.fit.table
+        itemfitPCM <<- item.fit.table
       }
   }
 }
@@ -1478,12 +1467,17 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
 #' Person fit
 #'
 #' Outputs a histogram of person fit ZSTD and a plot with person fit ZSTD and
-#' person location/score.
+#' person location/score. Defaults to use a hex heatmap. Option to
+#' display grouped output with colorized points.
 #'
 #' @param dfin Dataframe with item data only
 #' @param model Rasch model to use, "PCM" or "RM"
+#' @param pointsize Size of datapoints for grouped view
+#' @param alpha Transparency of points (0-1 where 1 = not transparent)
+#' @param bins Number of bins for hexplot
+#' @param group Grouping variable. Needs to be a vector, such as DIF variables
 #' @export
-RIpfit <- function(dfin, model = "PCM") {
+RIpfit <- function(dfin, model = "PCM", pointsize = 2, alpha = 0.5, bins = 30, group) {
   if (model == "PCM") {
     df.erm <- PCM(dfin)
   } else {
@@ -1511,17 +1505,19 @@ RIpfit <- function(dfin, model = "PCM") {
   df.pfit$`Person locations` <- thetas2$`Person Parameter`
   df.pfit$`Person infit ZSTD` <- person.fit$p.infitZ
 
+  if (missing(group)) {
   # figure
   df.pfit %>%
     ggplot(aes(x = `Person infit ZSTD`, y = `Person locations`, label = "")) +
-    geom_point(size = 1, color = "black") +
     geom_vline(xintercept = -2, color = "#e83c63", linetype = 2, size = 0.7) +
     geom_vline(xintercept = 2, color = "#e83c63", linetype = 2, size = 0.7) +
+    geom_hex(bins = bins) +
+    scale_fill_viridis_c('Count', option = "inferno", begin = 0.1) +
     scale_y_continuous(breaks = seq(-5, 5, by = 1)) +
     scale_x_continuous(breaks = seq(-5, 7, by = 1)) +
     labs(caption = paste0(
       round(nFloorPfit / nPfit * 100, 1), "% of participants have person infit ZSTD below -2.0, and ",
-      round(nCeilingPfit / nPfit * 100, 1), "% are above 2.0. \nThus, ", round(nPgoodfit / nPfit * 100, 1), "% are within +/- 2 infit ZSTD."
+      round(nCeilingPfit / nPfit * 100, 1), "% are above 2.0. \nThus, ", round(nPgoodfit / nPfit * 100, 1), "% of participants without floor/ceiling effects are within +/- 2 infit ZSTD.\nNote: ",length(person.fit$excl_obs_num)," (",round(length(person.fit$excl_obs_num)/nrow(dfin)*100,1),"%) observations were excluded due to max/min score."
     )) +
     theme(plot.caption = element_text(hjust = 0, face = "italic")) +
     theme(
@@ -1539,6 +1535,39 @@ RIpfit <- function(dfin, model = "PCM") {
         colour = "white"
       )
     )
+  }
+  else {
+    group[person.fit$excl_obs_num] <- NA # remove max/min scoring individuals from grouping variable
+    df.pfit$grp <- na.omit(group)
+    df.pfit %>%
+      ggplot(aes(x = `Person infit ZSTD`, y = `Person locations`, label = "", color = grp)) +
+      geom_vline(xintercept = -2, color = "#e83c63", linetype = 2, size = 0.7) +
+      geom_vline(xintercept = 2, color = "#e83c63", linetype = 2, size = 0.7) +
+      geom_point(size = pointsize, alpha = alpha) +
+      scale_color_viridis_d('Group', begin = 0.2) +
+      scale_y_continuous(breaks = seq(-5, 5, by = 1)) +
+      scale_x_continuous(breaks = seq(-5, 7, by = 1)) +
+      labs(caption = paste0(
+        round(nFloorPfit / nPfit * 100, 1), "% of participants have person infit ZSTD below -2.0, and ",
+        round(nCeilingPfit / nPfit * 100, 1), "% are above 2.0. \nThus, ", round(nPgoodfit / nPfit * 100, 1), "% of participants without floor/ceiling effects are within +/- 2 infit ZSTD.\nNote: ",length(person.fit$excl_obs_num)," (",round(length(person.fit$excl_obs_num)/nrow(dfin)*100,1),"%) observations were excluded due to max/min score."
+      )) +
+      theme(plot.caption = element_text(hjust = 0, face = "italic")) +
+      theme(
+        panel.background = element_rect(
+          fill = "#ebf5f0",
+          colour = "#ebf5f0",
+          linewidth = 0.5, linetype = "solid"
+        ),
+        panel.grid.major = element_line(
+          linewidth = 0.5, linetype = "solid",
+          colour = "white"
+        ),
+        panel.grid.minor = element_line(
+          linewidth = 0.25, linetype = "solid",
+          colour = "white"
+        )
+      )
+  }
 }
 
 
@@ -1878,8 +1907,9 @@ RIloadLoc <- function(dfin) {
 #' @param dfin Dataframe with item data only
 #' @param dif.var DIF variable
 #' @param cutoff Cutoff in item location logit difference for table highlighting
+#' @param table Set to TRUE = output a table object, and FALSE = dataframe `difTablePCM`
 #' @export
-RIdifTable <- function(dfin, dif.var, cutoff = 0.5) {
+RIdifTable <- function(dfin, dif.var, cutoff = 0.5, table = TRUE) {
   df.tree <- data.frame(matrix(ncol = 0, nrow = nrow(dfin))) # we need to make a new dataframe
   df.tree$difdata <- as.matrix(dfin) # containing item data in a nested dataframe
   # and DIF variables:
@@ -1889,23 +1919,31 @@ RIdifTable <- function(dfin, dif.var, cutoff = 0.5) {
   if(nrow(itempar(pctree.out) %>% as.data.frame() %>% t()) > 1) {
     plot(pctree.out)
 
-    itempar(pctree.out) %>% # identify the nodes to compare (see plot above)
+    difTable <- itempar(pctree.out) %>% # identify the nodes to compare (see plot above)
       as.data.frame() %>%
       t() %>%
       as.data.frame() %>%
-      mutate('Mean location' = rowMeans(.), StDev = rowSds(as.matrix(.))) %>%
+      mutate('Mean location' = rowMeans(.),
+             StDev = rowSds(as.matrix(.))) %>%
       rowwise() %>%
       mutate(MaxDiff = (max(c_across(c(1:(ncol(.)-2))))) - min(c_across(c(1:(ncol(.)-2))))) %>%
       ungroup() %>%
       mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
       rownames_to_column(var = "Item") %>%
       mutate(Item = names(dfin)) %>%
-      relocate(MaxDiff, .after = last_col()) %>%
-      formattable(list(
+      relocate(MaxDiff, .after = last_col())
+    if(table == TRUE) {
+
+      formattable(difTable, list(
         'MaxDiff' =
           formatter("span", style = ~ style(color = ifelse(MaxDiff < -cutoff, "red",
                                                            ifelse(MaxDiff > cutoff, "red",  "black"))))),
         table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato"')
+
+      } else {
+
+        difTablePCM <<- difTable
+    }
 
   } else {
     print("No significant DIF found.")
