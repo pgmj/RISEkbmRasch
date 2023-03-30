@@ -36,7 +36,7 @@ RIitemfitPCM(
 
 \item{fontfamily}{Set font family for table}
 
-\item{table}{Set to FALSE if you want a dataframe instead of a table output}
+\item{table}{Set to TRUE = table, and FALSE = dataframe \code{itemfitPCM}}
 }
 \description{
 ZSTD is inflated with large samples (N > 500). Optional function to reduce

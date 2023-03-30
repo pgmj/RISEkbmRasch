@@ -4,14 +4,23 @@
 \alias{RIpfit}
 \title{Person fit}
 \usage{
-RIpfit(dfin, model = "PCM")
+RIpfit(dfin, model = "PCM", pointsize = 2, alpha = 0.5, bins = 30, group)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
 \item{model}{Rasch model to use, "PCM" or "RM"}
+
+\item{pointsize}{Size of datapoints for grouped view}
+
+\item{alpha}{Transparency of points (0-1 where 1 = not transparent)}
+
+\item{bins}{Number of bins for hexplot}
+
+\item{group}{Grouping variable. Needs to be a vector, such as DIF variables}
 }
 \description{
 Outputs a histogram of person fit ZSTD and a plot with person fit ZSTD and
-person location/score.
+person location/score. Defaults to use a hex heatmap. Option to
+display grouped output with colorized points.
 }
