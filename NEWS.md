@@ -1,5 +1,11 @@
 ## Changelog
 
+### 0.1.14
+
+- added grouping function for `RIpfit()` and changed default setting to binned hex heatmap to better show distribution of respondents.
+- `RIdifTable()` can now optionally output a dataframe 
+- removed `RIrespCats()` since it was not working and wasn't going to be fixed. A new RIrespCats function is forthcoming, but the one using eRm works for now.
+
 ### 0.1.13
 
 New option:
