@@ -73,14 +73,41 @@ kbl_rise <- function(data, width = 75, fontsize = 14, fontfamily = "Lato",
     kable_classic(html_font = fontfamily)
 }
 
-#' Creates a figure with item missing data descriptives
+#' Creates a figure with item missing data descriptives for items
 #'
 #' Sample use: `RImissing(df, "PSS")`
+#'
+#' If `itemStart` is missing, the whole dataframe will be used.
 #'
 #' @param data Dataframe/tibble to create table from
 #' @param itemStart What your variable names start with, in quotes
 #' @export
 RImissing <- function(data, itemStart, ...) {
+
+  if (missing(itemStart)) {
+    data %>%
+      t() %>%
+      as.data.frame() %>%
+      mutate(Missing = rowSums(is.na(.))) %>%
+      select(Missing) %>%
+      arrange(desc(Missing)) %>%
+      rownames_to_column(var = "Item") %>%
+      mutate(Percentage = Missing / nrow(data) * 100) %>%
+      mutate(Item = factor(Item, levels = rev(Item))) %>%
+      ggplot(aes(x = Item, y = Percentage)) +
+      geom_col(fill = "#009ca6") +
+      geom_text(aes(label = round(Percentage, 1)),
+                hjust = 1.5, vjust = 0.5,
+                color = "white"
+      ) +
+      coord_flip() +
+      ggtitle("Missing data per item") +
+      xlab("Items") +
+      ylab("Percentage of responses missing") +
+      theme_minimal(...)
+
+  } else {
+
   data %>%
     dplyr::select(starts_with({{ itemStart }})) %>%
     t() %>%
@@ -89,7 +116,7 @@ RImissing <- function(data, itemStart, ...) {
     select(Missing) %>%
     arrange(desc(Missing)) %>%
     rownames_to_column(var = "Item") %>%
-    mutate(Percentage = Missing / nrow(df) * 100) %>%
+    mutate(Percentage = Missing / nrow(data) * 100) %>%
     mutate(Item = factor(Item, levels = rev(Item))) %>%
     ggplot(aes(x = Item, y = Percentage)) +
     geom_col(fill = "#009ca6") +
@@ -102,6 +129,7 @@ RImissing <- function(data, itemStart, ...) {
     xlab("Items") +
     ylab("Percentage of responses missing") +
     theme_minimal(...)
+  }
 }
 
 #' Show items based on itemlabels file
@@ -229,33 +257,21 @@ RIheatmap <- function(dfin) {
 #' Create table for demographic variables
 #'
 #' Input should be a vector with a demographic variable such as gender or age,
-#' and the desired label, enclosed in "".
+#' and the desired label, enclosed in double quotes.
 #'
-#' Sample use: RIdemographics(dif.gender, "Gender")
+#' Sample use: RIdemographics(dif.gender, "Gender", width = 40)
 #'
 #' @param dif.var A vector with a demographic variable
 #' @param diflabel What the variable represents (sex/age/etc), in quotes
-#' @param fontsize Defaults to 15
+#' @param ... Options for table, see `kbl_rise()`
 #' @export
-RIdemographics <- function(dif.var, diflabel, fontsize = 15) {
+RIdemographics <- function(dif.var, diflabel, ...) {
   dif.var %>%
     table() %>%
     as_tibble() %>%
     mutate("Percent" = (round((100 * n / sum(n)), 1))) %>%
     dplyr::rename(!!quo_name(diflabel) := ".") %>%
-    kbl(booktabs = T, escape = F, table.attr = "style='width:40%;'") %>%
-    # options for HTML output
-    kable_styling(
-      bootstrap_options = c("striped", "hover"),
-      position = "left",
-      full_width = T,
-      font_size = fontsize,
-      fixed_thead = T
-    ) %>%
-    column_spec(1, bold = T) %>%
-    kable_classic(html_font = "Lato") %>%
-    # latex_options are for PDF output
-    kable_styling(latex_options = c("striped", "scale_down"))
+    kbl_rise(...)
 }
 
 #' Create tile plot for all items, also showing the count of
@@ -289,8 +305,8 @@ RIbarstack <- function(dfin, omit.na = T) {
       na.omit() %>%
       pivot_longer(everything()) %>%
       dplyr::count(name, value) %>%
-      mutate(name = factor(name, levels = rev(names(dfin)))) %>%
-      ggplot(aes(x = n, y = name, fill = value)) +
+      mutate(Item = factor(name, levels = rev(names(dfin)))) %>%
+      ggplot(aes(x = n, y = Item, fill = value)) +
       geom_col() +
       scale_fill_viridis_c(expression(italic(n)), limits = c(0, NA)) +
       ggtitle("Item responses") +
@@ -299,8 +315,8 @@ RIbarstack <- function(dfin, omit.na = T) {
     dfin %>%
       pivot_longer(everything()) %>%
       dplyr::count(name, value) %>%
-      mutate(name = factor(name, levels = rev(names(dfin)))) %>%
-      ggplot(aes(x = n, y = name, fill = value)) +
+      mutate(Item = factor(name, levels = rev(names(dfin)))) %>%
+      ggplot(aes(x = n, y = Item, fill = value)) +
       geom_col() +
       scale_fill_viridis_c(expression(italic(n)), limits = c(0, NA)) +
       ggtitle("Item responses") +
@@ -1477,7 +1493,7 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
 #' @param bins Number of bins for hexplot
 #' @param group Grouping variable. Needs to be a vector, such as DIF variables
 #' @export
-RIpfit <- function(dfin, model = "PCM", pointsize = 2, alpha = 0.5, bins = 30, group) {
+RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30, group) {
   if (model == "PCM") {
     df.erm <- PCM(dfin)
   } else {
@@ -1544,7 +1560,7 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2, alpha = 0.5, bins = 30, g
       geom_vline(xintercept = -2, color = "#e83c63", linetype = 2, size = 0.7) +
       geom_vline(xintercept = 2, color = "#e83c63", linetype = 2, size = 0.7) +
       geom_point(size = pointsize, alpha = alpha) +
-      scale_color_viridis_d('Group', begin = 0.2) +
+      scale_color_viridis_d('Group', begin = 0.3, end = 0.9, option = 7) +
       scale_y_continuous(breaks = seq(-5, 5, by = 1)) +
       scale_x_continuous(breaks = seq(-5, 7, by = 1)) +
       labs(caption = paste0(
