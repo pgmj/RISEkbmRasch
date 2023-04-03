@@ -4,19 +4,19 @@
 \alias{RIdemographics}
 \title{Create table for demographic variables}
 \usage{
-RIdemographics(dif.var, diflabel, fontsize = 15)
+RIdemographics(dif.var, diflabel, ...)
 }
 \arguments{
 \item{dif.var}{A vector with a demographic variable}
 
 \item{diflabel}{What the variable represents (sex/age/etc), in quotes}
 
-\item{fontsize}{Defaults to 15}
+\item{...}{Options for table, see \code{kbl_rise()}}
 }
 \description{
 Input should be a vector with a demographic variable such as gender or age,
-and the desired label, enclosed in "".
+and the desired label, enclosed in double quotes.
 }
 \details{
-Sample use: RIdemographics(dif.gender, "Gender")
+Sample use: RIdemographics(dif.gender, "Gender", width = 40)
 }

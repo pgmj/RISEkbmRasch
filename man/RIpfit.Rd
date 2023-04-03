@@ -4,7 +4,7 @@
 \alias{RIpfit}
 \title{Person fit}
 \usage{
-RIpfit(dfin, model = "PCM", pointsize = 2, alpha = 0.5, bins = 30, group)
+RIpfit(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30, group)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}

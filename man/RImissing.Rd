@@ -2,7 +2,7 @@
 % Please edit documentation in R/RISEkbmRasch.R
 \name{RImissing}
 \alias{RImissing}
-\title{Creates a figure with item missing data descriptives}
+\title{Creates a figure with item missing data descriptives for items}
 \usage{
 RImissing(data, itemStart, ...)
 }
@@ -13,4 +13,7 @@ RImissing(data, itemStart, ...)
 }
 \description{
 Sample use: \code{RImissing(df, "PSS")}
+}
+\details{
+If \code{itemStart} is missing, the whole dataframe will be used.
 }
