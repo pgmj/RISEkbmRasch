@@ -13,8 +13,11 @@
 #'
 #' See ?element_text for more details on available settings.
 #'
-#' Please note that using this theme also updates the defaults for geom_text
-#' and geom_text_repel, which applies for the whole session/script.
+#' Please note that using this theme does not update the session defaults for
+#' geom_text and geom_text_repel. You can add the relevant line(s) manually:
+#'
+#'     update_geom_defaults("text", list(family = fontfamily)) +
+#'     update_geom_defaults("text_repel", list(family = fontfamily))
 #'
 #' @param fontfamily Font family for all plot text
 #' @param axissize Font size for axis labels
@@ -75,12 +78,13 @@ kbl_rise <- function(data, width = 75, fontsize = 14, fontfamily = "Lato",
 
 #' Creates a figure with item missing data descriptives for items
 #'
-#' Sample use: `RImissing(df, "PSS")`
+#' Sample use: `RImissing(df, itemStart = "PSS")`
 #'
 #' If `itemStart` is missing, the whole dataframe will be used.
 #'
 #' @param data Dataframe/tibble to create table from
 #' @param itemStart What your variable names start with, in quotes
+#' @param ... Options for `theme_rise()`
 #' @export
 RImissing <- function(data, itemStart, ...) {
 
@@ -104,7 +108,8 @@ RImissing <- function(data, itemStart, ...) {
       ggtitle("Missing data per item") +
       xlab("Items") +
       ylab("Percentage of responses missing") +
-      theme_minimal(...)
+      theme_minimal() +
+      theme_rise(...)
 
   } else {
 
@@ -128,9 +133,95 @@ RImissing <- function(data, itemStart, ...) {
     ggtitle("Missing data per item") +
     xlab("Items") +
     ylab("Percentage of responses missing") +
-    theme_minimal(...)
+    theme_minimal() +
+    theme_rise(...)
   }
 }
+
+#' Creates a figure with item missing data descriptives for participants
+#'
+#' Sample use: `RImissingP(df, itemStart = "PSS")`
+#'
+#' If `itemStart` is missing, the whole dataframe will be used.
+#'
+#' @param data Dataframe/tibble to create table from
+#' @param itemStart What your variable names start with, in quotes
+#' @param output Optional dataframe with participants with missing data
+#' @param ... Options for `theme_rise()`
+#' @export
+RImissingP <- function(data, itemStart, output, ...) {
+
+  if (missing(itemStart)) {
+    order <- data %>%
+      mutate(Missing = rowSums(is.na(.))) %>%
+      select(Missing) %>%
+      rownames_to_column(var = "Participant") %>%
+      na.omit() %>%
+      filter(Missing > 0) %>%
+      arrange(desc(Missing)) %>%
+      pull(Participant)
+
+    data %>%
+      mutate(Missing = rowSums(is.na(.))) %>%
+      select(Missing) %>%
+      rownames_to_column(var = "Participant") %>%
+      na.omit() %>%
+      filter(Missing > 0) %>%
+      arrange(desc(Missing)) %>%
+      mutate(Participant = as.factor(Participant)) %>%
+      mutate(Participant = fct_relevel(Participant, rev(order))) %>%
+      ggplot(aes(x = Participant, y = Missing)) +
+      geom_col(fill = "#009ca6") +
+      geom_text(aes(label = glue("{Missing*100/ncol(data)}%")),
+                hjust = 1.5, vjust = 0.5,
+                color = "white"
+      ) +
+      coord_flip() +
+      ggtitle("Missing data per participant") +
+      xlab("Participant rownumber") +
+      ylab("Number of responses missing") +
+      labs(caption = glue("Total number of items is {ncol(data)}.")) +
+      theme_minimal() +
+      theme_rise(...)
+
+  } else {
+
+    order <- data %>%
+      dplyr::select(starts_with({{ itemStart }})) %>%
+      mutate(Missing = rowSums(is.na(.))) %>%
+      select(Missing) %>%
+      rownames_to_column(var = "Participant") %>%
+      na.omit() %>%
+      filter(Missing > 0) %>%
+      arrange(desc(Missing)) %>%
+      pull(Participant)
+
+    data %>%
+      dplyr::select(starts_with({{ itemStart }})) %>%
+      mutate(Missing = rowSums(is.na(.))) %>%
+      select(Missing) %>%
+      rownames_to_column(var = "Participant") %>%
+      na.omit() %>%
+      filter(Missing > 0) %>%
+      arrange(desc(Missing)) %>%
+      mutate(Participant = as.factor(Participant)) %>%
+      mutate(Participant = fct_relevel(Participant, rev(order))) %>%
+      ggplot(aes(x = Participant, y = Missing)) +
+      geom_col(fill = "#009ca6") +
+      geom_text(aes(label = glue("{Missing*100/ncol(data)}%")),
+                hjust = 1.5, vjust = 0.5,
+                color = "white"
+      ) +
+      coord_flip() +
+      ggtitle("Missing data per participant") +
+      xlab("Participant rownumber") +
+      ylab("Number of responses missing") +
+      labs(caption = glue("Total number of items is {ncol(data)}.")) +
+      theme_minimal() +
+      theme_rise(...)
+  }
+}
+
 
 #' Show items based on itemlabels file
 #'
@@ -305,22 +396,25 @@ RIbarstack <- function(dfin, omit.na = T) {
       na.omit() %>%
       pivot_longer(everything()) %>%
       dplyr::count(name, value) %>%
-      mutate(Item = factor(name, levels = rev(names(dfin)))) %>%
+      mutate(Item = factor(name, levels = rev(names(dfin))),
+             value = factor(value)) %>%
       ggplot(aes(x = n, y = Item, fill = value)) +
       geom_col() +
-      scale_fill_viridis_c(expression(italic(n)), limits = c(0, NA)) +
+      scale_fill_viridis_d("Category") +
       ggtitle("Item responses") +
       xlab("Number of responses")
   } else {
     dfin %>%
       pivot_longer(everything()) %>%
       dplyr::count(name, value) %>%
-      mutate(Item = factor(name, levels = rev(names(dfin)))) %>%
+      mutate(Item = factor(name, levels = rev(names(dfin))),
+             value = factor(value)) %>%
       ggplot(aes(x = n, y = Item, fill = value)) +
       geom_col() +
-      scale_fill_viridis_c(expression(italic(n)), limits = c(0, NA)) +
+      scale_fill_viridis_d("Category") +
       ggtitle("Item responses") +
-      xlab("Number of responses")
+      xlab("Number of responses") +
+      labs(fill = "Category")
   }
 }
 
