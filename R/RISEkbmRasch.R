@@ -398,6 +398,7 @@ RIbarstack <- function(dfin, omit.na = T) {
       dplyr::count(name, value) %>%
       mutate(Item = factor(name, levels = rev(names(dfin))),
              value = factor(value)) %>%
+      mutate(value = forcats::fct_rev(value)) %>%
       ggplot(aes(x = n, y = Item, fill = value)) +
       geom_col() +
       scale_fill_viridis_d("Category") +
@@ -409,6 +410,7 @@ RIbarstack <- function(dfin, omit.na = T) {
       dplyr::count(name, value) %>%
       mutate(Item = factor(name, levels = rev(names(dfin))),
              value = factor(value)) %>%
+      mutate(value = forcats::fct_rev(value)) %>%
       ggplot(aes(x = n, y = Item, fill = value)) +
       geom_col() +
       scale_fill_viridis_d("Category") +
