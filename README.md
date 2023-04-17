@@ -28,6 +28,8 @@ detach("package:RISEkbmRasch", unload = TRUE) # not needed if you haven't loaded
 devtools::install_github("pgmj/RISEkbmRasch")
 ```
 
+Please see the [NEWS.md](https://github.com/pgmj/RISEkbmRasch/blob/main/NEWS.md) file for notes on updates.
+
 ## Usage
 
 Most functions in this package are relatively simple wrappers that create outputs such as tables and figures to make the Rasch analysis process quick and visual. There is a [companion Quarto template file](https://github.com/pgmj/RISEkbmRasch/tree/main/Quarto) that shows suggested ways to use this package.
