@@ -67,12 +67,14 @@ editor_options:
 #| code-fold: false
 #| include: false
 
-# two packages below require that you use devtools to install them manually:
+# The RISEkbmRasch package requires that you use devtools to install it from github:
 # first install devtools by
 # install.packages('devtools')
+# then run
+# devtools::install_github("pgmj/RISEkbmRasch")
 
-library(RISEkbmRasch) # devtools::install_github("pgmj/RISEkbmRasch")
-library(grateful) # devtools::install_github("Pakillo/grateful")
+library(RISEkbmRasch) 
+library(grateful)
 library(ggrepel)
 library(car)
 library(kableExtra)
@@ -356,7 +358,8 @@ RIoutfitLoc(df.omit.na)
 pkgs <- cite_packages(cite.tidyverse = TRUE, 
                       output = "table",
                       bib.file = "grateful-refs.bib",
-                      include.RStudio = TRUE)
+                      include.RStudio = TRUE,
+                      out.dir = getwd())
 formattable(pkgs, 
             table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 80%"')
 
