@@ -172,7 +172,7 @@ RImissingP <- function(data, itemStart, output, ...) {
       mutate(Participant = fct_relevel(Participant, rev(order))) %>%
       ggplot(aes(x = Participant, y = Missing)) +
       geom_col(fill = "#009ca6") +
-      geom_text(aes(label = glue("{Missing*100/ncol(data)}%")),
+      geom_text(aes(label = glue("{round(Missing*100/ncol(data),1)}%")),
                 hjust = 1.5, vjust = 0.5,
                 color = "white"
       ) +
@@ -208,7 +208,7 @@ RImissingP <- function(data, itemStart, output, ...) {
       mutate(Participant = fct_relevel(Participant, rev(order))) %>%
       ggplot(aes(x = Participant, y = Missing)) +
       geom_col(fill = "#009ca6") +
-      geom_text(aes(label = glue("{Missing*100/ncol(data)}%")),
+      geom_text(aes(label = glue("{round(Missing*100/ncol(data),1)}%")),
                 hjust = 1.5, vjust = 0.5,
                 color = "white"
       ) +
@@ -457,12 +457,22 @@ RIbarplot <- function(dfin) {
   for (i in 1:ncol(dfin)) {
     barplot(table(dfin[, i]),
       col = "#8dc8c7",
-      main = names(dfin[i]),
       ylab = "Number of responses",
-      xlab = (itemlabels %>%
-        filter(itemnr %in% names(dfin))
-        %>% .[i, 2])
+      xlab = "Response category"
     )
+    # set item description as subtitle
+    mtext(text = itemlabels %>%
+                    filter(itemnr %in% names(dfin))
+                  %>% .[i, 2],
+    side = 3,
+    line = 0.4)
+    # add itemnr as title
+    mtext(text = itemlabels %>%
+            filter(itemnr %in% names(dfin)) %>%
+            .[i, 1],
+          side = 3,
+          line = 1.5,
+          font = 2)
   }
 }
 
