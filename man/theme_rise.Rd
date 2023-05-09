@@ -32,6 +32,10 @@ Use is optional :)
 \details{
 See ?element_text for more details on available settings.
 
-Please note that using this theme also updates the defaults for geom_text
-and geom_text_repel, which applies for the whole session/script.
+Please note that using this theme does not update the session defaults for
+geom_text and geom_text_repel. You can add the relevant line(s) manually:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{update_geom_defaults("text", list(family = fontfamily)) +
+update_geom_defaults("text_repel", list(family = fontfamily))
+}\if{html}{\out{</div>}}
 }
