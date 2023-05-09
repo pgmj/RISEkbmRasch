@@ -1,5 +1,10 @@
 ## Changelog
 
+### 0.1.15
+
+- `RImissing()` for analysis of missing data per item added
+- `RImissingP()` for analysis of missing items per respondent added
+
 ### 0.1.14
 
 - added grouping function for `RIpfit()` and changed default setting to binned hex heatmap to better show distribution of respondents.
