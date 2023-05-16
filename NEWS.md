@@ -1,5 +1,14 @@
 ## Changelog
 
+### 0.1.16
+
+- `RImissingP()` now has option `n = 10` as a default, to limit/choose how many participants to display.
+- Multiple new DIF functions added, based on the eRm package's `LRtest()` function. These are also useful if encountering the issue found with `psychotree` when mixing dichotomous and polytomous items in the data. However, it seems like LRtest only works with two groups, which clearly is a limitation. The new functions also show standard errors/95% confidence intervals.
+  - `RIdifTableLR()` for average item locations table (sortable)
+  - `RIdifThreshTblLR()` for item threshold locations table
+  - `RIdifFigureLR()` for average item locations figure
+  - `RIdifThreshFigLR()` for item threshold locations figure
+
 ### 0.1.15
 
 - `RImissingP()` for analysis of missing items per respondent added
