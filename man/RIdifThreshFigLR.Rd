@@ -12,12 +12,10 @@ RIdifThreshFigLR(dfin, dif.var)
 \item{dif.var}{DIF variable}
 }
 \description{
-NOTE: currently only works with two DIF groups
-}
-\details{
 Makes use of the eRm package function \code{LRtest()}. Outputs a panel of figures
 with item threshold locations and 95\% confidence intervals.
-
+}
+\details{
 DIF variables need to be factors with the same length as the number of rows
 in the dataset.
 

@@ -16,12 +16,10 @@ RIdifThreshTblLR(dfin, dif.var, fontfamily = "sans-serif", cutoff = 0.5)
 \item{cutoff}{Cutoff in item location logit difference for table highlighting}
 }
 \description{
-NOTE: currently only works with two DIF groups
-}
-\details{
 Makes use of the eRm package function \code{LRtest()}. Outputs a table with item
 average locations, group differences, and standard errors.
-
+}
+\details{
 DIF variables need to be factors with the same length as the number of rows
 in the dataset.
 
