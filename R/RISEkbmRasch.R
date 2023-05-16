@@ -2621,10 +2621,7 @@ RIdifTableLR <- function(dfin, dif.var, sort = FALSE,
                         fontfamily = "sans-serif", cutoff = 0.5) {
   erm.out <- PCM(dfin)
   lrt.out <- LRtest(erm.out, splitcr = dif.var)
-  groups <- str_split(lrt.out$spl.gr, pattern = " ") %>% # get dif group labels
-    as_tibble(.name_repair = "minimal") %>%
-    t() %>%
-    .[,2]
+  groups <- levels(dif.var)
 
   # get item location for each subgroup
   lrt1 <- lrt.out[["betalist"]]$`1` %>%
@@ -2641,7 +2638,8 @@ RIdifTableLR <- function(dfin, dif.var, sort = FALSE,
     mutate(across(everything(), ~ round(.x, 3))) %>%
     mutate(across(everything(), ~ .x * -1)) %>%
     rownames_to_column("Item") %>%
-    separate(Item, c(NA,"Item","Threshold")) %>%
+    separate(Item, c(NA,"Item"), sep = " ") %>%
+    separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
   # add standard errors for all three
@@ -2652,7 +2650,9 @@ RIdifTableLR <- function(dfin, dif.var, sort = FALSE,
 
   # make version with average item location
   lrt.avg <- lrt.diff %>%
-    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    pivot_wider(names_from = "Item",
+                values_from = all_of(c(groups,"All")),
+                names_sep = ".") %>%
     t() %>%
     as.data.frame()
   lrt.avg <- lrt.avg[-1,]
@@ -2662,15 +2662,16 @@ RIdifTableLR <- function(dfin, dif.var, sort = FALSE,
     mutate(Location = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"))
+    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   ### add SE
   # pivot_wider for easier calculation
   lrt.avg.se <- lrt.se %>%
-    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    pivot_wider(names_from = "Item",
+                values_from = all_of(c(groups,"All")),
+                names_sep = ".") %>%
     t() %>%
     as.data.frame()
-
   lrt.avg.se <- lrt.avg.se[-1,] # remove first row
 
   lrt.avg.se <- lrt.avg.se %>%
@@ -2678,27 +2679,34 @@ RIdifTableLR <- function(dfin, dif.var, sort = FALSE,
     mutate(SE = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"))
+    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   lrt.avg$SE <- lrt.avg.se$SE
 
   # prepare table output
-
   lrt.table <- lrt.avg %>%
     dplyr::select(!starts_with("V")) %>%
-    pivot_wider(names_from = "DIFgroup",
-                values_from = c("Location","SE")) %>%
-    rename(!!groups[1] := paste0("Location_",groups[1]),
-           !!groups[2] := paste0("Location_",groups[2]),
-           `Both groups` = Location_All) %>%
-    mutate(GroupDiff = get(groups[1]) - get(groups[2]),
-           .before = `Both groups`) %>%
+    pivot_wider(
+      names_from = "DIFgroup",
+      values_from = c("Location", "SE")
+    ) %>%
+    dplyr::rename(
+      !!groups[1] := 2,
+      !!groups[2] := 3,
+      `Both groups` = Location_All
+    ) %>%
+    mutate(
+      GroupDiff = get(groups[1]) - get(groups[2]),
+      .before = `Both groups`
+    ) %>%
+    mutate_if(is.double, round, digits = 3) %>%
     mutate(GroupDiff = cell_spec(GroupDiff,
-                                 color = case_when(GroupDiff > cutoff ~ "red",
-                                                   GroupDiff < -cutoff ~ "red",
-                                                   TRUE ~ "black")
-    )
-    )
+                                 color = case_when(
+                                   GroupDiff > cutoff ~ "red",
+                                   GroupDiff < -cutoff ~ "red",
+                                   TRUE ~ "black"
+                                 )
+    ))
 
   if (sort == TRUE) {
     lrt.table %>%
@@ -2735,10 +2743,7 @@ RIdifThreshTblLR <- function(dfin, dif.var,
                               fontfamily = "sans-serif", cutoff = 0.5) {
   erm.out <- PCM(dfin)
   lrt.out <- LRtest(erm.out, splitcr = dif.var)
-  groups <- str_split(lrt.out$spl.gr, pattern = " ") %>% # get group labels
-    as_tibble(.name_repair = "minimal") %>%
-    t() %>%
-    .[,2]
+  groups <- levels(dif.var)
 
   # get item location for each subgroup
   lrt1 <- lrt.out[["betalist"]]$`1` %>%
@@ -2755,18 +2760,23 @@ RIdifThreshTblLR <- function(dfin, dif.var,
     mutate(across(everything(), ~ round(.x, 3))) %>%
     mutate(across(everything(), ~ .x * -1)) %>%
     rownames_to_column("Item") %>%
-    separate(Item, c(NA,"Item","Threshold")) %>%
+    separate(Item, c(NA,"Item"), sep = " ") %>%
+    separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
   # add standard errors for all three
-  lrt.se <- as.data.frame(cbind(lrt.out$selist$`1`,lrt.out$selist$`2`,erm.out$se.beta))
+  lrt.se <- as.data.frame(cbind(lrt.out$selist$`1`,
+                                lrt.out$selist$`2`,
+                                erm.out$se.beta))
   names(lrt.se) <- c(groups,"All")
   lrt.se$Item <- lrt.diff$Item
   lrt.se$Threshold <- lrt.diff$Threshold
 
   # make version with average item location
   lrt.avg <- lrt.diff %>%
-    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    pivot_wider(names_from = "Item",
+                values_from = all_of(c(groups,"All")),
+                names_sep = ".") %>%
     t() %>%
     as.data.frame()
   lrt.avg <- lrt.avg[-1,]
@@ -2776,15 +2786,16 @@ RIdifThreshTblLR <- function(dfin, dif.var,
     mutate(Location = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"))
+    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   ### add SE
   # pivot_wider for easier calculation
   lrt.avg.se <- lrt.se %>%
-    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    pivot_wider(names_from = "Item",
+                values_from = all_of(c(groups,"All")),
+                names_sep = ".") %>%
     t() %>%
     as.data.frame()
-
   lrt.avg.se <- lrt.avg.se[-1,] # remove first row
 
   lrt.avg.se <- lrt.avg.se %>%
@@ -2792,7 +2803,7 @@ RIdifThreshTblLR <- function(dfin, dif.var,
     mutate(SE = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"))
+    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   lrt.avg$SE <- lrt.avg.se$SE
 
@@ -2810,18 +2821,23 @@ RIdifThreshTblLR <- function(dfin, dif.var,
     dplyr::select(!starts_with("V")) %>%
     pivot_wider(names_from = "DIFgroup",
                 values_from = c("Location","SE")) %>%
-    rename(!!groups[1] := paste0("Location_",groups[1]),
-           !!groups[2] := paste0("Location_",groups[2]),
-           `Both groups` = Location_All) %>%
-    mutate(GroupDiff = get(groups[1]) - get(groups[2]),
-           .before = `Both groups`) %>%
+    dplyr::rename(
+      !!groups[1] := 3,
+      !!groups[2] := 4,
+      `Both groups` = Location_All
+    ) %>%
+    mutate(
+      GroupDiff = get(groups[1]) - get(groups[2]),
+      .before = `Both groups`
+    ) %>%
     mutate_if(is.double, round, digits = 3) %>%
     mutate(GroupDiff = cell_spec(GroupDiff,
-                                 color = case_when(GroupDiff > cutoff ~ "red",
-                                                   GroupDiff < -cutoff ~ "red",
-                                                   TRUE ~ "black")
-    )
-    )
+                                 color = case_when(
+                                   GroupDiff > cutoff ~ "red",
+                                   GroupDiff < -cutoff ~ "red",
+                                   TRUE ~ "black"
+                                 )
+    ))
 
   lrt.table %>%
     dplyr::select(!Item) %>%
@@ -2851,10 +2867,7 @@ RIdifThreshTblLR <- function(dfin, dif.var,
 RIdifFigureLR <- function(dfin, dif.var) {
   erm.out <- PCM(dfin)
   lrt.out <- LRtest(erm.out, splitcr = dif.var)
-  groups <- str_split(lrt.out$spl.gr, pattern = " ") %>% # get dif group labels
-    as_tibble(.name_repair = "minimal") %>%
-    t() %>%
-    .[,2]
+  groups <- levels(dif.var)
 
   # get item location for each subgroup
   lrt1 <- lrt.out[["betalist"]]$`1` %>%
@@ -2867,22 +2880,29 @@ RIdifFigureLR <- function(dfin, dif.var) {
     as.data.frame(nm = "All")
 
   # bind in one df
-  lrt.diff <- cbind(lrt1,lrt2,ermEta) %>%
+  lrt.diff <- cbind(lrt1,
+                    lrt2,
+                    ermEta) %>%
     mutate(across(everything(), ~ round(.x, 3))) %>%
     mutate(across(everything(), ~ .x * -1)) %>%
     rownames_to_column("Item") %>%
-    separate(Item, c(NA,"Item","Threshold")) %>%
+    separate(Item, c(NA,"Item"), sep = " ") %>%
+    separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
   # add standard errors for all three
-  lrt.se <- as.data.frame(cbind(lrt.out$selist$`1`,lrt.out$selist$`2`,erm.out$se.beta))
+  lrt.se <- as.data.frame(cbind(lrt.out$selist$`1`,
+                                lrt.out$selist$`2`,
+                                erm.out$se.beta))
   names(lrt.se) <- c(groups,"All")
   lrt.se$Item <- lrt.diff$Item
   lrt.se$Threshold <- lrt.diff$Threshold
 
   # make version with average item location
   lrt.avg <- lrt.diff %>%
-    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    pivot_wider(names_from = "Item",
+                values_from = all_of(c(groups,"All")),
+                names_sep = ".") %>%
     t() %>%
     as.data.frame()
   lrt.avg <- lrt.avg[-1,]
@@ -2892,12 +2912,14 @@ RIdifFigureLR <- function(dfin, dif.var) {
     mutate(Location = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"))
+    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   ### add SE
   # pivot_wider for easier calculation
   lrt.avg.se <- lrt.se %>%
-    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    pivot_wider(names_from = "Item",
+                values_from = all_of(c(groups,"All")),
+                names_sep = ".") %>%
     t() %>%
     as.data.frame()
 
@@ -2908,7 +2930,7 @@ RIdifFigureLR <- function(dfin, dif.var) {
     mutate(SE = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"))
+    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   lrt.avg$SE <- lrt.avg.se$SE
 
@@ -2958,10 +2980,7 @@ RIdifFigureLR <- function(dfin, dif.var) {
 RIdifThreshFigLR <- function(dfin, dif.var) {
   erm.out <- PCM(dfin)
   lrt.out <- LRtest(erm.out, splitcr = dif.var)
-  groups <- str_split(lrt.out$spl.gr, pattern = " ") %>% # get dif group labels
-    as_tibble(.name_repair = "minimal") %>%
-    t() %>%
-    .[,2]
+  groups <- levels(dif.var)
 
   # get item location for each subgroup
   lrt1 <- lrt.out[["betalist"]]$`1` %>%
@@ -2974,22 +2993,29 @@ RIdifThreshFigLR <- function(dfin, dif.var) {
     as.data.frame(nm = "All")
 
   # bind in one df
-  lrt.diff <- cbind(lrt1,lrt2,ermEta) %>%
+  lrt.diff <- cbind(lrt1,
+                    lrt2,
+                    ermEta) %>%
     mutate(across(everything(), ~ round(.x, 3))) %>%
     mutate(across(everything(), ~ .x * -1)) %>%
     rownames_to_column("Item") %>%
-    separate(Item, c(NA,"Item","Threshold")) %>%
+    separate(Item, c(NA,"Item"), sep = " ") %>%
+    separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
   # add standard errors for all three
-  lrt.se <- as.data.frame(cbind(lrt.out$selist$`1`,lrt.out$selist$`2`,erm.out$se.beta))
+  lrt.se <- as.data.frame(cbind(lrt.out$selist$`1`,
+                                lrt.out$selist$`2`,
+                                erm.out$se.beta))
   names(lrt.se) <- c(groups,"All")
   lrt.se$Item <- lrt.diff$Item
   lrt.se$Threshold <- lrt.diff$Threshold
 
   # make version with average item location
   lrt.avg <- lrt.diff %>%
-    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    pivot_wider(names_from = "Item",
+                values_from = all_of(c(groups,"All")),
+                names_sep = ".") %>%
     t() %>%
     as.data.frame()
   lrt.avg <- lrt.avg[-1,]
@@ -2999,15 +3025,16 @@ RIdifThreshFigLR <- function(dfin, dif.var) {
     mutate(Location = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"))
+    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   ### add SE
   # pivot_wider for easier calculation
   lrt.avg.se <- lrt.se %>%
-    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    pivot_wider(names_from = "Item",
+                values_from = all_of(c(groups,"All")),
+                names_sep = ".") %>%
     t() %>%
     as.data.frame()
-
   lrt.avg.se <- lrt.avg.se[-1,] # remove first row
 
   lrt.avg.se <- lrt.avg.se %>%
@@ -3015,7 +3042,7 @@ RIdifThreshFigLR <- function(dfin, dif.var) {
     mutate(SE = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"))
+    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   lrt.avg$SE <- lrt.avg.se$SE
 
