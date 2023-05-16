@@ -26,7 +26,8 @@
 #' @param axisface Set to "bold" if you want bold axis labels
 #' @return Add + theme_rise() to your ggplot or RIfunction that outputs a ggplot
 #' @export
-theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15, margins = 12, axisface = "plain") {
+theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15,
+                       margins = 12, axisface = "plain", ...) {
   theme(
     text = element_text(family = fontfamily),
     axis.title.x = element_text(
@@ -47,7 +48,8 @@ theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15, margi
     plot.caption = element_text(
       face = "italic"
     ),
-    legend.text = element_text(family = fontfamily)
+    legend.text = element_text(family = fontfamily),
+    ...
   )
     # add manually for geom_text() and geom_text_repel() to match font family:
     #update_geom_defaults("text", list(family = fontfamily))
@@ -60,9 +62,10 @@ theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15, margi
 #' @param width Width of table (0-100)
 #' @param fontsize Font size
 #' @param fontfamily Font family
+#' @param ... Passes options to kbl()
 #' @export
-kbl_rise <- function(data, width = 75, fontsize = 14, fontfamily = "Lato",
-                     options = c("striped", "hover")) {
+kbl_rise <- function(data, width = 65, fontsize = 14, fontfamily = "Lato",
+                     options = c("striped", "hover"), ...) {
   kbl(data, booktabs = T, escape = F, table.attr = glue("style='width:{width}%;'")) %>%
     kable_styling(
       bootstrap_options = options,
@@ -70,7 +73,8 @@ kbl_rise <- function(data, width = 75, fontsize = 14, fontfamily = "Lato",
       full_width = T,
       font_size = fontsize,
       fixed_thead = T,
-      latex_options = c("striped", "scale_down")
+      latex_options = c("striped", "scale_down"),
+      ...
     ) %>%
     row_spec(0, bold = T) %>%
     kable_classic(html_font = fontfamily)
@@ -101,7 +105,7 @@ RImissing <- function(data, itemStart, ...) {
       ggplot(aes(x = Item, y = Percentage)) +
       geom_col(fill = "#009ca6") +
       geom_text(aes(label = round(Percentage, 1)),
-                hjust = 1.5, vjust = 0.5,
+                hjust = 2.5, vjust = 0.5,
                 color = "white"
       ) +
       coord_flip() +
@@ -126,7 +130,7 @@ RImissing <- function(data, itemStart, ...) {
     ggplot(aes(x = Item, y = Percentage)) +
     geom_col(fill = "#009ca6") +
     geom_text(aes(label = round(Percentage, 1)),
-      hjust = 1.5, vjust = 0.5,
+      hjust = 2.5, vjust = 0.5,
       color = "white"
     ) +
     coord_flip() +
@@ -147,9 +151,10 @@ RImissing <- function(data, itemStart, ...) {
 #' @param data Dataframe/tibble to create table from
 #' @param itemStart What your variable names start with, in quotes
 #' @param output Optional dataframe with participants with missing data
+#' @param n For large samples, show n participants with most missing data
 #' @param ... Options for `theme_rise()`
 #' @export
-RImissingP <- function(data, itemStart, output, ...) {
+RImissingP <- function(data, itemStart, output, n = 10, ...) {
 
   if (missing(itemStart)) {
     order <- data %>%
@@ -168,6 +173,7 @@ RImissingP <- function(data, itemStart, output, ...) {
       na.omit() %>%
       filter(Missing > 0) %>%
       arrange(desc(Missing)) %>%
+      head(n) %>%
       mutate(Participant = as.factor(Participant)) %>%
       mutate(Participant = fct_relevel(Participant, rev(order))) %>%
       ggplot(aes(x = Participant, y = Missing)) +
@@ -176,6 +182,7 @@ RImissingP <- function(data, itemStart, output, ...) {
                 hjust = 1.5, vjust = 0.5,
                 color = "white"
       ) +
+      scale_y_continuous(breaks = scales::breaks_extended()) +
       coord_flip() +
       ggtitle("Missing data per participant") +
       xlab("Participant rownumber") +
@@ -212,6 +219,7 @@ RImissingP <- function(data, itemStart, output, ...) {
                 hjust = 1.5, vjust = 0.5,
                 color = "white"
       ) +
+      scale_y_continuous(breaks = scales::breaks_extended()) +
       coord_flip() +
       ggtitle("Missing data per participant") +
       xlab("Participant rownumber") +
@@ -652,12 +660,12 @@ RIrmPCA <- function(dfin, no.table, fontsize = 15) {
 #' @param items A single item (e.g. "q4"), or a vector with multiple items (e.g. c("q4","q2"))
 #' @param xlims Start/end point for x-axis
 #' @export
-RIitemCats <- function(dfin, items = "all", xlims = c(-6,6)) {
+RIitemCats <- function(dfin, items = "all", xlims = c(-6,6), legend = FALSE) {
   # individual plots for those two items:
   df.erm <- PCM(dfin) # run PCM, partial credit model
   plotICC(df.erm,
-    xlim = xlims, # change the theta interval to display
-    legpos = FALSE, # change legpos to TRUE if you want the legend displayed
+    xlim = xlims, # change the x axis theta interval to display
+    legpos = legend, # change legpos to TRUE if you want the legend displayed
     ylab = "Probability",
     xlab = "Person location",
     item.subset = items,
@@ -1272,7 +1280,7 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
     ) +
     xlab("") +
     ylab("Persons") +
-    scale_x_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
+    scale_x_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
     geom_vline(xintercept = person.mean, color = "#0e4e65", linetype = 2) +
     annotate("rect", ymin = 0, ymax = Inf, xmin = (person.mean - person.sd), xmax = (person.mean + person.sd), alpha = .2) +
     geom_text(hjust = 1.1, vjust = 1) +
@@ -1290,7 +1298,7 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
     ) +
     xlab("") +
     ylab("Thresholds") +
-    scale_x_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
+    scale_x_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
     scale_y_reverse() +
     geom_vline(xintercept = item.mean, color = "#e83c63", linetype = 2) +
     annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean - item.thresh.sd), xmax = (item.mean + item.thresh.sd), alpha = .2) +
@@ -1304,13 +1312,13 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
     geom_text(hjust = 1.1, vjust = 1) +
     ylab("Location (logit scale)") +
     xlab("Items") +
-    scale_y_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
+    scale_y_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
     theme_bw() +
     theme(legend.position = "none") +
     coord_flip() +
     labs(caption = paste0(
       "Person location average: ", pi.locations[3, 2], " (SD ", pi.locations[3, 3], "), Item threshold location average: ",
-      pi.locations[2, 2], " (SD ", pi.locations[2, 3], ")."
+      pi.locations[2, 2], " (SD ", pi.locations[2, 3], "). Sample size: ",nrow(dfin),"."
     )) +
     theme(plot.caption = element_text(hjust = 0, face = "italic"))
 
@@ -1382,12 +1390,13 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
       geom_text(hjust = 1.1, vjust = 1) +
       ylab('Location (logit scale)') +
       xlab('Items') +
-      scale_y_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
+      scale_y_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
       theme_bw() +
       theme(legend.position = 'none') +
       coord_flip() +
       labs(caption = paste0("Person location average: ", pi.locations[2,2], " (SD ", pi.locations[2,3],"), Item location average: ",
-                            pi.locations[1,2], " (SD ", pi.locations[1,3], ").")) +
+                            pi.locations[1,2], " (SD ", pi.locations[1,3], "). Sample size: ",nrow(dfin),"."
+                            )) +
       theme(plot.caption = element_text(hjust = 0, face = "italic"))
 
     # Person location histogram
@@ -1396,7 +1405,7 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
                      aes(locations, fill="Persons", y= after_stat(count))) +
       xlab('') +
       ylab('Persons') +
-      scale_x_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
+      scale_x_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
       geom_vline(xintercept = person.mean, color = "#0e4e65", linetype = 2) +
       annotate("rect", ymin = 0, ymax = Inf, xmin = (person.mean-person.sd), xmax = (person.mean+person.sd), alpha = .2) +
       geom_text(hjust = 1.1, vjust = 1) +
@@ -1410,7 +1419,7 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
                      aes(locations, y= after_stat(count))) +
       xlab('') +
       ylab('Items aggregated') +
-      scale_x_continuous(limits = xlim, breaks = scales::pretty_breaks(n = 10)) +
+      scale_x_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
       scale_y_reverse() +
       geom_vline(xintercept = item.mean, color = "#e83c63", linetype = 2) +
       annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean-item.sd), xmax = (item.mean+item.sd), alpha = .2) +
@@ -2436,7 +2445,6 @@ RIitemHierarchy <- function(dfin, ci = "95"){
       theme(legend.position = "none") +
       scale_x_discrete(labels = str_wrap(paste0(itemOrder, " - ", itemLabels), width = 36)) +
       coord_flip() +
-      #scale_y_continuous(limits = c(-5,6), breaks = scales::pretty_breaks(n = 10)) +
       labs(caption = str_wrap("Note. Item locations are indicated by black diamond shapes. Item threshold locations are indicated by colored dots.
                               Horizontal error bars indicate 95% confidence intervals around threshold locations.")) +
       theme(plot.caption = element_text(hjust = 0, face = "italic"))
@@ -2509,7 +2517,7 @@ RIestThetas <- function(dfin, itemParams, model = "PCM", method = "WL") {
 
   } else if (missing(itemParams) & is.null(model)) {
     df.erm <- RM(dfin)
-    itemParams <- as.matrix(coef(df.erm, "eta"))
+    itemParams <- as.matrix(coef(df.erm, "beta")*-1)
 
     # Transpose dataframe to make persons to columns, then output a vector with thetas
     dfin %>%
@@ -2572,7 +2580,7 @@ RIestThetas2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4
 
   } else if (missing(itemParams) & is.null(model)) {
     df.erm <- RM(dfin)
-    itemParams <- as.matrix(coef(df.erm, "eta"))
+    itemParams <- as.matrix(coef(df.erm, "beta")*-1)
 
     # Transpose dataframe to make persons to columns, then output a vector with thetas
     dfin %>%
@@ -2588,5 +2596,467 @@ RIestThetas2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4
       as_tibble() %>%
       future_map_dbl(., estTheta)
   }
+}
+
+
+#' DIF PCM analysis with table output for item locations
+#'
+#' NOTE: currently only works with two DIF groups
+#'
+#' Makes use of the eRm package function `LRtest()`. Outputs a table with item
+#' average locations, group differences, and standard errors.
+#'
+#' DIF variables need to be factors with the same length as the number of rows
+#' in the dataset.
+#'
+#' sample usage: RIdifTableE(df, dif.age)
+#'
+#' @param dfin Dataframe with item data only
+#' @param dif.var DIF variable
+#' @param sort Set to TRUE to sort the table based on DIF size
+#' @param cutoff Cutoff in item location logit difference for table highlighting
+#' @param fontfamily Set table font
+#' @export
+RIdifTableLR <- function(dfin, dif.var, sort = FALSE,
+                        fontfamily = "sans-serif", cutoff = 0.5) {
+  erm.out <- PCM(dfin)
+  lrt.out <- LRtest(erm.out, splitcr = dif.var)
+  groups <- str_split(lrt.out$spl.gr, pattern = " ") %>% # get dif group labels
+    as_tibble(.name_repair = "minimal") %>%
+    t() %>%
+    .[,2]
+
+  # get item location for each subgroup
+  lrt1 <- lrt.out[["betalist"]]$`1` %>%
+    as.data.frame(nm = groups[1])
+  lrt2 <- lrt.out[["betalist"]]$`2` %>%
+    as.data.frame(nm = groups[2])
+
+  # get thresholds from non-DIF-split model
+  ermEta <- erm.out[["betapar"]] %>%
+    as.data.frame(nm = "All")
+
+  # bind in one df
+  lrt.diff <- cbind(lrt1,lrt2,ermEta) %>%
+    mutate(across(everything(), ~ round(.x, 3))) %>%
+    mutate(across(everything(), ~ .x * -1)) %>%
+    rownames_to_column("Item") %>%
+    separate(Item, c(NA,"Item","Threshold")) %>%
+    mutate(Item = factor(Item, levels = names(dfin)))
+
+  # add standard errors for all three
+  lrt.se <- as.data.frame(cbind(lrt.out$selist$`1`,lrt.out$selist$`2`,erm.out$se.beta))
+  names(lrt.se) <- c(groups,"All")
+  lrt.se$Item <- lrt.diff$Item
+  lrt.se$Threshold <- lrt.diff$Threshold
+
+  # make version with average item location
+  lrt.avg <- lrt.diff %>%
+    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    t() %>%
+    as.data.frame()
+  lrt.avg <- lrt.avg[-1,]
+
+  lrt.avg <- lrt.avg %>%
+    mutate(across(everything(), ~ as.numeric(.x))) %>%
+    mutate(Location = rowMeans(., na.rm = T)) %>%
+    mutate_if(is.double, round, digits = 3) %>%
+    rownames_to_column("groupitem") %>%
+    separate(groupitem, c("DIFgroup","Item"))
+
+  ### add SE
+  # pivot_wider for easier calculation
+  lrt.avg.se <- lrt.se %>%
+    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    t() %>%
+    as.data.frame()
+
+  lrt.avg.se <- lrt.avg.se[-1,] # remove first row
+
+  lrt.avg.se <- lrt.avg.se %>%
+    mutate(across(everything(), ~ as.numeric(.x))) %>%
+    mutate(SE = rowMeans(., na.rm = T)) %>%
+    mutate_if(is.double, round, digits = 3) %>%
+    rownames_to_column("groupitem") %>%
+    separate(groupitem, c("DIFgroup","Item"))
+
+  lrt.avg$SE <- lrt.avg.se$SE
+
+  # prepare table output
+
+  lrt.table <- lrt.avg %>%
+    dplyr::select(!starts_with("V")) %>%
+    pivot_wider(names_from = "DIFgroup",
+                values_from = c("Location","SE")) %>%
+    rename(!!groups[1] := paste0("Location_",groups[1]),
+           !!groups[2] := paste0("Location_",groups[2]),
+           `Both groups` = Location_All) %>%
+    mutate(GroupDiff = get(groups[1]) - get(groups[2]),
+           .before = `Both groups`) %>%
+    mutate(GroupDiff = cell_spec(GroupDiff,
+                                 color = case_when(GroupDiff > cutoff ~ "red",
+                                                   GroupDiff < -cutoff ~ "red",
+                                                   TRUE ~ "black")
+    )
+    )
+
+  if (sort == TRUE) {
+    lrt.table %>%
+      arrange(desc(GroupDiff)) %>%
+      kbl_rise() %>%
+      column_spec(4, bold = T)
+  } else {
+
+  lrt.table %>%
+    kbl_rise() %>%
+    column_spec(4, bold = T)
+  }
+
+}
+
+#' DIF PCM analysis with table output for item thresholds
+#'
+#' NOTE: currently only works with two DIF groups
+#'
+#' Makes use of the eRm package function `LRtest()`. Outputs a table with item
+#' average locations, group differences, and standard errors.
+#'
+#' DIF variables need to be factors with the same length as the number of rows
+#' in the dataset.
+#'
+#' sample usage: RIdifTableThreshE(df, dif.age, fontfamily = "Arial")
+#'
+#' @param dfin Dataframe with item data only
+#' @param dif.var DIF variable
+#' @param cutoff Cutoff in item location logit difference for table highlighting
+#' @param fontfamily Set table font
+#' @export
+RIdifThreshTblLR <- function(dfin, dif.var,
+                              fontfamily = "sans-serif", cutoff = 0.5) {
+  erm.out <- PCM(dfin)
+  lrt.out <- LRtest(erm.out, splitcr = dif.var)
+  groups <- str_split(lrt.out$spl.gr, pattern = " ") %>% # get group labels
+    as_tibble(.name_repair = "minimal") %>%
+    t() %>%
+    .[,2]
+
+  # get item location for each subgroup
+  lrt1 <- lrt.out[["betalist"]]$`1` %>%
+    as.data.frame(nm = groups[1])
+  lrt2 <- lrt.out[["betalist"]]$`2` %>%
+    as.data.frame(nm = groups[2])
+
+  # get thresholds from non-DIF-split model
+  ermEta <- erm.out[["betapar"]] %>%
+    as.data.frame(nm = "All")
+
+  # bind in one df
+  lrt.diff <- cbind(lrt1,lrt2,ermEta) %>%
+    mutate(across(everything(), ~ round(.x, 3))) %>%
+    mutate(across(everything(), ~ .x * -1)) %>%
+    rownames_to_column("Item") %>%
+    separate(Item, c(NA,"Item","Threshold")) %>%
+    mutate(Item = factor(Item, levels = names(dfin)))
+
+  # add standard errors for all three
+  lrt.se <- as.data.frame(cbind(lrt.out$selist$`1`,lrt.out$selist$`2`,erm.out$se.beta))
+  names(lrt.se) <- c(groups,"All")
+  lrt.se$Item <- lrt.diff$Item
+  lrt.se$Threshold <- lrt.diff$Threshold
+
+  # make version with average item location
+  lrt.avg <- lrt.diff %>%
+    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    t() %>%
+    as.data.frame()
+  lrt.avg <- lrt.avg[-1,]
+
+  lrt.avg <- lrt.avg %>%
+    mutate(across(everything(), ~ as.numeric(.x))) %>%
+    mutate(Location = rowMeans(., na.rm = T)) %>%
+    mutate_if(is.double, round, digits = 3) %>%
+    rownames_to_column("groupitem") %>%
+    separate(groupitem, c("DIFgroup","Item"))
+
+  ### add SE
+  # pivot_wider for easier calculation
+  lrt.avg.se <- lrt.se %>%
+    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    t() %>%
+    as.data.frame()
+
+  lrt.avg.se <- lrt.avg.se[-1,] # remove first row
+
+  lrt.avg.se <- lrt.avg.se %>%
+    mutate(across(everything(), ~ as.numeric(.x))) %>%
+    mutate(SE = rowMeans(., na.rm = T)) %>%
+    mutate_if(is.double, round, digits = 3) %>%
+    rownames_to_column("groupitem") %>%
+    separate(groupitem, c("DIFgroup","Item"))
+
+  lrt.avg$SE <- lrt.avg.se$SE
+
+  lrt.plot <- lrt.diff %>%
+    pivot_longer(any_of(c(groups,"All")),
+                 names_to = "DIFgroup",
+                 values_to = "Location")
+  lrt.plot.se <- lrt.se %>%
+    pivot_longer(any_of(c(groups,"All")),
+                 names_to = "DIFgroup",
+                 values_to = "SE")
+  lrt.plot <- full_join(lrt.plot,lrt.plot.se, by = c("Item","Threshold","DIFgroup"))
+
+  lrt.table <- lrt.plot %>%
+    dplyr::select(!starts_with("V")) %>%
+    pivot_wider(names_from = "DIFgroup",
+                values_from = c("Location","SE")) %>%
+    rename(!!groups[1] := paste0("Location_",groups[1]),
+           !!groups[2] := paste0("Location_",groups[2]),
+           `Both groups` = Location_All) %>%
+    mutate(GroupDiff = get(groups[1]) - get(groups[2]),
+           .before = `Both groups`) %>%
+    mutate_if(is.double, round, digits = 3) %>%
+    mutate(GroupDiff = cell_spec(GroupDiff,
+                                 color = case_when(GroupDiff > cutoff ~ "red",
+                                                   GroupDiff < -cutoff ~ "red",
+                                                   TRUE ~ "black")
+    )
+    )
+
+  lrt.table %>%
+    dplyr::select(!Item) %>%
+    dplyr::rename(`Item threshold` = Threshold) %>%
+    kbl_rise() %>%
+    pack_rows(index = table(lrt.table$Item)) %>%
+    column_spec(c(1,4), bold = T)
+
+}
+
+
+#' DIF PCM analysis with panel figure output for items' average locations
+#'
+#' NOTE: currently only works with two DIF groups
+#'
+#' Makes use of the eRm package function `LRtest()`. Outputs a panel of figures
+#' with item average locations and 95% confidence intervals.
+#'
+#' DIF variables need to be factors with the same length as the number of rows
+#' in the dataset.
+#'
+#' sample usage: RIdifTableE(df, dif.age)
+#'
+#' @param dfin Dataframe with item data only
+#' @param dif.var DIF variable
+#' @export
+RIdifFigureLR <- function(dfin, dif.var) {
+  erm.out <- PCM(dfin)
+  lrt.out <- LRtest(erm.out, splitcr = dif.var)
+  groups <- str_split(lrt.out$spl.gr, pattern = " ") %>% # get dif group labels
+    as_tibble(.name_repair = "minimal") %>%
+    t() %>%
+    .[,2]
+
+  # get item location for each subgroup
+  lrt1 <- lrt.out[["betalist"]]$`1` %>%
+    as.data.frame(nm = groups[1])
+  lrt2 <- lrt.out[["betalist"]]$`2` %>%
+    as.data.frame(nm = groups[2])
+
+  # get thresholds from non-DIF-split model
+  ermEta <- erm.out[["betapar"]] %>%
+    as.data.frame(nm = "All")
+
+  # bind in one df
+  lrt.diff <- cbind(lrt1,lrt2,ermEta) %>%
+    mutate(across(everything(), ~ round(.x, 3))) %>%
+    mutate(across(everything(), ~ .x * -1)) %>%
+    rownames_to_column("Item") %>%
+    separate(Item, c(NA,"Item","Threshold")) %>%
+    mutate(Item = factor(Item, levels = names(dfin)))
+
+  # add standard errors for all three
+  lrt.se <- as.data.frame(cbind(lrt.out$selist$`1`,lrt.out$selist$`2`,erm.out$se.beta))
+  names(lrt.se) <- c(groups,"All")
+  lrt.se$Item <- lrt.diff$Item
+  lrt.se$Threshold <- lrt.diff$Threshold
+
+  # make version with average item location
+  lrt.avg <- lrt.diff %>%
+    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    t() %>%
+    as.data.frame()
+  lrt.avg <- lrt.avg[-1,]
+
+  lrt.avg <- lrt.avg %>%
+    mutate(across(everything(), ~ as.numeric(.x))) %>%
+    mutate(Location = rowMeans(., na.rm = T)) %>%
+    mutate_if(is.double, round, digits = 3) %>%
+    rownames_to_column("groupitem") %>%
+    separate(groupitem, c("DIFgroup","Item"))
+
+  ### add SE
+  # pivot_wider for easier calculation
+  lrt.avg.se <- lrt.se %>%
+    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    t() %>%
+    as.data.frame()
+
+  lrt.avg.se <- lrt.avg.se[-1,] # remove first row
+
+  lrt.avg.se <- lrt.avg.se %>%
+    mutate(across(everything(), ~ as.numeric(.x))) %>%
+    mutate(SE = rowMeans(., na.rm = T)) %>%
+    mutate_if(is.double, round, digits = 3) %>%
+    rownames_to_column("groupitem") %>%
+    separate(groupitem, c("DIFgroup","Item"))
+
+  lrt.avg$SE <- lrt.avg.se$SE
+
+  ggplot(data = subset(lrt.avg, DIFgroup %in% groups),
+         aes(
+           x = factor(DIFgroup),
+           y = Location,
+           group = Item,
+           color = Item
+         )) +
+    geom_line() +
+    geom_point() +
+    geom_errorbar(aes(y = Location, ymin = Location - 1.96*SE, ymax = Location + 1.96*SE),
+                  width = 0.1
+    ) +
+    geom_point(data = subset(lrt.avg, DIFgroup == "All"),
+               aes(x = 1.5, y = Location),
+               shape = 16,
+               color = "black") +
+    xlab("DIF node") +
+    facet_wrap(~Item) +
+    labs(title = "DIF for item location",
+         subtitle = "Item locations are calculated as the mean of each item's threshold locations",
+         caption = "Note. Error bars indicate 95% confidence interval.",
+         x = "DIF group",
+         y = "Item location") +
+    theme(legend.position = "none",
+          plot.caption = element_text(hjust = 0, face = "italic"))
+
+}
+
+#' DIF PCM analysis with panel figure output for item thresholds
+#'
+#' NOTE: currently only works with two DIF groups
+#'
+#' Makes use of the eRm package function `LRtest()`. Outputs a panel of figures
+#' with item threshold locations and 95% confidence intervals.
+#'
+#' DIF variables need to be factors with the same length as the number of rows
+#' in the dataset.
+#'
+#' sample usage: RIdifTableE(df, dif.age)
+#'
+#' @param dfin Dataframe with item data only
+#' @param dif.var DIF variable
+#' @export
+RIdifThreshFigLR <- function(dfin, dif.var) {
+  erm.out <- PCM(dfin)
+  lrt.out <- LRtest(erm.out, splitcr = dif.var)
+  groups <- str_split(lrt.out$spl.gr, pattern = " ") %>% # get dif group labels
+    as_tibble(.name_repair = "minimal") %>%
+    t() %>%
+    .[,2]
+
+  # get item location for each subgroup
+  lrt1 <- lrt.out[["betalist"]]$`1` %>%
+    as.data.frame(nm = groups[1])
+  lrt2 <- lrt.out[["betalist"]]$`2` %>%
+    as.data.frame(nm = groups[2])
+
+  # get thresholds from non-DIF-split model
+  ermEta <- erm.out[["betapar"]] %>%
+    as.data.frame(nm = "All")
+
+  # bind in one df
+  lrt.diff <- cbind(lrt1,lrt2,ermEta) %>%
+    mutate(across(everything(), ~ round(.x, 3))) %>%
+    mutate(across(everything(), ~ .x * -1)) %>%
+    rownames_to_column("Item") %>%
+    separate(Item, c(NA,"Item","Threshold")) %>%
+    mutate(Item = factor(Item, levels = names(dfin)))
+
+  # add standard errors for all three
+  lrt.se <- as.data.frame(cbind(lrt.out$selist$`1`,lrt.out$selist$`2`,erm.out$se.beta))
+  names(lrt.se) <- c(groups,"All")
+  lrt.se$Item <- lrt.diff$Item
+  lrt.se$Threshold <- lrt.diff$Threshold
+
+  # make version with average item location
+  lrt.avg <- lrt.diff %>%
+    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    t() %>%
+    as.data.frame()
+  lrt.avg <- lrt.avg[-1,]
+
+  lrt.avg <- lrt.avg %>%
+    mutate(across(everything(), ~ as.numeric(.x))) %>%
+    mutate(Location = rowMeans(., na.rm = T)) %>%
+    mutate_if(is.double, round, digits = 3) %>%
+    rownames_to_column("groupitem") %>%
+    separate(groupitem, c("DIFgroup","Item"))
+
+  ### add SE
+  # pivot_wider for easier calculation
+  lrt.avg.se <- lrt.se %>%
+    pivot_wider(names_from = "Item", values_from = all_of(c(groups,"All"))) %>%
+    t() %>%
+    as.data.frame()
+
+  lrt.avg.se <- lrt.avg.se[-1,] # remove first row
+
+  lrt.avg.se <- lrt.avg.se %>%
+    mutate(across(everything(), ~ as.numeric(.x))) %>%
+    mutate(SE = rowMeans(., na.rm = T)) %>%
+    mutate_if(is.double, round, digits = 3) %>%
+    rownames_to_column("groupitem") %>%
+    separate(groupitem, c("DIFgroup","Item"))
+
+  lrt.avg$SE <- lrt.avg.se$SE
+
+  lrt.plot <- lrt.diff %>%
+    pivot_longer(any_of(c(groups,"All")),
+                 names_to = "DIFgroup",
+                 values_to = "Location")
+  lrt.plot.se <- lrt.se %>%
+    pivot_longer(any_of(c(groups,"All")),
+                 names_to = "DIFgroup",
+                 values_to = "SE")
+  lrt.plot <- full_join(lrt.plot,lrt.plot.se, by = c("Item","Threshold","DIFgroup"))
+
+  ggplot(data = subset(lrt.plot, DIFgroup %in% groups),
+         aes(
+           x = factor(DIFgroup),
+           y = Location,
+           group = Threshold,
+           color = Threshold
+         )) +
+    geom_line() +
+    geom_point(alpha = 0.9) +
+    geom_errorbar(aes(y = Location, ymin = Location - 1.96*SE, ymax = Location + 1.96*SE),
+                  width = 0.1
+    ) +
+    geom_errorbar(data = subset(lrt.plot, DIFgroup == "All"),
+                  aes(x = 1.5, y = Location, ymin = Location - 1.96*SE, ymax = Location + 1.96*SE),
+                  width = 0.1,
+                  color = "darkgrey"
+    ) +
+    geom_point(data = subset(lrt.plot, DIFgroup == "All"),
+               aes(x = 1.5, y = Location),
+               shape = 16,
+               color = "black",
+               alpha = 0.6) +
+    xlab("DIF group") +
+    facet_wrap(~Item) +
+    labs(title = "Item threshold locations",
+         caption = "Note. Error bars indicate 95% confidence interval.") +
+    theme(legend.position = "none",
+          plot.caption = element_text(hjust = 0, face = "italic"))
+
 }
 
