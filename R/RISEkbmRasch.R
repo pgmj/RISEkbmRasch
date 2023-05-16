@@ -1177,7 +1177,11 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato") {
       kable_classic(html_font = fontfamily) %>%
       # latex_options are for PDF output
       kable_styling(latex_options = c("striped","scale_down")) %>%
-      footnote(general = paste0("Relative cut-off value (highlighted in red) is ", round(dyn.cutoff,3), ", which is ", cutoff, " above the average correlation."))
+      footnote(general = paste0("Relative cut-off value (highlighted in red) is ",
+                                round(dyn.cutoff,3),
+                                ", which is ",
+                                cutoff,
+                                " above the average correlation."))
   }
 
 }
@@ -2601,8 +2605,6 @@ RIestThetas2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4
 
 #' DIF PCM analysis with table output for item locations
 #'
-#' NOTE: currently only works with two DIF groups
-#'
 #' Makes use of the eRm package function `LRtest()`. Outputs a table with item
 #' average locations, group differences, and standard errors.
 #'
@@ -2618,33 +2620,45 @@ RIestThetas2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4
 #' @param fontfamily Set table font
 #' @export
 RIdifTableLR <- function(dfin, dif.var, sort = FALSE,
-                        fontfamily = "sans-serif", cutoff = 0.5) {
+                         fontfamily = "sans-serif", cutoff = 0.5) {
   erm.out <- PCM(dfin)
-  lrt.out <- LRtest(erm.out, splitcr = dif.var)
-  groups <- levels(dif.var)
+  lrt.out <- LRtest(erm.out, splitcr = droplevels(dif.var))
+  groups <- levels(droplevels(dif.var)) # remove unused factor levels
+  nr.groups <- length(groups) # get number of subgroups
 
   # get item location for each subgroup
-  lrt1 <- lrt.out[["betalist"]]$`1` %>%
-    as.data.frame(nm = groups[1])
-  lrt2 <- lrt.out[["betalist"]]$`2` %>%
-    as.data.frame(nm = groups[2])
+  itemthresh <- lrt.out[["betalist"]][[1]] %>%
+    as.data.frame() %>%
+    rownames()
+  lrt.locs <- data.frame(matrix(ncol = 1, nrow = length(lrt.out[["betalist"]][[1]])))
+  for (i in 1:nr.groups){
+    lrt.locs[[i]] <- lrt.out[["betalist"]][[i]] %>%
+      as.data.frame(nm = groups[i]) %>%
+      pull(groups[i])
+  }
+  lrt.locs <- setNames(lrt.locs, groups)
+  lrt.locs$Item <- itemthresh
 
   # get thresholds from non-DIF-split model
-  ermEta <- erm.out[["betapar"]] %>%
-    as.data.frame(nm = "All")
+  lrt.locs$All <- erm.out[["betapar"]] %>%
+    as.data.frame(nm = "All") %>%
+    pull(All)
 
   # bind in one df
-  lrt.diff <- cbind(lrt1,lrt2,ermEta) %>%
-    mutate(across(everything(), ~ round(.x, 3))) %>%
-    mutate(across(everything(), ~ .x * -1)) %>%
-    rownames_to_column("Item") %>%
+  lrt.diff <- lrt.locs %>%
+    mutate_if(is.numeric, ~ .x * -1) %>%
+    mutate_if(is.numeric, ~ round(.x, 3)) %>%
     separate(Item, c(NA,"Item"), sep = " ") %>%
     separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
-  # add standard errors for all three
-  lrt.se <- as.data.frame(cbind(lrt.out$selist$`1`,lrt.out$selist$`2`,erm.out$se.beta))
-  names(lrt.se) <- c(groups,"All")
+  # add standard errors for all subgroups + whole group
+  lrt.se <- data.frame(matrix(ncol = 1, nrow = length(lrt.out$selist[[1]])))
+  for (i in 1:nr.groups){
+    lrt.se[[i]] <- lrt.out$selist[[i]]
+  }
+  lrt.se$All <- erm.out$se.beta
+  lrt.se <- setNames(lrt.se, c(groups,"All"))
   lrt.se$Item <- lrt.diff$Item
   lrt.se$Threshold <- lrt.diff$Threshold
 
@@ -2690,41 +2704,61 @@ RIdifTableLR <- function(dfin, dif.var, sort = FALSE,
       names_from = "DIFgroup",
       values_from = c("Location", "SE")
     ) %>%
-    dplyr::rename(
-      !!groups[1] := 2,
-      !!groups[2] := 3,
-      `Both groups` = Location_All
-    ) %>%
-    mutate(
-      GroupDiff = get(groups[1]) - get(groups[2]),
-      .before = `Both groups`
-    ) %>%
+    dplyr::rename_with(.fn = ~ gsub("Location_","", .x),
+                       .cols = contains("Location")) %>%
+    rowwise() %>%
+    mutate(MaxDiff = max(c_across(c(2:(nr.groups+1)))) - min(c_across(c(2:(nr.groups+1)))),
+           .before = "All") %>%
+    ungroup() %>%
     mutate_if(is.double, round, digits = 3) %>%
-    mutate(GroupDiff = cell_spec(GroupDiff,
-                                 color = case_when(
-                                   GroupDiff > cutoff ~ "red",
-                                   GroupDiff < -cutoff ~ "red",
-                                   TRUE ~ "black"
-                                 )
-    ))
+    mutate(MaxDiff = cell_spec(MaxDiff,
+                               color = case_when(
+                                 MaxDiff > cutoff ~ "red",
+                                 MaxDiff < -cutoff ~ "red",
+                                 TRUE ~ "black"
+                               )
+    )) %>%
+    rowwise() %>%
+    mutate(across(all_of(groups), ~ cell_spec(.x,
+                                              background = case_when(
+                                                .x == max(c_across(c(2:(nr.groups+1)))) ~ "lightblue",
+                                                .x == min(c_across(c(2:(nr.groups+1)))) ~ "burlywood",
+                                                TRUE ~ ""
+                                              ))))
 
   if (sort == TRUE) {
     lrt.table %>%
-      arrange(desc(GroupDiff)) %>%
+      arrange(desc(MaxDiff)) %>%
       kbl_rise() %>%
-      column_spec(4, bold = T)
+      column_spec(length(groups)+2,
+                  bold = T) %>%
+      column_spec(c(length(groups)+3,ncol(lrt.table)),
+                  italic = T) %>%
+      add_header_above(c(" " = 1, "Item locations" = nr.groups+2, "Standard errors" = nr.groups+1),
+                       bold = T,
+                       line_sep = 5) %>%
+      footnote(general = paste0("Values highlighted in red are above the chosen cutoff ",
+                                cutoff,
+                                " logits. Background color brown and blue indicate the lowest and highest values among the DIF groups."))
   } else {
 
-  lrt.table %>%
-    kbl_rise() %>%
-    column_spec(4, bold = T)
+    lrt.table %>%
+      kbl_rise() %>%
+      column_spec(length(groups)+2,
+                  bold = T) %>%
+      column_spec(c(length(groups)+3,ncol(lrt.table)),
+                  italic = T) %>%
+      add_header_above(c(" " = 1, "Item locations" = nr.groups+2, "Standard errors" = nr.groups+1),
+                       bold = T,
+                       line_sep = 5) %>%
+      footnote(general = paste0("Values highlighted in red are above the chosen cutoff ",
+                                cutoff,
+                                " logits. Background color brown and blue indicate the lowest and highest values among the DIF groups."))
   }
 
 }
 
 #' DIF PCM analysis with table output for item thresholds
-#'
-#' NOTE: currently only works with two DIF groups
 #'
 #' Makes use of the eRm package function `LRtest()`. Outputs a table with item
 #' average locations, group differences, and standard errors.
@@ -2743,32 +2777,42 @@ RIdifThreshTblLR <- function(dfin, dif.var,
                               fontfamily = "sans-serif", cutoff = 0.5) {
   erm.out <- PCM(dfin)
   lrt.out <- LRtest(erm.out, splitcr = dif.var)
-  groups <- levels(dif.var)
+  groups <- levels(droplevels(dif.var)) # remove unused factor levels
+  nr.groups <- length(groups) # get number of subgroups
 
   # get item location for each subgroup
-  lrt1 <- lrt.out[["betalist"]]$`1` %>%
-    as.data.frame(nm = groups[1])
-  lrt2 <- lrt.out[["betalist"]]$`2` %>%
-    as.data.frame(nm = groups[2])
+  itemthresh <- lrt.out[["betalist"]][[1]] %>%
+    as.data.frame() %>%
+    rownames()
+  lrt.locs <- data.frame(matrix(ncol = 1, nrow = length(lrt.out[["betalist"]][[1]])))
+  for (i in 1:nr.groups){
+    lrt.locs[[i]] <- lrt.out[["betalist"]][[i]] %>%
+      as.data.frame(nm = groups[i]) %>%
+      pull(groups[i])
+  }
+  lrt.locs <- setNames(lrt.locs, groups)
+  lrt.locs$Item <- itemthresh
 
   # get thresholds from non-DIF-split model
-  ermEta <- erm.out[["betapar"]] %>%
-    as.data.frame(nm = "All")
+  lrt.locs$All <- erm.out[["betapar"]] %>%
+    as.data.frame(nm = "All") %>%
+    pull(All)
 
   # bind in one df
-  lrt.diff <- cbind(lrt1,lrt2,ermEta) %>%
-    mutate(across(everything(), ~ round(.x, 3))) %>%
-    mutate(across(everything(), ~ .x * -1)) %>%
-    rownames_to_column("Item") %>%
+  lrt.diff <- lrt.locs %>%
+    mutate_if(is.numeric, ~ .x * -1) %>%
+    mutate_if(is.numeric, ~ round(.x, 3)) %>%
     separate(Item, c(NA,"Item"), sep = " ") %>%
     separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
-  # add standard errors for all three
-  lrt.se <- as.data.frame(cbind(lrt.out$selist$`1`,
-                                lrt.out$selist$`2`,
-                                erm.out$se.beta))
-  names(lrt.se) <- c(groups,"All")
+  # add standard errors for all subgroups + whole group
+  lrt.se <- data.frame(matrix(ncol = 1, nrow = length(lrt.out$selist[[1]])))
+  for (i in 1:nr.groups){
+    lrt.se[[i]] <- lrt.out$selist[[i]]
+  }
+  lrt.se$All <- erm.out$se.beta
+  lrt.se <- setNames(lrt.se, c(groups,"All"))
   lrt.se$Item <- lrt.diff$Item
   lrt.se$Threshold <- lrt.diff$Threshold
 
@@ -2821,37 +2865,49 @@ RIdifThreshTblLR <- function(dfin, dif.var,
     dplyr::select(!starts_with("V")) %>%
     pivot_wider(names_from = "DIFgroup",
                 values_from = c("Location","SE")) %>%
-    dplyr::rename(
-      !!groups[1] := 3,
-      !!groups[2] := 4,
-      `Both groups` = Location_All
-    ) %>%
-    mutate(
-      GroupDiff = get(groups[1]) - get(groups[2]),
-      .before = `Both groups`
-    ) %>%
+    dplyr::rename_with(.fn = ~ gsub("Location_","", .x),
+                       .cols = contains("Location")) %>%
+    rowwise() %>%
+    mutate(MaxDiff = max(c_across(c(3:(nr.groups+2)))) - min(c_across(c(3:(nr.groups+2)))),
+           .before = "All") %>%
+    ungroup() %>%
     mutate_if(is.double, round, digits = 3) %>%
-    mutate(GroupDiff = cell_spec(GroupDiff,
-                                 color = case_when(
-                                   GroupDiff > cutoff ~ "red",
-                                   GroupDiff < -cutoff ~ "red",
-                                   TRUE ~ "black"
-                                 )
-    ))
+    mutate(MaxDiff = cell_spec(MaxDiff,
+                               color = case_when(
+                                 MaxDiff > cutoff ~ "red",
+                                 MaxDiff < -cutoff ~ "red",
+                                 TRUE ~ "black"
+                               )
+    )) %>%
+    rowwise() %>%
+    mutate(across(all_of(groups), ~ cell_spec(.x,
+                                              background = case_when(
+                                                .x == max(c_across(c(3:(nr.groups+2)))) ~ "lightblue",
+                                                .x == min(c_across(c(3:(nr.groups+2)))) ~ "burlywood",
+                                                TRUE ~ ""
+                                              ))))
 
   lrt.table %>%
     dplyr::select(!Item) %>%
     dplyr::rename(`Item threshold` = Threshold) %>%
     kbl_rise() %>%
     pack_rows(index = table(lrt.table$Item)) %>%
-    column_spec(c(1,4), bold = T)
+    column_spec(column = c(1,nr.groups+2),
+                 bold = T) %>%
+    column_spec(column = c(nr.groups+3,(ncol(lrt.table)-1)),
+               italic = T) %>%
+    add_header_above(c(" " = 1, "Treshold locations" = nr.groups+2, "Standard errors" = nr.groups+1),
+                     bold = T,
+                     line_sep = 5) %>%
+    footnote(general = paste0("Values highlighted in red are above the chosen cutoff ",
+                              cutoff,
+                              " logits. Background color brown and blue indicate the lowest and highest values among the DIF groups.")
+             )
 
 }
 
 
 #' DIF PCM analysis with panel figure output for items' average locations
-#'
-#' NOTE: currently only works with two DIF groups
 #'
 #' Makes use of the eRm package function `LRtest()`. Outputs a panel of figures
 #' with item average locations and 95% confidence intervals.
@@ -2866,35 +2922,43 @@ RIdifThreshTblLR <- function(dfin, dif.var,
 #' @export
 RIdifFigureLR <- function(dfin, dif.var) {
   erm.out <- PCM(dfin)
-  lrt.out <- LRtest(erm.out, splitcr = dif.var)
-  groups <- levels(dif.var)
+  lrt.out <- LRtest(erm.out, splitcr = droplevels(dif.var))
+  groups <- levels(droplevels(dif.var))
+  nr.groups <- length(groups)
 
   # get item location for each subgroup
-  lrt1 <- lrt.out[["betalist"]]$`1` %>%
-    as.data.frame(nm = groups[1])
-  lrt2 <- lrt.out[["betalist"]]$`2` %>%
-    as.data.frame(nm = groups[2])
+  itemthresh <- lrt.out[["betalist"]][[1]] %>%
+    as.data.frame() %>%
+    rownames()
+  lrt.locs <- data.frame(matrix(ncol = 1, nrow = length(lrt.out[["betalist"]][[1]])))
+  for (i in 1:nr.groups){
+    lrt.locs[[i]] <- lrt.out[["betalist"]][[i]] %>%
+      as.data.frame(nm = groups[i]) %>%
+      pull(groups[i])
+  }
+  lrt.locs <- setNames(lrt.locs, groups)
+  lrt.locs$Item <- itemthresh
 
   # get thresholds from non-DIF-split model
-  ermEta <- erm.out[["betapar"]] %>%
-    as.data.frame(nm = "All")
+  lrt.locs$All <- erm.out[["betapar"]] %>%
+    as.data.frame(nm = "All") %>%
+    pull(All)
 
   # bind in one df
-  lrt.diff <- cbind(lrt1,
-                    lrt2,
-                    ermEta) %>%
-    mutate(across(everything(), ~ round(.x, 3))) %>%
-    mutate(across(everything(), ~ .x * -1)) %>%
-    rownames_to_column("Item") %>%
+  lrt.diff <- lrt.locs %>%
+    mutate_if(is.numeric, ~ .x * -1) %>%
+    mutate_if(is.numeric, ~ round(.x, 3)) %>%
     separate(Item, c(NA,"Item"), sep = " ") %>%
     separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
-  # add standard errors for all three
-  lrt.se <- as.data.frame(cbind(lrt.out$selist$`1`,
-                                lrt.out$selist$`2`,
-                                erm.out$se.beta))
-  names(lrt.se) <- c(groups,"All")
+  # add standard errors for all subgroups + whole group
+  lrt.se <- data.frame(matrix(ncol = 1, nrow = length(lrt.out$selist[[1]])))
+  for (i in 1:nr.groups){
+    lrt.se[[i]] <- lrt.out$selist[[i]]
+  }
+  lrt.se$All <- erm.out$se.beta
+  lrt.se <- setNames(lrt.se, c(groups,"All"))
   lrt.se$Item <- lrt.diff$Item
   lrt.se$Threshold <- lrt.diff$Threshold
 
@@ -2922,7 +2986,6 @@ RIdifFigureLR <- function(dfin, dif.var) {
                 names_sep = ".") %>%
     t() %>%
     as.data.frame()
-
   lrt.avg.se <- lrt.avg.se[-1,] # remove first row
 
   lrt.avg.se <- lrt.avg.se %>%
@@ -2936,7 +2999,7 @@ RIdifFigureLR <- function(dfin, dif.var) {
 
   ggplot(data = subset(lrt.avg, DIFgroup %in% groups),
          aes(
-           x = factor(DIFgroup),
+           x = factor(DIFgroup, levels = groups),
            y = Location,
            group = Item,
            color = Item
@@ -2947,14 +3010,16 @@ RIdifFigureLR <- function(dfin, dif.var) {
                   width = 0.1
     ) +
     geom_point(data = subset(lrt.avg, DIFgroup == "All"),
-               aes(x = 1.5, y = Location),
-               shape = 16,
-               color = "black") +
+               aes(x = (nr.groups+1)/2+0.15, y = Location),
+               shape = 18,
+               color = "black",
+               size = 3,
+               alpha = 0.6) +
     xlab("DIF node") +
     facet_wrap(~Item) +
     labs(title = "DIF for item location",
          subtitle = "Item locations are calculated as the mean of each item's threshold locations",
-         caption = "Note. Error bars indicate 95% confidence interval.",
+         caption = "Note. Error bars indicate 95% confidence interval.\nDark grey diamonds indicate item location for all participants as one group.",
          x = "DIF group",
          y = "Item location") +
     theme(legend.position = "none",
@@ -2963,8 +3028,6 @@ RIdifFigureLR <- function(dfin, dif.var) {
 }
 
 #' DIF PCM analysis with panel figure output for item thresholds
-#'
-#' NOTE: currently only works with two DIF groups
 #'
 #' Makes use of the eRm package function `LRtest()`. Outputs a panel of figures
 #' with item threshold locations and 95% confidence intervals.
@@ -2979,35 +3042,43 @@ RIdifFigureLR <- function(dfin, dif.var) {
 #' @export
 RIdifThreshFigLR <- function(dfin, dif.var) {
   erm.out <- PCM(dfin)
-  lrt.out <- LRtest(erm.out, splitcr = dif.var)
-  groups <- levels(dif.var)
+  lrt.out <- LRtest(erm.out, splitcr = droplevels(dif.var))
+  groups <- levels(droplevels(dif.var))
+  nr.groups <- length(groups)
 
   # get item location for each subgroup
-  lrt1 <- lrt.out[["betalist"]]$`1` %>%
-    as.data.frame(nm = groups[1])
-  lrt2 <- lrt.out[["betalist"]]$`2` %>%
-    as.data.frame(nm = groups[2])
+  itemthresh <- lrt.out[["betalist"]][[1]] %>%
+    as.data.frame() %>%
+    rownames()
+  lrt.locs <- data.frame(matrix(ncol = 1, nrow = length(lrt.out[["betalist"]][[1]])))
+  for (i in 1:nr.groups){
+    lrt.locs[[i]] <- lrt.out[["betalist"]][[i]] %>%
+      as.data.frame(nm = groups[i]) %>%
+      pull(groups[i])
+  }
+  lrt.locs <- setNames(lrt.locs, groups)
+  lrt.locs$Item <- itemthresh
 
   # get thresholds from non-DIF-split model
-  ermEta <- erm.out[["betapar"]] %>%
-    as.data.frame(nm = "All")
+  lrt.locs$All <- erm.out[["betapar"]] %>%
+    as.data.frame(nm = "All") %>%
+    pull(All)
 
   # bind in one df
-  lrt.diff <- cbind(lrt1,
-                    lrt2,
-                    ermEta) %>%
-    mutate(across(everything(), ~ round(.x, 3))) %>%
-    mutate(across(everything(), ~ .x * -1)) %>%
-    rownames_to_column("Item") %>%
+  lrt.diff <- lrt.locs %>%
+    mutate_if(is.numeric, ~ .x * -1) %>%
+    mutate_if(is.numeric, ~ round(.x, 3)) %>%
     separate(Item, c(NA,"Item"), sep = " ") %>%
     separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
-  # add standard errors for all three
-  lrt.se <- as.data.frame(cbind(lrt.out$selist$`1`,
-                                lrt.out$selist$`2`,
-                                erm.out$se.beta))
-  names(lrt.se) <- c(groups,"All")
+  # add standard errors for all subgroups + whole group
+  lrt.se <- data.frame(matrix(ncol = 1, nrow = length(lrt.out$selist[[1]])))
+  for (i in 1:nr.groups){
+    lrt.se[[i]] <- lrt.out$selist[[i]]
+  }
+  lrt.se$All <- erm.out$se.beta
+  lrt.se <- setNames(lrt.se, c(groups,"All"))
   lrt.se$Item <- lrt.diff$Item
   lrt.se$Threshold <- lrt.diff$Threshold
 
@@ -3058,7 +3129,7 @@ RIdifThreshFigLR <- function(dfin, dif.var) {
 
   ggplot(data = subset(lrt.plot, DIFgroup %in% groups),
          aes(
-           x = factor(DIFgroup),
+           x = factor(DIFgroup, levels = groups),
            y = Location,
            group = Threshold,
            color = Threshold
@@ -3069,19 +3140,26 @@ RIdifThreshFigLR <- function(dfin, dif.var) {
                   width = 0.1
     ) +
     geom_errorbar(data = subset(lrt.plot, DIFgroup == "All"),
-                  aes(x = 1.5, y = Location, ymin = Location - 1.96*SE, ymax = Location + 1.96*SE),
+                  aes(x = (nr.groups+1)/2+0.15,
+                      y = Location,
+                      ymin = Location - 1.96*SE,
+                      ymax = Location + 1.96*SE),
                   width = 0.1,
                   color = "darkgrey"
     ) +
     geom_point(data = subset(lrt.plot, DIFgroup == "All"),
-               aes(x = 1.5, y = Location),
-               shape = 16,
+               aes(x = (nr.groups+1)/2+0.15,
+                   y = Location
+                   ),
+               shape = 18,
                color = "black",
-               alpha = 0.6) +
+               size = 3,
+               alpha = 0.6
+               ) +
     xlab("DIF group") +
     facet_wrap(~Item) +
     labs(title = "Item threshold locations",
-         caption = "Note. Error bars indicate 95% confidence interval.") +
+         caption = "Note. Error bars indicate 95% confidence interval.\nDark grey diamonds indicate item location for all participants as one group.") +
     theme(legend.position = "none",
           plot.caption = element_text(hjust = 0, face = "italic"))
 
