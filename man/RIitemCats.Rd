@@ -4,7 +4,7 @@
 \alias{RIitemCats}
 \title{Individual ICC plots.}
 \usage{
-RIitemCats(dfin, items = "all", xlims = c(-6, 6))
+RIitemCats(dfin, items = "all", xlims = c(-6, 6), legend = FALSE)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}

@@ -6,10 +6,11 @@
 \usage{
 kbl_rise(
   data,
-  width = 75,
+  width = 65,
   fontsize = 14,
   fontfamily = "Lato",
-  options = c("striped", "hover")
+  options = c("striped", "hover"),
+  ...
 )
 }
 \arguments{
@@ -20,6 +21,8 @@ kbl_rise(
 \item{fontsize}{Font size}
 
 \item{fontfamily}{Font family}
+
+\item{...}{Passes options to kbl()}
 }
 \description{
 A kableExtra function to simplify table code

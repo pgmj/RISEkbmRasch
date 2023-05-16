@@ -9,7 +9,8 @@ theme_rise(
   axissize = 13,
   titlesize = 15,
   margins = 12,
-  axisface = "plain"
+  axisface = "plain",
+  ...
 )
 }
 \arguments{
