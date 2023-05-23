@@ -104,8 +104,8 @@ RImissing <- function(data, itemStart, ...) {
       mutate(Item = factor(Item, levels = rev(Item))) %>%
       ggplot(aes(x = Item, y = Percentage)) +
       geom_col(fill = "#009ca6") +
-      geom_text(aes(label = round(Percentage, 1)),
-                hjust = 2.5, vjust = 0.5,
+      geom_text(aes(label = glue("{round(Percentage,1)}%")),
+                hjust = 1.5, vjust = 0.5,
                 color = "white"
       ) +
       coord_flip() +
@@ -129,8 +129,8 @@ RImissing <- function(data, itemStart, ...) {
     mutate(Item = factor(Item, levels = rev(Item))) %>%
     ggplot(aes(x = Item, y = Percentage)) +
     geom_col(fill = "#009ca6") +
-    geom_text(aes(label = round(Percentage, 1)),
-      hjust = 2.5, vjust = 0.5,
+    geom_text(aes(label = glue("{round(Percentage,1)}%")),
+      hjust = 1.5, vjust = 0.5,
       color = "white"
     ) +
     coord_flip() +
@@ -179,10 +179,11 @@ RImissingP <- function(data, itemStart, output, n = 10, ...) {
       ggplot(aes(x = Participant, y = Missing)) +
       geom_col(fill = "#009ca6") +
       geom_text(aes(label = glue("{round(Missing*100/ncol(data),1)}%")),
-                hjust = 1.5, vjust = 0.5,
+                hjust = 1.1, vjust = 0.5,
                 color = "white"
       ) +
       scale_y_continuous(breaks = scales::breaks_extended()) +
+      scale_x_discrete(labels = ~ str_wrap(.x, 30)) +
       coord_flip() +
       ggtitle("Missing data per participant") +
       xlab("Participant rownumber") +
@@ -211,15 +212,17 @@ RImissingP <- function(data, itemStart, output, n = 10, ...) {
       na.omit() %>%
       filter(Missing > 0) %>%
       arrange(desc(Missing)) %>%
+      head(n) %>%
       mutate(Participant = as.factor(Participant)) %>%
       mutate(Participant = fct_relevel(Participant, rev(order))) %>%
       ggplot(aes(x = Participant, y = Missing)) +
       geom_col(fill = "#009ca6") +
       geom_text(aes(label = glue("{round(Missing*100/ncol(data),1)}%")),
-                hjust = 1.5, vjust = 0.5,
+                hjust = 1.1, vjust = 0.5,
                 color = "white"
       ) +
       scale_y_continuous(breaks = scales::breaks_extended()) +
+      scale_x_discrete(labels = ~ str_wrap(.x, 30)) +
       coord_flip() +
       ggtitle("Missing data per participant") +
       xlab("Participant rownumber") +
