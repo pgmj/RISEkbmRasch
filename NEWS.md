@@ -1,5 +1,10 @@
 ## Changelog
 
+### Note on DIF
+
+- The previously found bug in the `psychotools` package when mixing dichotomous and polytomous items has been [fixed in version 0.7-3](https://cran.rstudio.com/web/packages/psychotools/NEWS), so make sure to upgrade that package. This means that the "old" DIF-functions should be used primarily.
+- The LR-based DIF-functions (described below) seem to produce inflated DIF sizes and should probably only be used with careful interpretation by those who fully understand the eRm package's `LRtest()` output.
+
 ### 0.1.16
 
 - `RImissingP()` now has option `n = 10` as a default, to limit/choose how many participants to display.
