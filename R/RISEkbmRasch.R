@@ -27,7 +27,8 @@
 #' @return Add + theme_rise() to your ggplot or RIfunction that outputs a ggplot
 #' @export
 theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15,
-                       margins = 12, axisface = "plain", ...) {
+                       margins = 12, axisface = "plain", panelDist = 0.6, ...) {
+  theme_minimal() +
   theme(
     text = element_text(family = fontfamily),
     axis.title.x = element_text(
@@ -46,14 +47,16 @@ theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15,
       face = axisface
     ),
     plot.caption = element_text(
+      hjust = 0,
       face = "italic"
     ),
     legend.text = element_text(family = fontfamily),
+    legend.background = element_rect(color = "lightgrey"),
+    strip.background = element_rect(color = "lightgrey"),
+    panel.spacing = unit(panelDist, "cm", data = NULL),
+    panel.border = element_rect(color = "grey", fill = NA),
     ...
   )
-    # add manually for geom_text() and geom_text_repel() to match font family:
-    #update_geom_defaults("text", list(family = fontfamily))
-    #update_geom_defaults("text_repel", list(family = fontfamily))
 }
 
 #' A kableExtra function to simplify table code
@@ -176,21 +179,27 @@ RImissingP <- function(data, itemStart, output, n = 10, ...) {
       head(n) %>%
       mutate(Participant = as.factor(Participant)) %>%
       mutate(Participant = fct_relevel(Participant, rev(order))) %>%
-      ggplot(aes(x = Participant, y = Missing)) +
-      geom_col(fill = "#009ca6") +
-      geom_text(aes(label = glue("{round(Missing*100/ncol(data),1)}%")),
-                hjust = 1.1, vjust = 0.5,
-                color = "white"
-      ) +
-      scale_y_continuous(breaks = scales::breaks_extended()) +
-      scale_x_discrete(labels = ~ str_wrap(.x, 30)) +
-      coord_flip() +
-      ggtitle("Missing data per participant") +
-      xlab("Participant rownumber") +
-      ylab("Number of responses missing") +
-      labs(caption = glue("Total number of items is {ncol(data)}.")) +
-      theme_minimal() +
-      theme_rise(...)
+      {
+
+        ggplot(.,aes(x = Participant, y = Missing)) +
+          geom_col(fill = "#009ca6") +
+          geom_text(aes(label = glue("{round(Missing*100/ncol(data),1)}%")),
+                    hjust = 1.1, vjust = 0.5,
+                    color = "white"
+          ) +
+          scale_y_continuous(breaks = seq(from = 0,
+                                          to = max(.$Missing),
+                                          by = 1),
+                             labels = scales::number_format(accuracy = 1),
+                             minor_breaks = NULL) +
+          coord_flip() +
+          ggtitle("Missing data per participant") +
+          xlab("Participant rownumber") +
+          ylab("Number of responses missing") +
+          labs(caption = glue("Note. Total number of items is {ncol(data)}.")) +
+          theme_minimal() +
+          theme_rise(...)
+      }
 
   } else {
 
@@ -215,21 +224,27 @@ RImissingP <- function(data, itemStart, output, n = 10, ...) {
       head(n) %>%
       mutate(Participant = as.factor(Participant)) %>%
       mutate(Participant = fct_relevel(Participant, rev(order))) %>%
-      ggplot(aes(x = Participant, y = Missing)) +
-      geom_col(fill = "#009ca6") +
-      geom_text(aes(label = glue("{round(Missing*100/ncol(data),1)}%")),
-                hjust = 1.1, vjust = 0.5,
-                color = "white"
-      ) +
-      scale_y_continuous(breaks = scales::breaks_extended()) +
-      scale_x_discrete(labels = ~ str_wrap(.x, 30)) +
-      coord_flip() +
-      ggtitle("Missing data per participant") +
-      xlab("Participant rownumber") +
-      ylab("Number of responses missing") +
-      labs(caption = glue("Total number of items is {ncol(data)}.")) +
-      theme_minimal() +
-      theme_rise(...)
+      {
+
+        ggplot(.,aes(x = Participant, y = Missing)) +
+          geom_col(fill = "#009ca6") +
+          geom_text(aes(label = glue("{round(Missing*100/ncol(data),1)}%")),
+                    hjust = 1.1, vjust = 0.5,
+                    color = "white"
+          ) +
+          scale_y_continuous(breaks = seq(from = 0,
+                                          to = max(.$Missing),
+                                          by = 1),
+                             labels = scales::number_format(accuracy = 1),
+                             minor_breaks = NULL) +
+          coord_flip() +
+          ggtitle("Missing data per participant") +
+          xlab("Participant rownumber") +
+          ylab("Number of responses missing") +
+          labs(caption = glue("Note. Total number of items is {ncol(data)}.")) +
+          theme_minimal() +
+          theme_rise(...)
+      }
   }
 }
 
@@ -237,8 +252,8 @@ RImissingP <- function(data, itemStart, output, n = 10, ...) {
 #' Show items based on itemlabels file
 #'
 #' Requires a dataframe with two columns, labeled "itemnr" and "item",
-#' containing information on the item numbers (qN) and item content.
-#' This dataframe has to be labeled "itemlabels".
+#' containing information on the item numbers/labels and item content/description.
+#' This dataframe has to be labeled `itemlabels`.
 #'
 #' Default behavior is to only list items that are in the dataframe.
 #' Any items eliminated during analysis process will not be included.
@@ -2422,39 +2437,43 @@ RIitemHierarchy <- function(dfin, ci = "95"){
   if(ci == "none"){
     itemLocs %>%
       mutate(Item = factor(itemnr, levels = itemOrder)) %>%
-      ggplot(aes(x = Item)) +
-      geom_point(aes(y = Locations, color = itemnr)) +
-      geom_text(aes(y = Locations, label = Threshold, color = itemnr), hjust = 1, vjust = 1.3) +
+      ggplot(aes(x = Item, color = Threshold)) +
+      geom_point(aes(y = Locations)) +
+      geom_text(aes(y = Locations, label = Threshold), hjust = 1, vjust = 1.3) +
       geom_point(aes(y = Location),
                  size = 4,
-                 shape = 18) +
+                 shape = 18,
+                 color = "black") +
       theme(legend.position = "none") +
       scale_x_discrete(labels = str_wrap(paste0(itemOrder, " - ", itemLabels), width = 36)) +
       coord_flip() +
       labs(caption = str_wrap("Note. Item locations are indicated by black diamond shapes. Item threshold locations are indicated by colored dots.")) +
-      theme(plot.caption = element_text(hjust = 0, face = "italic"))
+      theme(plot.caption = element_text(hjust = 0, face = "italic")) +
+      scale_color_brewer(palette = "Dark2")
 
   }
   else {
     itemLocs %>%
       mutate(Item = factor(itemnr, levels = itemOrder)) %>%
-      ggplot(aes(x = Item)) +
-      geom_point(aes(y = Locations, color = itemnr)) +
-      geom_errorbar(aes(ymin = Locations - 1.96*ThreshSEM, ymax = Locations + 1.96*ThreshSEM, color = itemnr),
-                    width = 0.05
-                    ) +
-      geom_text(aes(y = Locations, label = Threshold, color = itemnr), hjust = 1, vjust = 1.3) +
+      ggplot(aes(x = Item, color = Threshold)) +
+      geom_point(aes(y = Locations),
+                 position = position_nudge()) +
+      geom_errorbar(aes(ymin = Locations - 1.96*ThreshSEM, ymax = Locations + 1.96*ThreshSEM),
+                    width = 0.1
+      ) +
+      geom_text(aes(y = Locations, label = Threshold), hjust = 1, vjust = 1.3) +
       geom_point(aes(y = Location),
                  size = 4,
                  shape = 18,
                  color = "black"
-                 ) +
+      ) +
       theme(legend.position = "none") +
       scale_x_discrete(labels = str_wrap(paste0(itemOrder, " - ", itemLabels), width = 36)) +
       coord_flip() +
       labs(caption = str_wrap("Note. Item locations are indicated by black diamond shapes. Item threshold locations are indicated by colored dots.
                               Horizontal error bars indicate 95% confidence intervals around threshold locations.")) +
-      theme(plot.caption = element_text(hjust = 0, face = "italic"))
+      theme(plot.caption = element_text(hjust = 0, face = "italic")) +
+      scale_color_brewer(palette = "Dark2")
   }
 }
 
