@@ -10,6 +10,7 @@ theme_rise(
   titlesize = 15,
   margins = 12,
   axisface = "plain",
+  panelDist = 0.6,
   ...
 )
 }

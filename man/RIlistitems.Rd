@@ -16,8 +16,8 @@ A table with items used in dataframe
 }
 \description{
 Requires a dataframe with two columns, labeled "itemnr" and "item",
-containing information on the item numbers (qN) and item content.
-This dataframe has to be labeled "itemlabels".
+containing information on the item numbers/labels and item content/description.
+This dataframe has to be labeled \code{itemlabels}.
 }
 \details{
 Default behavior is to only list items that are in the dataframe.
