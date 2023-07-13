@@ -26,7 +26,7 @@
 #' @param axisface Set to "bold" if you want bold axis labels
 #' @return Add + theme_rise() to your ggplot or RIfunction that outputs a ggplot
 #' @export
-theme_rise <- function(fontfamily = "Arial", axissize = 13, titlesize = 15,
+theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15,
                        margins = 12, axisface = "plain", panelDist = 0.6, ...) {
   theme_minimal() +
   theme(
@@ -91,9 +91,8 @@ kbl_rise <- function(data, width = 65, fontsize = 14, fontfamily = "Arial",
 #'
 #' @param data Dataframe/tibble to create table from
 #' @param itemStart What your variable names start with, in quotes
-#' @param ... Options for `theme_rise()`
 #' @export
-RImissing <- function(data, itemStart, ...) {
+RImissing <- function(data, itemStart) {
 
   if (missing(itemStart)) {
     data %>%
@@ -115,8 +114,7 @@ RImissing <- function(data, itemStart, ...) {
       ggtitle("Missing data per item") +
       xlab("Items") +
       ylab("Percentage of responses missing") +
-      theme_minimal() +
-      theme_rise(...)
+      theme_minimal()
 
   } else {
 
@@ -140,8 +138,7 @@ RImissing <- function(data, itemStart, ...) {
     ggtitle("Missing data per item") +
     xlab("Items") +
     ylab("Percentage of responses missing") +
-    theme_minimal() +
-    theme_rise(...)
+    theme_minimal()
   }
 }
 
@@ -155,9 +152,8 @@ RImissing <- function(data, itemStart, ...) {
 #' @param itemStart What your variable names start with, in quotes
 #' @param output Optional dataframe with participants with missing data
 #' @param n For large samples, show n participants with most missing data
-#' @param ... Options for `theme_rise()`
 #' @export
-RImissingP <- function(data, itemStart, output, n = 10, ...) {
+RImissingP <- function(data, itemStart, output, n = 10) {
 
   if (missing(itemStart)) {
     order <- data %>%
@@ -197,8 +193,7 @@ RImissingP <- function(data, itemStart, output, n = 10, ...) {
           xlab("Participant rownumber") +
           ylab("Number of responses missing") +
           labs(caption = glue("Note. Total number of items is {ncol(data)}.")) +
-          theme_minimal() +
-          theme_rise(...)
+          theme_minimal()
       }
 
   } else {
@@ -242,8 +237,7 @@ RImissingP <- function(data, itemStart, output, n = 10, ...) {
           xlab("Participant rownumber") +
           ylab("Number of responses missing") +
           labs(caption = glue("Note. Total number of items is {ncol(data)}.")) +
-          theme_minimal() +
-          theme_rise(...)
+          theme_minimal()
       }
   }
 }
