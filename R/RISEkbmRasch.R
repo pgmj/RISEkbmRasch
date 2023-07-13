@@ -26,7 +26,7 @@
 #' @param axisface Set to "bold" if you want bold axis labels
 #' @return Add + theme_rise() to your ggplot or RIfunction that outputs a ggplot
 #' @export
-theme_rise <- function(fontfamily, axissize = 13, titlesize = 15,
+theme_rise <- function(fontfamily = "Arial", axissize = 13, titlesize = 15,
                        margins = 12, axisface = "plain", panelDist = 0.6, ...) {
   theme_minimal() +
   theme(
@@ -67,7 +67,7 @@ theme_rise <- function(fontfamily, axissize = 13, titlesize = 15,
 #' @param fontfamily Font family
 #' @param ... Passes options to kbl()
 #' @export
-kbl_rise <- function(data, width = 65, fontsize = 14, fontfamily = "Lato",
+kbl_rise <- function(data, width = 65, fontsize = 14, fontfamily = "Arial",
                      options = c("striped", "hover"), ...) {
   kbl(data, booktabs = T, escape = F, table.attr = glue("style='width:{width}%;'")) %>%
     kable_styling(
