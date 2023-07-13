@@ -26,7 +26,7 @@
 #' @param axisface Set to "bold" if you want bold axis labels
 #' @return Add + theme_rise() to your ggplot or RIfunction that outputs a ggplot
 #' @export
-theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15,
+theme_rise <- function(fontfamily, axissize = 13, titlesize = 15,
                        margins = 12, axisface = "plain", panelDist = 0.6, ...) {
   theme_minimal() +
   theme(
@@ -100,7 +100,7 @@ RImissing <- function(data, itemStart, ...) {
       t() %>%
       as.data.frame() %>%
       mutate(Missing = rowSums(is.na(.))) %>%
-      select(Missing) %>%
+      dplyr::select(Missing) %>%
       arrange(desc(Missing)) %>%
       rownames_to_column(var = "Item") %>%
       mutate(Percentage = Missing / nrow(data) * 100) %>%
@@ -125,7 +125,7 @@ RImissing <- function(data, itemStart, ...) {
     t() %>%
     as.data.frame() %>%
     mutate(Missing = rowSums(is.na(.))) %>%
-    select(Missing) %>%
+    dplyr::select(Missing) %>%
     arrange(desc(Missing)) %>%
     rownames_to_column(var = "Item") %>%
     mutate(Percentage = Missing / nrow(data) * 100) %>%
@@ -162,19 +162,19 @@ RImissingP <- function(data, itemStart, output, n = 10, ...) {
   if (missing(itemStart)) {
     order <- data %>%
       mutate(Missing = rowSums(is.na(.))) %>%
-      select(Missing) %>%
+      dplyr::select(Missing) %>%
       rownames_to_column(var = "Participant") %>%
       na.omit() %>%
-      filter(Missing > 0) %>%
+      dplyr::filter(Missing > 0) %>%
       arrange(desc(Missing)) %>%
       pull(Participant)
 
     data %>%
       mutate(Missing = rowSums(is.na(.))) %>%
-      select(Missing) %>%
+      dplyr::select(Missing) %>%
       rownames_to_column(var = "Participant") %>%
       na.omit() %>%
-      filter(Missing > 0) %>%
+      dplyr::filter(Missing > 0) %>%
       arrange(desc(Missing)) %>%
       head(n) %>%
       mutate(Participant = as.factor(Participant)) %>%
@@ -206,20 +206,20 @@ RImissingP <- function(data, itemStart, output, n = 10, ...) {
     order <- data %>%
       dplyr::select(starts_with({{ itemStart }})) %>%
       mutate(Missing = rowSums(is.na(.))) %>%
-      select(Missing) %>%
+      dplyr::select(Missing) %>%
       rownames_to_column(var = "Participant") %>%
       na.omit() %>%
-      filter(Missing > 0) %>%
+      dplyr::filter(Missing > 0) %>%
       arrange(desc(Missing)) %>%
       pull(Participant)
 
     data %>%
       dplyr::select(starts_with({{ itemStart }})) %>%
       mutate(Missing = rowSums(is.na(.))) %>%
-      select(Missing) %>%
+      dplyr::select(Missing) %>%
       rownames_to_column(var = "Participant") %>%
       na.omit() %>%
-      filter(Missing > 0) %>%
+      dplyr::filter(Missing > 0) %>%
       arrange(desc(Missing)) %>%
       head(n) %>%
       mutate(Participant = as.factor(Participant)) %>%
@@ -269,7 +269,7 @@ RIlistitems <- function(dfin, all.items = FALSE, ...) {
   if (all.items == FALSE) {
 
     itemlabels %>%
-      filter(itemnr %in% names(dfin)) %>%
+      dplyr::filter(itemnr %in% names(dfin)) %>%
       kbl_rise(...)
 
   } else {
@@ -322,7 +322,7 @@ RIcolorlistitems <- function(items, color) {
 #' @export
 RIlistItemsMargin <- function(dfin, fontsize = 11) {
   itemlabels %>%
-    filter(itemnr %in% names(dfin)) %>%
+    dplyr::filter(itemnr %in% names(dfin)) %>%
     formattable(align = c(
       "c",
       "l"
@@ -488,13 +488,13 @@ RIbarplot <- function(dfin) {
     )
     # set item description as subtitle
     mtext(text = itemlabels %>%
-                    filter(itemnr %in% names(dfin))
+                    dplyr::filter(itemnr %in% names(dfin))
                   %>% .[i, 2],
     side = 3,
     line = 0.4)
     # add itemnr as title
     mtext(text = itemlabels %>%
-            filter(itemnr %in% names(dfin)) %>%
+            dplyr::filter(itemnr %in% names(dfin)) %>%
             .[i, 1],
           side = 3,
           line = 1.5,
@@ -1518,20 +1518,20 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
   if (peak.tif > 3.32) {
     # now find where the cutoff points are for 3.33 on the theta (x) variable
     # this provides the highest and lowest value into two variables
-    psep_min <- psimatrix %>% filter(psX < 0) %>% slice(which.min(abs(psY - 3.33))) %>% dplyr::select(psX) %>% pull()
-    psep_max <- psimatrix %>% filter(psX > 0) %>%  slice(which.min(abs(psY - 3.33))) %>% dplyr::select(psX) %>% pull()
+    psep_min <- psimatrix %>% dplyr::filter(psX < 0) %>% slice(which.min(abs(psY - 3.33))) %>% dplyr::select(psX) %>% pull()
+    psep_max <- psimatrix %>% dplyr::filter(psX > 0) %>%  slice(which.min(abs(psY - 3.33))) %>% dplyr::select(psX) %>% pull()
     # calculate how many participants cross the cutoffs
     nCeilingRel<-length(which(pthetas > psep_max))
     nFloorRel<-length(which(pthetas < psep_min))
     nWithinRel<-(length(pthetas)-(nCeilingRel+nFloorRel))
     # Retrieve the lowest and highest item thresholds into vector variables
     min_thresh <- df.locations %>%
-      filter(type == "Item thresholds") %>%
+      dplyr::filter(type == "Item thresholds") %>%
       arrange(locations) %>%
       slice(1) %>%
       pull()
     max_thresh <- df.locations %>%
-      filter(type == "Item thresholds") %>%
+      dplyr::filter(type == "Item thresholds") %>%
       arrange(desc(locations)) %>%
       slice(1) %>%
       pull()
@@ -1576,7 +1576,7 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
     # estimate person location/theta mean and SD
     ple <- person.locations.estimate$theta.table %>%
       as_tibble() %>%
-      filter(Interpolated == FALSE)
+      dplyr::filter(Interpolated == FALSE)
     pleMean <- mean(ple$`Person Parameter`)
     pleSD <- sd(ple$`Person Parameter`)
 
