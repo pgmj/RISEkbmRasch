@@ -1,5 +1,12 @@
 ## Changelog
 
+### 0.1.20.0
+
+- `RIestTheta()` now accepts optional specification of range of theta values
+- simulation functions added, for polytomous data only
+- `RIscoreSE()` will now use WL estimation (Warm, 1989), and produces a full range of values using simulated data
+  - `RIscoreSE()` can optionally output a figure showing ordinal sum score vs logit score
+
 ### 0.1.16.4
 
 - `RIitemHierarchy)` has a new coloring scheme and wider `geom_errorbar()` to make it easier to interpret when there are overlapping confidence intervals.
