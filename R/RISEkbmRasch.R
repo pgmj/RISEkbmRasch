@@ -4,8 +4,7 @@
 ### Creative Commons Attribution 4.0 International Public License
 ### https://creativecommons.org/licenses/by/4.0/
 
-### See .qmd files at https://github.com/pgmj/pgmj for use cases
-### Link to vignette is available at the GitHub page.
+### See https://pgmj.github.io/raschrvignette/RaschRvign.html for vignette.
 
 #' A simple ggplot theme for RISE formatting
 #'
@@ -421,7 +420,7 @@ RIbarstack <- function(dfin, omit.na = T) {
       mutate(value = forcats::fct_rev(value)) %>%
       ggplot(aes(x = n, y = Item, fill = value)) +
       geom_col() +
-      scale_fill_viridis_d("Category") +
+      scale_fill_viridis_d("Category", direction = -1) +
       ggtitle("Item responses") +
       xlab("Number of responses")
   } else {
@@ -433,7 +432,7 @@ RIbarstack <- function(dfin, omit.na = T) {
       mutate(value = forcats::fct_rev(value)) %>%
       ggplot(aes(x = n, y = Item, fill = value)) +
       geom_col() +
-      scale_fill_viridis_d("Category") +
+      scale_fill_viridis_d("Category", direction = -1) +
       ggtitle("Item responses") +
       xlab("Number of responses") +
       labs(fill = "Category")
@@ -2471,31 +2470,121 @@ RIitemHierarchy <- function(dfin, ci = "95"){
   }
 }
 
-#' Raw sum score to logit score transformation table
+#' Raw sum score to logit score transformation table & figure
 #'
-#' Displays a table with raw sum scores and their corresponding logit score
+#' By default displays a table with raw sum scores and their corresponding logit score
 #' and logit standard error.
 #'
+#' Optional figure or dataframe output. Note that the figure uses `coord_flip()`,
+#' and take this into account if you wish to add theming.
+#'
 #' @param dfin Dataframe with item data only
+#' @param output Options: "table" (default), "figure", or "dataframe"
+#' @param point_size Point size for figure
+#' @param error_width Width of error bar ends for figure
+#' @param error_multiplier Range of error bars to multiply with SEM
+#' @param score_range Range of theta/person score/location/measure
+#' @param samplesize Sample size for simulated data
+#' @param sdx Multiplier for item location SD for simulated data dispersion
 #' @export
-RIscoreSE <- function(dfin) {
-  sink(nullfile()) # suppress output from the rows below
-  ppar <- dfin %>%
-    PCM() %>%
-    person.parameter() %>%
-    print() %>%
-    as.data.frame()
-  sink()
+RIscoreSE <- function(data, output = "table", point_size = 3,
+                      error_width = 0.5, error_multiplier = 1.96,
+                      score_range = c(-4, 4), samplesize = 250, sdx = 5) {
+  # get item threshold location parameters
+  df.erm <- PCM(data)
+  item.estimates <- eRm::thresholds(df.erm)
+  # put them in a matrix object
+  itemParameters <- item.estimates[["threshtable"]][["1"]] %>%
+    as.data.frame() %>%
+    select(!Location) %>%
+    as.matrix()
+  # get mean/SD item locations
+  itemMean <- item.estimates[["threshtable"]][["1"]] %>%
+    as.data.frame() %>%
+    pull(Location) %>%
+    mean()
+  itemSD <- item.estimates[["threshtable"]][["1"]] %>%
+    as.data.frame() %>%
+    pull(Location) %>%
+    sd()
 
-  ppar %>%
-    #dplyr::select(!X1.Raw.Score) %>%
-    dplyr::rename('Logit score' = 'X1.Estimate',
-           'Logit std.error' = 'X1.Std.Error',
-           'Ordinal sum score' = 'X1.Raw.Score') %>%
+  # write them to a list object
+  tlist <- map(1:nrow(itemParameters), ~ assign(paste0("t", .x), as.vector(itemParameters[.x, ]))) %>%
+    setNames(paste0("t", 1:nrow(itemParameters)))
+
+  # create a vector of latent scores with wide variation to generate a full set of possible scores
+  abilities <- rnorm(
+    n = samplesize,
+    mean = itemMean,
+    sd = itemSD * sdx
+  )
+
+  # simulate a dataset
+  simData <- SimPartialScore(
+    deltaslist = tlist,
+    thetavec = abilities
+  ) %>%
+    as.data.frame()
+
+  # estimate person locations
+  estLocations <- RIestThetas(
+    dfin = simData,
+    itemParams = itemParameters, theta_range = score_range
+  )
+
+  # estimate person location standard error
+  semLocations <- c()
+  for (i in 1:length(estLocations)) {
+    p1theta <- estLocations[i]
+    p1responses <- as.numeric(as.vector(simData[i, ]))
+    tmp <- semTheta(
+      thEst = p1theta,
+      it = itemParameters,
+      model = "PCM",
+      method = "WL",
+      range = score_range
+    )
+    semLocations <- c(semLocations, tmp)
+  }
+
+  # combine location+sem
+  tableData <- data.frame(
+    location = round(estLocations, 4),
+    sem = round(semLocations, 4)
+  ) %>%
+    mutate(ordinal_sum_score = rowSums(simData, na.rm = T)) # add ordinal sum scores
+
+  scoreTable <- tableData %>%
+    unique() %>%
+    arrange(ordinal_sum_score) %>%
+    relocate(ordinal_sum_score, .before = "location") %>%
+    dplyr::rename(
+      "Logit score" = "location",
+      "Logit std.error" = "sem",
+      "Ordinal sum score" = "ordinal_sum_score"
+    ) %>%
     remove_rownames() %>%
-    mutate(across(where(is.numeric), ~ round(.x, 2))) %>%
-    formattable(., table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato; width: 80%"')
+    mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+  if (output == "table") {
+    kbl_rise(scoreTable)
+  } else if (output == "dataframe") {
+    return(scoreTable)
+  } else if (output == "figure") {
+    ggplot(scoreTable, aes(`Ordinal sum score`, `Logit score`)) +
+      geom_errorbar(aes(ymin = `Logit score` - (error_multiplier * `Logit std.error`),
+                        ymax = `Logit score` + (error_multiplier * `Logit std.error`)),
+                    width = error_width, color = "darkgrey"
+      ) +
+      geom_point(size = point_size, shape = 18) +
+      scale_x_continuous() +
+      scale_y_continuous() +
+      coord_flip() +
+      labs(x = "Ordinal sum score", y = "Logit interval score") +
+      theme_bw()
+  }
 }
+
 
 #' Person location estimation
 #'
@@ -2510,14 +2599,18 @@ RIscoreSE <- function(dfin) {
 #'
 #' @param dfin Dataframe with response data only (no demographics etc), items as columns
 #' @param itemParams Optional item (threshold) location matrix
-#' @param model Rasch model to use (use NULL for dichotomous data)
+#' @param model Rasch model to use (currently only default PCM works)
 #' @param method Estimation method (defaults to "WL")
+#' @param theta_range Range of theta (person location) values
 #' @export
-RIestThetas <- function(dfin, itemParams, model = "PCM", method = "WL") {
+RIestThetas <- function(dfin, itemParams, model = "PCM", method = "WL",
+                        theta_range = c(-4,4)) {
 
   # define function to call from purrr::map_dbl later.
-  estTheta <- function(personResponse, itemParameters = itemParams, rmod = model, est = method) {
-    thetaEst(itemParameters, as.numeric(as.vector(personResponse)), model = rmod, method = est)
+  estTheta <- function(personResponse, itemParameters = itemParams, rmod = model,
+                       est = method, rtheta = theta_range) {
+    thetaEst(itemParameters, as.numeric(as.vector(personResponse)), model = rmod,
+             method = est, range = rtheta)
   }
   # if no itemParams are given, calculate them based on input dataframe
   if (missing(itemParams) & model == "PCM") {
@@ -2574,13 +2667,17 @@ RIestThetas <- function(dfin, itemParams, model = "PCM", method = "WL") {
 #' @param model Rasch model to use (use NULL for dichotomous data)
 #' @param method Estimation method (defaults to "WL")
 #' @param cpu Number of CPUs/cores to utilize (default is 4)
+#' @param theta_range Range of theta (person location) values
 #' @export
-RIestThetas2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4) {
+RIestThetas2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4,
+                         theta_range = c(-4,4)) {
   library(furrr)
   plan(multisession, workers = cpu)
   # define function to call from purrr::map_dbl later.
-  estTheta <- function(personResponse, itemParameters = itemParams, rmod = model, est = method) {
-    thetaEst(itemParameters, as.numeric(as.vector(personResponse)), model = rmod, method = est)
+  estTheta <- function(personResponse, itemParameters = itemParams, rmod = model,
+                       est = method, rtheta = theta_range) {
+    thetaEst(itemParameters, as.numeric(as.vector(personResponse)), model = rmod,
+             method = est, range = rtheta)
   }
   # if no itemParams are given, calculate them based on input dataframe
   if (missing(itemParams) & model == "PCM") {
