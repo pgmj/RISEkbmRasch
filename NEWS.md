@@ -2,6 +2,7 @@
 
 ### 0.1.20.0
 
+- `RItif()` added option to choose TIF cutoff value for which to generate caption text 
 - `RIestTheta()` now accepts optional specification of range of theta values
 - simulation functions added, for polytomous data only
 - `RIscoreSE()` will now use WL estimation (Warm, 1989), and produces a full range of values using simulated data
