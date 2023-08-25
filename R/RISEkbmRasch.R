@@ -1460,12 +1460,18 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
 #' PSI = 1 - SEM^2, and TIF = 1/SEM^2, and the values reported in
 #' this function are based on sample average SEM.
 #'
+#' TIF 2.5 corresponds to PSI 0.6
+#' TIF 3.33 -> PSI 0.7
+#' TIF 5 -> PSI 0.8
+#' TIF 10 -> PSI 0.9
+#'
 #' @param dfin Dataframe with item data only
 #' @param lo Lower limit of x axis (default = -5)
 #' @param hi Upper limit of x axis (default = 5)
 #' @param samplePSI Adds information about sample characteristics
+#' @param cutoff Caption text will generate information relative to this TIF value
 #' @export
-RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
+RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33) {
   df.erm <- PCM(dfin)
   item.estimates <- eRm::thresholds(df.erm)
   item_difficulty <- item.estimates[["threshtable"]][["1"]]
@@ -1508,11 +1514,11 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
   # check if TIF goes above 3.3
   peak.tif <- psimatrix %>% slice(which.max(psY)) %>% dplyr::select(psY) %>% pull()
 
-  if (peak.tif > 3.32) {
+  if (peak.tif > cutoff - 0.01) {
     # now find where the cutoff points are for 3.33 on the theta (x) variable
     # this provides the highest and lowest value into two variables
-    psep_min <- psimatrix %>% dplyr::filter(psX < 0) %>% slice(which.min(abs(psY - 3.33))) %>% dplyr::select(psX) %>% pull()
-    psep_max <- psimatrix %>% dplyr::filter(psX > 0) %>%  slice(which.min(abs(psY - 3.33))) %>% dplyr::select(psX) %>% pull()
+    psep_min <- psimatrix %>% dplyr::filter(psX < 0) %>% slice(which.min(abs(psY - cutoff))) %>% dplyr::select(psX) %>% pull()
+    psep_max <- psimatrix %>% dplyr::filter(psX > 0) %>%  slice(which.min(abs(psY - cutoff))) %>% dplyr::select(psX) %>% pull()
     # calculate how many participants cross the cutoffs
     nCeilingRel<-length(which(pthetas > psep_max))
     nFloorRel<-length(which(pthetas < psep_min))
@@ -1532,7 +1538,7 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
     # calculate how many participants cross the cutoffs
     nCeilingThresh<-length(which(pthetas > max_thresh))
     nFloorThresh<-length(which(pthetas < min_thresh))
-    psep_caption <- paste0("Test Information 3.33 (PSI 0.7) is reached between ", round(psep_min,2), " and ", round(psep_max,2), " logits, where ",
+    psep_caption <- paste0("Test Information ",cutoff, " is reached between ", round(psep_min,2), " and ", round(psep_max,2), " logits, where ",
                            round(nWithinRel/length(pthetas)*100,1), "% of the participants are located. \n",
                            round(nCeilingRel/length(pthetas)*100,1), "% of participants have locations above the upper cutoff, and ",
                            round(nFloorRel/length(pthetas)*100,1), "% are below the lower cutoff. \n",
@@ -1542,7 +1548,7 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE) {
   } else {
     psep_min = 0
     psep_max = 0
-    psep_caption <- paste0("Test information is not above 3.33 (PSI 0.7) at any part of the scale.")
+    psep_caption <- paste0("Test information is not above ",cutoff, " at any part of the scale.")
   }
 
   TIFplot <- ggplot(psimatrix) +
