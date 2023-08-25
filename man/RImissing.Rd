@@ -4,14 +4,12 @@
 \alias{RImissing}
 \title{Creates a figure with item missing data descriptives for items}
 \usage{
-RImissing(data, itemStart, ...)
+RImissing(data, itemStart)
 }
 \arguments{
 \item{data}{Dataframe/tibble to create table from}
 
 \item{itemStart}{What your variable names start with, in quotes}
-
-\item{...}{Options for \code{theme_rise()}}
 }
 \description{
 Sample use: \code{RImissing(df, itemStart = "PSS")}

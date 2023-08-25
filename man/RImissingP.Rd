@@ -4,7 +4,7 @@
 \alias{RImissingP}
 \title{Creates a figure with item missing data descriptives for participants}
 \usage{
-RImissingP(data, itemStart, output, n = 10, ...)
+RImissingP(data, itemStart, output, n = 10)
 }
 \arguments{
 \item{data}{Dataframe/tibble to create table from}
@@ -14,8 +14,6 @@ RImissingP(data, itemStart, output, n = 10, ...)
 \item{output}{Optional dataframe with participants with missing data}
 
 \item{n}{For large samples, show n participants with most missing data}
-
-\item{...}{Options for \code{theme_rise()}}
 }
 \description{
 Sample use: \code{RImissingP(df, itemStart = "PSS")}

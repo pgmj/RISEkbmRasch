@@ -4,16 +4,24 @@
 \alias{RIestThetas}
 \title{Person location estimation}
 \usage{
-RIestThetas(dfin, itemParams, model = "PCM", method = "WL")
+RIestThetas(
+  dfin,
+  itemParams,
+  model = "PCM",
+  method = "WL",
+  theta_range = c(-4, 4)
+)
 }
 \arguments{
 \item{dfin}{Dataframe with response data only (no demographics etc), items as columns}
 
 \item{itemParams}{Optional item (threshold) location matrix}
 
-\item{model}{Rasch model to use (use NULL for dichotomous data)}
+\item{model}{Rasch model to use (currently only default PCM works)}
 
 \item{method}{Estimation method (defaults to "WL")}
+
+\item{theta_range}{Range of theta (person location) values}
 }
 \description{
 NOTE: Does not yet work with dichotomous data

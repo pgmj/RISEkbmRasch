@@ -4,7 +4,14 @@
 \alias{RIestThetas2}
 \title{Person location estimation with parallel processing}
 \usage{
-RIestThetas2(dfin, itemParams, model = "PCM", method = "WL", cpu = 4)
+RIestThetas2(
+  dfin,
+  itemParams,
+  model = "PCM",
+  method = "WL",
+  cpu = 4,
+  theta_range = c(-4, 4)
+)
 }
 \arguments{
 \item{dfin}{Dataframe with response data only (no demographics etc), items as columns}
@@ -16,6 +23,8 @@ RIestThetas2(dfin, itemParams, model = "PCM", method = "WL", cpu = 4)
 \item{method}{Estimation method (defaults to "WL")}
 
 \item{cpu}{Number of CPUs/cores to utilize (default is 4)}
+
+\item{theta_range}{Range of theta (person location) values}
 }
 \description{
 Yields about 2-3x speed increase when using 4-8 CPU cores.

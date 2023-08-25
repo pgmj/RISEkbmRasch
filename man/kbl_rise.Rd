@@ -8,7 +8,7 @@ kbl_rise(
   data,
   width = 65,
   fontsize = 14,
-  fontfamily = "Lato",
+  fontfamily = "Arial",
   options = c("striped", "hover"),
   ...
 )

@@ -2,14 +2,41 @@
 % Please edit documentation in R/RISEkbmRasch.R
 \name{RIscoreSE}
 \alias{RIscoreSE}
-\title{Raw sum score to logit score transformation table}
+\title{Raw sum score to logit score transformation table & figure}
 \usage{
-RIscoreSE(dfin)
+RIscoreSE(
+  data,
+  output = "table",
+  point_size = 3,
+  error_width = 0.5,
+  error_multiplier = 1.96,
+  score_range = c(-4, 4),
+  samplesize = 250,
+  sdx = 5
+)
 }
 \arguments{
+\item{output}{Options: "table" (default), "figure", or "dataframe"}
+
+\item{point_size}{Point size for figure}
+
+\item{error_width}{Width of error bar ends for figure}
+
+\item{error_multiplier}{Range of error bars to multiply with SEM}
+
+\item{score_range}{Range of theta/person score/location/measure}
+
+\item{samplesize}{Sample size for simulated data}
+
+\item{sdx}{Multiplier for item location SD for simulated data dispersion}
+
 \item{dfin}{Dataframe with item data only}
 }
 \description{
-Displays a table with raw sum scores and their corresponding logit score
+By default displays a table with raw sum scores and their corresponding logit score
 and logit standard error.
+}
+\details{
+Optional figure or dataframe output. Note that the figure uses \code{coord_flip()},
+and take this into account if you wish to add theming.
 }
