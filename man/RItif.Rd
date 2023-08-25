@@ -4,7 +4,7 @@
 \alias{RItif}
 \title{Reliability of test}
 \usage{
-RItif(dfin, lo = -5, hi = 5, samplePSI = FALSE)
+RItif(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
@@ -14,6 +14,8 @@ RItif(dfin, lo = -5, hi = 5, samplePSI = FALSE)
 \item{hi}{Upper limit of x axis (default = 5)}
 
 \item{samplePSI}{Adds information about sample characteristics}
+
+\item{cutoff}{Caption text will generate information relative to this TIF value}
 }
 \description{
 Test information shows the reliability curve of the test (not the sample).
@@ -24,4 +26,10 @@ calculated as \eqn{\frac{\mathrm{SSD}-\mathrm{MSE}}{\mathrm{SSD}}}{(SSD-MSE)/SSD
 see \code{?eRm::SepRel} for details. According to Embretson & Reise (2000),
 PSI = 1 - SEM^2, and TIF = 1/SEM^2, and the values reported in
 this function are based on sample average SEM.
+}
+\details{
+TIF 2.5 corresponds to PSI 0.6
+TIF 3.33 -> PSI 0.7
+TIF 5 -> PSI 0.8
+TIF 10 -> PSI 0.9
 }
