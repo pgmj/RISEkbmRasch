@@ -1,5 +1,9 @@
 ## Changelog
 
+### 0.1.20.1
+
+- `RIscoreSE()` fix. Should now work with any number of item thresholds.
+
 ### 0.1.20.0
 
 - `RItif()` added option to choose TIF cutoff value for which to generate caption text 
