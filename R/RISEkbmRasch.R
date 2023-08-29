@@ -2492,10 +2492,11 @@ RIitemHierarchy <- function(dfin, ci = "95"){
 #' @param score_range Range of theta/person score/location/measure
 #' @param samplesize Sample size for simulated data
 #' @param sdx Multiplier for item location SD for simulated data dispersion
+#' @param ... Options for `kbl_rise()` for table creation
 #' @export
 RIscoreSE <- function(data, output = "table", point_size = 3,
                       error_width = 0.5, error_multiplier = 1.96,
-                      score_range = c(-4, 4), samplesize = 250, sdx = 5) {
+                      score_range = c(-4, 4), samplesize = 250, sdx = 5, ...) {
   # get item threshold location parameters
   df.erm <- PCM(data)
   item.estimates <- eRm::thresholds(df.erm)
@@ -2517,6 +2518,8 @@ RIscoreSE <- function(data, output = "table", point_size = 3,
   # write them to a list object
   tlist <- map(1:nrow(itemParameters), ~ assign(paste0("t", .x), as.vector(itemParameters[.x, ]))) %>%
     setNames(paste0("t", 1:nrow(itemParameters)))
+  # remove any NA values from the list object
+  tlist <- lapply(tlist, function(x) x[!is.na(x)])
 
   # create a vector of latent scores with wide variation to generate a full set of possible scores
   abilities <- rnorm(
@@ -2573,7 +2576,7 @@ RIscoreSE <- function(data, output = "table", point_size = 3,
     mutate(across(where(is.numeric), ~ round(.x, 3)))
 
   if (output == "table") {
-    kbl_rise(scoreTable)
+    kbl_rise(scoreTable, ...)
   } else if (output == "dataframe") {
     return(scoreTable)
   } else if (output == "figure") {
