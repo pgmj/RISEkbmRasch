@@ -12,7 +12,8 @@ RIscoreSE(
   error_multiplier = 1.96,
   score_range = c(-4, 4),
   samplesize = 250,
-  sdx = 5
+  sdx = 5,
+  ...
 )
 }
 \arguments{
@@ -29,6 +30,8 @@ RIscoreSE(
 \item{samplesize}{Sample size for simulated data}
 
 \item{sdx}{Multiplier for item location SD for simulated data dispersion}
+
+\item{...}{Options for \code{kbl_rise()} for table creation}
 
 \item{dfin}{Dataframe with item data only}
 }
