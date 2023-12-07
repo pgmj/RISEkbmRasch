@@ -2602,7 +2602,7 @@ RIscoreSE <- function(dfin, output = "table", point_size = 3,
                       error_width = 0.5, error_multiplier = 1.96,
                       score_range = c(-4, 4), samplesize = 250, sdx = 5, ...) {
   # get item threshold location parameters
-  df.erm <- PCM(data)
+  df.erm <- PCM(dfin)
   item.estimates <- eRm::thresholds(df.erm)
   # put them in a matrix object
   itemParameters <- item.estimates[["threshtable"]][["1"]] %>%
