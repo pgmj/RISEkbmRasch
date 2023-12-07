@@ -10,21 +10,28 @@ Minor fixes:
 
 Major updates:
 
-- `RItargeting()` now uses `library(patchwork)` instead of `cowplot` to combine figures.
-- `RItargeting()` can now output a list object with the three parts of the targeting figure, which allows for customization of themes/colors/fonts, etc. The three parts are:
+#### `RItargeting()`
+
+- allows choice of bin size for person location histogram, default is 30 - `RItargeting(data, bins = 30)`
+- now uses `library(patchwork)` instead of `cowplot` to combine figures.
+- can now output a list object with the three parts of the targeting figure, which allows for customization of themes/colors/fonts, etc. The three parts are:
   - `p1` - Person location histogram
   - `p2` - Item threshold histogram
   - `p3` - Individual item thresholds
   - If you want to use this, you should save the output to a named object, `targeting <- RItargeting(data)`, and then access the parts using `targeting$p1`, `targeting$p2`, and `targeting$p3`. You can then combine the figures, e.g. `targeting$p1 / targeting$p2 / targeting$p3 + plot_layout(heights = c(1,1,1.4))`.
-- `RItargeting()` now uses the viridis H color palette by default.
+- now uses the viridis H color palette by default.
 
-- `RIitemhierarchy()` has a lot more information in the plot now. This is documented in the caption text. While a bit messy looking, it makes the plot contain key information that we recommend to include in published psychometrics. This includes:
+#### `RIitemhierarchy()`
+
+-  has a lot more information in the plot now! Could get messy if you have a lot of thresholds. This is documented in the caption text. It makes the plot contain a lot of key information that we recommend to include in published psychometrics. This includes:
     - Values for item threshold and average item locations.
     - The mean of the item thresholds.
     - The relative distance from the mean for each item.
-- `RIitemhierarchy()` now uses the viridis H color palette by default.
+- now uses the viridis H color palette by default.
 
-- `RIitemparams()` is largely reworked and has new options available.
+#### `RIitemparams()` 
+
+- largely reworked and has new options available.
   - it does not by default write a CSV file any more, you need to specify `output = "file"`
   - other output options include "table" (default) and "dataframe".
   - you can choose level of detail in the output, using `detail = "thresholds"` or `output = "all"`. This applies to any type of output.
