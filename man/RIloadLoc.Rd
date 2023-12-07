@@ -5,10 +5,14 @@
 \title{Generates a plot showing the first residual contrast loadings based on a PCA
 of Rasch model residuals vs item locations.}
 \usage{
-RIloadLoc(dfin)
+RIloadLoc(dfin, output = "figure", pcx = c("PC1", "PC2", "PC3"))
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
+
+\item{output}{Either "figure" (default) or "dataframe"}
+
+\item{pcx}{Number of principal components to output for "dataframe"}
 }
 \value{
 A plot with item locations (y) and loadings (x)

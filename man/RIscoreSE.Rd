@@ -5,7 +5,7 @@
 \title{Raw sum score to logit score transformation table & figure}
 \usage{
 RIscoreSE(
-  data,
+  dfin,
   output = "table",
   point_size = 3,
   error_width = 0.5,
@@ -17,6 +17,8 @@ RIscoreSE(
 )
 }
 \arguments{
+\item{dfin}{Dataframe with item data only}
+
 \item{output}{Options: "table" (default), "figure", or "dataframe"}
 
 \item{point_size}{Point size for figure}
@@ -32,8 +34,6 @@ RIscoreSE(
 \item{sdx}{Multiplier for item location SD for simulated data dispersion}
 
 \item{...}{Options for \code{kbl_rise()} for table creation}
-
-\item{dfin}{Dataframe with item data only}
 }
 \description{
 By default displays a table with raw sum scores and their corresponding logit score

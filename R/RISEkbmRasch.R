@@ -188,10 +188,10 @@ RImissingP <- function(data, itemStart, output, n = 10) {
                              labels = scales::number_format(accuracy = 1),
                              minor_breaks = NULL) +
           coord_flip() +
-          ggtitle("Missing data per participant") +
-          xlab("Participant rownumber") +
-          ylab("Number of responses missing") +
-          labs(caption = glue("Note. Total number of items is {ncol(data)}.")) +
+          labs(title = "Missing data per participant",
+               x = "Participant rownumber",
+               y = "Number of responses missing",
+               caption = glue("Note. Total number of items is {ncol(data)}.")) +
           theme_minimal()
       }
 
@@ -232,10 +232,10 @@ RImissingP <- function(data, itemStart, output, n = 10) {
                              labels = scales::number_format(accuracy = 1),
                              minor_breaks = NULL) +
           coord_flip() +
-          ggtitle("Missing data per participant") +
-          xlab("Participant rownumber") +
-          ylab("Number of responses missing") +
-          labs(caption = glue("Note. Total number of items is {ncol(data)}.")) +
+          labs(title = "Missing data per participant",
+               x = "Participant rownumber",
+               y = "Number of responses missing",
+               caption = glue("Note. Total number of items is {ncol(data)}.")) +
           theme_minimal()
       }
   }
@@ -334,6 +334,7 @@ RIlistItemsMargin <- function(dfin, fontsize = 11) {
 #' @param dfin Dataframe with item data only
 #' @export
 RIheatmap <- function(dfin) {
+
   # extract vectors with person/item id arranged by order of total score
   person.order <- dfin %>%
     mutate(persontotal = rowSums(., na.rm = TRUE)) %>%
@@ -420,9 +421,10 @@ RIbarstack <- function(dfin, omit.na = T) {
       mutate(value = forcats::fct_rev(value)) %>%
       ggplot(aes(x = n, y = Item, fill = value)) +
       geom_col() +
-      scale_fill_viridis_d("Category", direction = -1) +
-      ggtitle("Item responses") +
-      xlab("Number of responses")
+      scale_fill_viridis_d(direction = -1) +
+      labs(title = "Item responses",
+           x = "Number of responses",
+           fill = "Category")
   } else {
     dfin %>%
       pivot_longer(everything()) %>%
@@ -432,10 +434,10 @@ RIbarstack <- function(dfin, omit.na = T) {
       mutate(value = forcats::fct_rev(value)) %>%
       ggplot(aes(x = n, y = Item, fill = value)) +
       geom_col() +
-      scale_fill_viridis_d("Category", direction = -1) +
-      ggtitle("Item responses") +
-      xlab("Number of responses") +
-      labs(fill = "Category")
+      scale_fill_viridis_d(direction = -1) +
+      labs(title = "Item responses",
+           x = "Number of responses",
+           fill = "Category")
   }
 }
 
@@ -555,6 +557,7 @@ RIallresp <- function(dfin, pdf.out, fontsize = 15) {
 #' @param fontsize Set font size
 #' @export
 RIpcmPCA <- function(dfin, no.table, fontsize = 15) {
+
   if (missing(no.table)) {
     df.erm <- PCM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
@@ -678,7 +681,7 @@ RIitemCats <- function(dfin, items = "all", xlims = c(-6,6), legend = FALSE) {
     xlim = xlims, # change the x axis theta interval to display
     legpos = legend, # change legpos to TRUE if you want the legend displayed
     ylab = "Probability",
-    xlab = "Person location",
+    xlab = "Person location (logit scale)",
     item.subset = items,
     ask = FALSE
   )
@@ -791,6 +794,7 @@ RIrawdist <- function(dfin) {
 RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
                          msq_min = 0.7, msq_max = 1.3, fontsize = 15, fontfamily = "Lato",
                          table = TRUE) {
+
   if (missing(samplesize)) {
     df.erm <- PCM(dfin) # run PCM model
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
@@ -1207,11 +1211,20 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato") {
 #' Item Thresholds. At the bottom is a figure showing the individual
 #' item thresholds as dots.
 #'
+#' The figure is made up from three figures using library(patchwork). If desired,
+#' you can output the three figures to a list object instead of a single figure.
+#' This allows you to modify each figure (change theming, colors, etc). You can
+#' put together the three figures into one using patchwork:
+#'
+#' `list$p1 / list$p2 / list$p3 + plot_layout(heights = c(1, 1, 1.4))`
+#'
 #' @param dfin Dataframe with item data only
 #' @param dich Set to TRUE if your data is dichotomous
 #' @param xlim Optionally, set lower/upper limits for x axis
+#' @param output Default "figure", or "list" to output 3 figures to a list object
+#' @param bins Optionally, set number of bins for histograms
 #' @export
-RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
+RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", bins = 30) {
   if(dich == FALSE) {
   df.erm <- PCM(dfin) # run PCM model
   # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
@@ -1223,13 +1236,13 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
    item.fit <- eRm::itemfit(person.locations.estimate)
 
   item.locations <- item_difficulty[, 2:ncol(item_difficulty)]
-  names(item.locations) <- paste0("T", c(1:ncol(item.locations))) # re-number items
+  names(item.locations) <- paste0("t", c(1:ncol(item.locations))) # re-number items
   itemloc.long <- item.locations %>%
     rownames_to_column() %>%
     dplyr::rename(names = "rowname") %>%
     mutate(names = factor(names, levels = rev(names(dfin)))) %>%
     pivot_longer(
-      cols = starts_with("T"),
+      cols = starts_with("t"),
       names_to = "thresholds",
       values_to = "par_values"
     )
@@ -1287,26 +1300,26 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
   pi.locations[3,2] <- round(mean(pthetas),2)
   pi.locations[3,3] <- round(sd(pthetas),2)
 
+  targeting_plots <- list()
+
   # Person location histogram
-  p2 <- ggplot() +
+  targeting_plots$p1 <- ggplot() +
     geom_histogram(
       data = subset(df.locations, type == "Persons"),
-      aes(locations, fill = "Persons", y = after_stat(count))
+      aes(locations, fill = "Persons", y = after_stat(count)),
+      bins = bins
     ) +
     xlab("") +
     ylab("Persons") +
     scale_x_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
     geom_vline(xintercept = person.mean, color = "#0e4e65", linetype = 2) +
     annotate("rect", ymin = 0, ymax = Inf, xmin = (person.mean - person.sd), xmax = (person.mean + person.sd), alpha = .2) +
-    geom_text(hjust = 1.1, vjust = 1) +
     theme_bw() +
-    theme(
-      legend.position = "none",
-      text = element_text(family = "sans")
-    )
+    theme(legend.position = "none")
+
 
   # Item Threshold location histogram
-  p3 <- ggplot() +
+  targeting_plots$p2 <- ggplot() +
     geom_histogram(
       data = subset(df.locations, type == "Item thresholds"),
       aes(locations, y = after_stat(count))
@@ -1317,28 +1330,25 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
     scale_y_reverse() +
     geom_vline(xintercept = item.mean, color = "#e83c63", linetype = 2) +
     annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean - item.thresh.sd), xmax = (item.mean + item.thresh.sd), alpha = .2) +
-    geom_text(hjust = 1.1, vjust = 1) +
     theme_bw() +
     theme(legend.position = "none")
 
   # make plot with each items thresholds shown as dots
-  p1 <- ggplot(itemloc.long, aes(x = names, y = par_values, label = thresholds, color = names)) +
+  targeting_plots$p3 <- ggplot(itemloc.long, aes(x = names, y = par_values, label = thresholds, color = thresholds)) +
     geom_point() +
-    geom_text(hjust = 1.1, vjust = 1) +
-    ylab("Location (logit scale)") +
-    xlab("Items") +
+    geom_text(hjust = 1.2, vjust = 1) +
+    scale_color_viridis_d(option = "H", end = 0.97) +
     scale_y_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
-    theme_bw() +
-    theme(legend.position = "none") +
     coord_flip() +
-    labs(caption = paste0(
+    labs(y = "Location (logit scale)",
+         x = "Items",
+         caption = paste0(
       "Person location average: ", pi.locations[3, 2], " (SD ", pi.locations[3, 3], "), Item threshold location average: ",
       pi.locations[2, 2], " (SD ", pi.locations[2, 3], "). Sample size: ",nrow(dfin),"."
     )) +
-    theme(plot.caption = element_text(hjust = 0, face = "italic"))
-
-  # combine plots together to create Wright map, and let the individual item threshold plot have some more space
-  plot_grid(p2,p3,p1, labels=NULL, nrow = 3, align ="hv", rel_heights = c(1,1,1.4))
+    theme_bw() +
+    theme(plot.caption = element_text(hjust = 0, face = "italic"),
+          legend.position = "none")
 
   } else {
 
@@ -1399,52 +1409,58 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6)) {
     pi.locations[2,2] <- round(mean(pthetas),2)
     pi.locations[2,3] <- round(sd(pthetas),2)
 
-    # make plot with each items thresholds shown as dots
-    p1=ggplot(itemloc.long, aes(x = names, y = item.estimates, label = names, color = names)) +
-      geom_point() +
-      geom_text(hjust = 1.1, vjust = 1) +
-      ylab('Location (logit scale)') +
-      xlab('Items') +
-      scale_y_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
-      theme_bw() +
-      theme(legend.position = 'none') +
-      coord_flip() +
-      labs(caption = paste0("Person location average: ", pi.locations[2,2], " (SD ", pi.locations[2,3],"), Item location average: ",
-                            pi.locations[1,2], " (SD ", pi.locations[1,3], "). Sample size: ",nrow(dfin),"."
-                            )) +
-      theme(plot.caption = element_text(hjust = 0, face = "italic"))
+    targeting_plots <- list()
 
     # Person location histogram
-    p2<-ggplot() +
+    targeting_plots$p1 <- ggplot() +
       geom_histogram(data=subset(df.locations, type=="Persons"),
-                     aes(locations, fill="Persons", y= after_stat(count))) +
+                     aes(locations, fill="Persons", y= after_stat(count)),
+                     bins = bins
+                     ) +
       xlab('') +
       ylab('Persons') +
       scale_x_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
       geom_vline(xintercept = person.mean, color = "#0e4e65", linetype = 2) +
       annotate("rect", ymin = 0, ymax = Inf, xmin = (person.mean-person.sd), xmax = (person.mean+person.sd), alpha = .2) +
-      geom_text(hjust = 1.1, vjust = 1) +
       theme_bw() +
-      theme(legend.position = 'none',
-            text=element_text(family = "sans"))
+      theme(legend.position = 'none')
 
     # Item Threshold location histogram
-    p3 <- ggplot() +
+    targeting_plots$p2 <- ggplot() +
       geom_histogram(data=subset(df.locations, type=="Item thresholds"),
                      aes(locations, y= after_stat(count))) +
-      xlab('') +
-      ylab('Items aggregated') +
+      labs(x = "",
+           y = "Items aggregated") +
       scale_x_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
       scale_y_reverse() +
       geom_vline(xintercept = item.mean, color = "#e83c63", linetype = 2) +
       annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean-item.sd), xmax = (item.mean+item.sd), alpha = .2) +
-      geom_text(hjust = 1.1, vjust = 1) +
+      geom_text(hjust = 1.2, vjust = 1) +
       theme_bw() +
       theme(legend.position = 'none')
 
-    # combine plots together to create Wright map, and let the individual item threshold plot have some more space
-    plot_grid(p2,p3,p1, labels=NULL, nrow = 3, align ="hv", rel_heights = c(1,1,1.4))
+    # Plot with each item's thresholds shown as dots
+    targeting_plots$p3 <- ggplot(itemloc.long, aes(x = names, y = item.estimates, label = names, color = names)) +
+      geom_point() +
+      geom_text(hjust = 1.2, vjust = 1) +
+      scale_y_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
+      theme_bw() +
+      coord_flip() +
+      labs(y = "Location (logit scale)",
+           x = "Items",
+           caption = paste0("Person location average: ", pi.locations[2,2], " (SD ", pi.locations[2,3],"), Item location average: ",
+                            pi.locations[1,2], " (SD ", pi.locations[1,3], "). Sample size: ",nrow(dfin),"."
+           )) +
+      theme(plot.caption = element_text(hjust = 0, face = "italic"),
+            legend.position = 'none')
 
+  }
+
+  if (output == "figure") {
+    # combine plots together to create Wright map, and let the individual item threshold plot have some more space
+    targeting_plots$p1 / targeting_plots$p2 / targeting_plots$p3 + plot_layout(heights = c(1, 1, 1.4))
+  } else if (output == "list") {
+    return(targeting_plots)
   }
 }
 
@@ -1557,7 +1573,7 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33) {
     geom_hline(yintercept = 5, color = "#e83c63", linetype = 2, size = 0.7) +
     scale_y_continuous(breaks = seq(0, 8, by = 1)) +
     scale_x_continuous(breaks = seq(lo, hi, by = 1)) +
-    labs(x = "Logits", y = "Test information") +
+    labs(x = "Location (logit scale)", y = "Test information") +
     labs(caption = paste0(psep_caption)) +
     theme(plot.caption = element_text(hjust = 0, face = "italic")) +
     theme(
@@ -1725,43 +1741,105 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
 
 #' Item parameters summary
 #'
-#' Displays a table with item threshold locations
-#' and exports a CSV file ("itemParameters.csv") to your working
-#' directory. This file can be used for estimating person thetas/scores.
+#' Displays a table with item threshold locations. Can also output a dataframe or
+#' a CSV file. Set `detail = "all"` to get more detailed output.
 #'
 #' @param dfin Dataframe with item data only
-#' @param filename Optional specification of filename for item parameters output
-#' @param fontsize Set font size for table
+#' @param fontsize Option to set font size for table
+#' @param output Defaults to "table, can be set to "dataframe" or "file"
+#' @param detail Set to "all" to get more detailed summary output
+#' @param filename Name of file to save output to
 #' @export
-RIitemparams <- function(dfin, filename = "itemParameters.csv", fontsize = 15) {
+RIitemparams <- function(dfin, fontsize = 15, output = "table",
+                         detail = "thresholds", filename = "item_params.csv") {
   df.erm <- PCM(dfin)
   item.estimates <- eRm::thresholds(df.erm)
   item_difficulty <- item.estimates[["threshtable"]][["1"]]
-  item_difficulty<-as.data.frame(item_difficulty)
-  item_difficulty %>%
-    dplyr::select(!Location) %>%
-    mutate(across(where(is.numeric), ~ round(.x, 4))) %>%
-    write_csv(., file = filename)
+  item_difficulty <- as.data.frame(item_difficulty) %>%
+    mutate(across(where(is.numeric), ~ round(.x, 3)))
 
-  item_difficulty %>%
-    mutate(across(where(is.numeric), ~ round(.x, 2))) %>%
-    relocate(Location, .after = last_col()) %>%
-    mutate(Location = cell_spec(Location, bold = T, align = "right")) %>%
-    dplyr::rename('Item location' = Location) %>%
-    kbl(booktabs = T, escape = F) %>%
-    # bootstrap options are for HTML output
-    kable_styling(bootstrap_options = c("striped", "hover"),
-                  position = "left",
-                  full_width = F,
-                  font_size = fontsize,
-                  fixed_thead = T) %>% # when there is a long list in the table
-    #  column_spec(c(2:3), color = "red") %>%
-    #  row_spec(3:5, bold = T, color = "white", background = "lightblue") %>%
-    column_spec(1, bold = T) %>%
-    kable_classic(html_font = "Lato") %>%
-    # latex_options are for PDF output
-    kable_styling(latex_options = c("striped","scale_down"))
+  # detailed df
+  item_params <- item_difficulty %>%
+    #mutate(item_avg_loc = rowMeans(select(., starts_with("Threshold")), na.rm = TRUE)) %>%
+    mutate(all_item_avg = mean(Location)) %>%
+    mutate(relative_avg_loc = Location - all_item_avg) %>%
+    mutate(relative_lowest_tloc = `Threshold 1` - all_item_avg) %>%
+    rownames_to_column("itemnr")
+
+  # get the highest threshold value from each item - since the number of thresholds can vary, this needs special treatment
+  highest_loc <- item_params %>%
+    pivot_longer(cols = starts_with("Threshold"),
+                 names_to = "threshold",
+                 values_to = "t_location") %>%
+    group_by(itemnr) %>%
+    filter(t_location == max(t_location)) %>%
+    ungroup() %>%
+    dplyr::select(itemnr, t_location) %>%
+    dplyr::rename(relative_highest_tloc = t_location)
+
+  # join the highest threshold location to the item_params df
+  item_params <- item_params %>%
+    left_join(highest_loc, by = "itemnr") %>%
+    relocate(all_item_avg, .after = relative_highest_tloc) %>%
+    as.data.frame()
+
+  if (output == "file" & detail == "thresholds") {
+    item_difficulty %>%
+      dplyr::select(!Location) %>%
+      set_names(paste0("threshold_", 1:ncol(.))) %>%
+      write_csv(., file = filename)
+  }
+  else if (output == "file" & detail == "all") {
+    item_params %>%
+      write_csv(., file = filename)
+  }
+  else if (output == "dataframe" & detail == "thresholds") {
+    return(item_difficulty)
+  }
+  else if (output == "dataframe" & detail == "all") {
+    return(item_params)
+  }
+  else if (output == "table" & detail == "thresholds") {
+    item_difficulty %>%
+      mutate(across(where(is.numeric), ~ round(.x, 2))) %>%
+      relocate(Location, .after = last_col()) %>%
+      mutate(Location = cell_spec(Location, bold = T, align = "right")) %>%
+      dplyr::rename('Item location' = Location) %>%
+      kbl(booktabs = T, escape = F) %>%
+      # bootstrap options are for HTML output
+      kable_styling(bootstrap_options = c("striped", "hover"),
+                    position = "left",
+                    full_width = F,
+                    font_size = fontsize,
+                    fixed_thead = T) %>% # when there is a long list in the table
+      column_spec(1, bold = T) %>%
+      kable_classic(html_font = "Lato") %>%
+      # for latex/PDF output
+      kable_styling(latex_options = c("striped","scale_down"))
+  }
+  else if (output == "table" & detail == "all") {
+    item_params %>%
+      mutate(across(where(is.numeric), ~ round(.x, 2))) %>%
+      mutate(Location = cell_spec(Location, bold = T, align = "right")) %>%
+      dplyr::rename('Item location' = Location,
+                    'Relative item location' = relative_avg_loc,
+                    'Relative lowest threshold' = relative_lowest_tloc,
+                    'Relative highest threshold' = relative_highest_tloc) %>%
+      select(!all_item_avg) %>%
+      kbl(booktabs = T, escape = F) %>%
+      # bootstrap options are for HTML output
+      kable_styling(bootstrap_options = c("striped", "hover"),
+                    position = "left",
+                    full_width = F,
+                    font_size = fontsize,
+                    fixed_thead = T) %>% # when there is a long list in the table
+      column_spec(1, bold = T) %>%
+      kable_classic(html_font = "Lato") %>%
+      kable_styling(latex_options = c("striped","scale_down"))
+  }
+
 }
+
 
 
 ##### Construct alley plots
@@ -1995,22 +2073,24 @@ RIoutfitLoc <- function(dfin, samplesize, nsamples) {
 #' function, ie. `RIloadLoc(na.omit(df))`
 #'
 #' @param dfin Dataframe with item data only
+#' @param output Either "figure" (default) or "dataframe"
+#' @param pcx Number of principal components to output for "dataframe"
 #' @export
 #' @return A plot with item locations (y) and loadings (x)
-RIloadLoc <- function(dfin) {
+RIloadLoc <- function(dfin, output = "figure", pcx = c("PC1","PC2","PC3")) {
   df.erm<-PCM(dfin) # run PCM model
   # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
   item.estimates <- eRm::thresholds(df.erm)
   item_difficulty <- item.estimates[["threshtable"]][["1"]]
-  item_difficulty<-as.data.frame(item_difficulty)
+  item_difficulty <- as.data.frame(item_difficulty)
 
-  item.se <- item.estimates$se.thresh # not used yet
+  # item.se <- item.estimates$se.thresh # not used yet
 
   person.locations.estimate <- person.parameter(df.erm)
   item.fit <- eRm::itemfit(person.locations.estimate)
   std.resids <- item.fit$st.res
 
-  pca2<-prcomp(std.resids)
+  pca2 <- prcomp(std.resids)
   pcaloadings <- as.data.frame(pca2$rotation)
   pcaloadings$Location <- item_difficulty$Location
 
@@ -2023,12 +2103,14 @@ RIloadLoc <- function(dfin) {
   xdiff <- diff(c(floor(min(pcaloadings$PC1)),ceiling(max(pcaloadings$PC1))))
   ydiff <- diff(c(floor(min(pcaloadings$Location)),ceiling(max(pcaloadings$Location))))
 
+  if(output == "figure") {
+
   pcaloadings %>%
     rownames_to_column() %>%
     ggplot(aes(x=PC1, y=Location, label = rowname)) +
     geom_point(size = 3, color = "black") +
     xlab("Loadings on first residual contrast") +
-    ylab("Item location") +
+    ylab("Item location (logit scale)") +
     geom_vline(xintercept = 0, color = "#e83c63", linetype = 2) +
     geom_hline(yintercept = 0, color = "#e83c63", linetype = 2) +
     scale_x_continuous(limits = c(-1,1), breaks = seq(-1,1, by = 0.25)) +
@@ -2043,6 +2125,12 @@ RIloadLoc <- function(dfin) {
       panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
                                       colour = "white")
     )
+  } else {
+    pcaloadings <- pcaloadings %>%
+      rownames_to_column(var = "itemnr") %>%
+      select(itemnr,Location,all_of(pcx))
+    return(pcaloadings)
+  }
 }
 
 
@@ -2455,24 +2543,40 @@ RIitemHierarchy <- function(dfin, ci = "95"){
     itemLocs %>%
       mutate(Item = factor(itemnr, levels = itemOrder)) %>%
       ggplot(aes(x = Item, color = Threshold)) +
-      geom_point(aes(y = Locations),
-                 position = position_nudge()) +
-      geom_errorbar(aes(ymin = Locations - 1.96*ThreshSEM, ymax = Locations + 1.96*ThreshSEM),
-                    width = 0.1
-      ) +
-      geom_text(aes(y = Locations, label = Threshold), hjust = 1, vjust = 1.3) +
       geom_point(aes(y = Location),
                  size = 4,
                  shape = 18,
                  color = "black"
       ) +
-      theme(legend.position = "none") +
+      geom_point(aes(y = Locations),
+                 position = position_nudge()) +
+      geom_text(aes(y = Location, label = round(Location,2)),
+                hjust = 0.5, vjust = -1.3, color = "black", size = 3,
+                show.legend = FALSE) +
+      geom_text(aes(y = Location, label = round(Location-mean(Location),2)),
+                hjust = 0.5, vjust = 2, color = "darkgrey", size = 3,
+                show.legend = FALSE) +
+      geom_errorbar(aes(ymin = Locations - 1.96*ThreshSEM, ymax = Locations + 1.96*ThreshSEM),
+                    width = 0.11
+      ) +
+      geom_text(aes(y = Locations, label = Threshold), hjust = 0.5, vjust = 1.4,
+                show.legend = FALSE) +
+      geom_text(aes(y = Locations, label = round(Locations,2)), hjust = 0.5, vjust = -1.1, size = 3,
+                show.legend = FALSE) +
+      geom_hline(aes(yintercept = mean(Location)),
+                 linetype = "dashed",
+                 color = "darkgrey") +
+      geom_rug(aes(y = Locations), color = "darkgrey", sides = "l", length = unit(0.02, "npc")) +
       scale_x_discrete(labels = str_wrap(paste0(itemOrder, " - ", itemLabels), width = 36)) +
       coord_flip() +
-      labs(caption = str_wrap("Note. Item locations are indicated by black diamond shapes. Item threshold locations are indicated by colored dots.
-                              Horizontal error bars indicate 95% confidence intervals around threshold locations.")) +
-      theme(plot.caption = element_text(hjust = 0, face = "italic")) +
-      scale_color_brewer(palette = "Dark2")
+      #scale_color_brewer(palette = "Dark2", guide = "none") +
+      scale_color_viridis_d(guide = "none", option = "H") + # enables any number of thresholds to be colorized with good contrast between adjacent categories
+      labs(caption = glue("Note. Item locations are indicated by black diamond shapes and black text.
+            Grey text indicates the deviation of the item location from the mean item location ({round(mean(itemLocs$Location),2)}).
+            Item threshold locations are indicated by colored dots and colored text.
+            Horizontal error bars indicate 95% confidence intervals around threshold locations.")) +
+      theme(plot.caption = element_text(hjust = 0, face = "italic"),
+            legend.position = "none")
   }
 }
 
@@ -2494,7 +2598,7 @@ RIitemHierarchy <- function(dfin, ci = "95"){
 #' @param sdx Multiplier for item location SD for simulated data dispersion
 #' @param ... Options for `kbl_rise()` for table creation
 #' @export
-RIscoreSE <- function(data, output = "table", point_size = 3,
+RIscoreSE <- function(dfin, output = "table", point_size = 3,
                       error_width = 0.5, error_multiplier = 1.96,
                       score_range = c(-4, 4), samplesize = 250, sdx = 5, ...) {
   # get item threshold location parameters
@@ -2589,7 +2693,8 @@ RIscoreSE <- function(data, output = "table", point_size = 3,
       scale_x_continuous() +
       scale_y_continuous() +
       coord_flip() +
-      labs(x = "Ordinal sum score", y = "Logit interval score") +
+      labs(x = "Ordinal sum score",
+           y = "Logit interval score") +
       theme_bw()
   }
 }
@@ -2634,7 +2739,7 @@ RIestThetas <- function(dfin, itemParams, model = "PCM", method = "WL",
     # Transpose dataframe to make persons to columns, then output a vector with thetas
     dfin %>%
       t() %>%
-      as_tibble() %>%
+      as.data.frame() %>%
       map_dbl(., estTheta)
 
   } else if (missing(itemParams) & is.null(model)) {
@@ -2644,7 +2749,7 @@ RIestThetas <- function(dfin, itemParams, model = "PCM", method = "WL",
     # Transpose dataframe to make persons to columns, then output a vector with thetas
     dfin %>%
       t() %>%
-      as_tibble() %>%
+      as.data.frame() %>%
       map_dbl(., estTheta)
 
   } else {
@@ -2652,7 +2757,7 @@ RIestThetas <- function(dfin, itemParams, model = "PCM", method = "WL",
 # Transpose dataframe to make persons to columns, then output a vector with thetas
   dfin %>%
     t() %>%
-    as_tibble() %>%
+    as.data.frame() %>%
     map_dbl(., estTheta)
   }
 }
@@ -2701,7 +2806,7 @@ RIestThetas2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4
     # Transpose dataframe to make persons to columns, then output a vector with thetas
     dfin %>%
       t() %>%
-      as_tibble() %>%
+      as.data.frame() %>%
       future_map_dbl(., estTheta)
 
   } else if (missing(itemParams) & is.null(model)) {
@@ -2711,7 +2816,7 @@ RIestThetas2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4
     # Transpose dataframe to make persons to columns, then output a vector with thetas
     dfin %>%
       t() %>%
-      as_tibble() %>%
+      as.data.frame() %>%
       future_map_dbl(., estTheta)
 
   } else {
@@ -2719,7 +2824,7 @@ RIestThetas2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4
     # Transpose dataframe to make persons to columns, then output a vector with thetas
     dfin %>%
       t() %>%
-      as_tibble() %>%
+      as.data.frame() %>%
       future_map_dbl(., estTheta)
   }
 }
@@ -3143,7 +3248,7 @@ RIdifFigureLR <- function(dfin, dif.var) {
          subtitle = "Item locations are calculated as the mean of each item's threshold locations",
          caption = "Note. Error bars indicate 95% confidence interval.\nDark grey diamonds indicate item location for all participants as one group.",
          x = "DIF group",
-         y = "Item location") +
+         y = "Item location (logit scale") +
     theme(legend.position = "none",
           plot.caption = element_text(hjust = 0, face = "italic"))
 

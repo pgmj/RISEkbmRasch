@@ -4,7 +4,7 @@
 \alias{RItargeting}
 \title{Targeting, Wright map derivative.}
 \usage{
-RItargeting(dfin, dich = FALSE, xlim = c(-5, 6))
+RItargeting(dfin, dich = FALSE, xlim = c(-5, 6), output = "figure", bins = 30)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
@@ -12,6 +12,10 @@ RItargeting(dfin, dich = FALSE, xlim = c(-5, 6))
 \item{dich}{Set to TRUE if your data is dichotomous}
 
 \item{xlim}{Optionally, set lower/upper limits for x axis}
+
+\item{output}{Default "figure", or "list" to output 3 figures to a list object}
+
+\item{bins}{Optionally, set number of bins for histograms}
 }
 \description{
 Outputs a figure consisting of three figures with the
@@ -20,4 +24,12 @@ At the top is a histogram of Person Locations, with a dotted line and
 gray field indicating mean/SD. In the middle is a similar histogram with
 Item Thresholds. At the bottom is a figure showing the individual
 item thresholds as dots.
+}
+\details{
+The figure is made up from three figures using library(patchwork). If desired,
+you can output the three figures to a list object instead of a single figure.
+This allows you to modify each figure (change theming, colors, etc). You can
+put together the three figures into one using patchwork:
+
+\code{list$p1 / list$p2 / list$p3 + plot_layout(heights = c(1, 1, 1.4))}
 }

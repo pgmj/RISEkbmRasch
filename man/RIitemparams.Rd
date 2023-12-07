@@ -4,17 +4,26 @@
 \alias{RIitemparams}
 \title{Item parameters summary}
 \usage{
-RIitemparams(dfin, filename = "itemParameters.csv", fontsize = 15)
+RIitemparams(
+  dfin,
+  fontsize = 15,
+  output = "table",
+  detail = "thresholds",
+  filename = "item_params.csv"
+)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
-\item{filename}{Optional specification of filename for item parameters output}
+\item{fontsize}{Option to set font size for table}
 
-\item{fontsize}{Set font size for table}
+\item{output}{Defaults to "table, can be set to "dataframe" or "file"}
+
+\item{detail}{Set to "all" to get more detailed summary output}
+
+\item{filename}{Name of file to save output to}
 }
 \description{
-Displays a table with item threshold locations
-and exports a CSV file ("itemParameters.csv") to your working
-directory. This file can be used for estimating person thetas/scores.
+Displays a table with item threshold locations. Can also output a dataframe or
+a CSV file. Set \code{detail = "all"} to get more detailed output.
 }

@@ -1,5 +1,35 @@
 ## Changelog
 
+### 0.1.30.0
+
+Minor fixes:
+
+- `RIestThetas()` and the parallel processing version `RIestThetas2()` now use `as.data.frame()` instead of `as_tibble()` to avoid a warning message.
+- The x axis of all figures showing the logit scale should now have a consistent label ("Location (logit scale)")
+- Begun some work to clean up the code and make it more consistent, primarily ggplot labels using `labs()`.
+
+Major updates:
+
+- `RItargeting()` now uses `library(patchwork)` instead of `cowplot` to combine figures.
+- `RItargeting()` can now output a list object with the three parts of the targeting figure, which allows for customization of themes/colors/fonts, etc. The three parts are:
+  - `p1` - Person location histogram
+  - `p2` - Item threshold histogram
+  - `p3` - Individual item thresholds
+  - If you want to use this, you should save the output to a named object, `targeting <- RItargeting(data)`, and then access the parts using `targeting$p1`, `targeting$p2`, and `targeting$p3`. You can then combine the figures, e.g. `targeting$p1 / targeting$p2 / targeting$p3 + plot_layout(heights = c(1,1,1.4))`.
+- `RItargeting()` now uses the viridis H color palette by default.
+
+- `RIitemhierarchy()` has a lot more information in the plot now. This is documented in the caption text. While a bit messy looking, it makes the plot contain key information that we recommend to include in published psychometrics. This includes:
+    - Values for item threshold and average item locations.
+    - The mean of the item thresholds.
+    - The relative distance from the mean for each item.
+- `RIitemhierarchy()` now uses the viridis H color palette by default.
+
+- `RIitemparams()` is largely reworked and has new options available.
+  - it does not by default write a CSV file any more, you need to specify `output = "file"`
+  - other output options include "table" (default) and "dataframe".
+  - you can choose level of detail in the output, using `detail = "thresholds"` or `output = "all"`. This applies to any type of output.
+  - `detail = "all"` adds information about avg/max/min values relative to the mean item location
+
 ### 0.1.20.1
 
 - `RIscoreSE()` fix. Should now work with any number of item thresholds.
