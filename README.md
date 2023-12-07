@@ -1,6 +1,8 @@
 # RISEkbmRasch
 R package for Rasch Measurement Theory based psychometric analysis, intended for use with [Quarto](https://quarto.org) for documentation and presentation of analysis process and results. This package uses other packages for the Rasch analyses, such as [eRm](https://cran.r-project.org/web/packages/eRm/), [mirt](https://cran.r-project.org/web/packages/mirt/), [psychotree](https://cran.r-project.org/web/packages/psychotree/), and [catR](https://cran.r-project.org/web/packages/catR/index.html). The package simplifies the Rasch analysis process and provides easy creation of tables and figures with functions that have few options. The package has been tested on MacOS and Windows with R 4.1 and 4.2.
 
+Please see the [NEWS.md](https://github.com/pgmj/RISEkbmRasch/blob/main/NEWS.md) file for notes on updates.
+
 There is now a [vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html) that is recommended reading after you skimmed this README. You will find a sample Rasch analysis in the vignette, with output from most of the package functions. The vignette is produced using Quarto, and its source code is of course also [available](https://github.com/pgmj/pgmj.github.io/blob/main/raschrvignette/RaschRvign.qmd).
 
 Most functions have been developed with polytomous data analysis in mind, using the partial credit model. Also, the choice was made to rely primarily on conditional maximum likelihood estimation for item parameters, since it is robust under various conditions and enables "person-free assessment".
@@ -27,8 +29,6 @@ While not strictly necessary, it is highly recommended to install Quarto (and up
 detach("package:RISEkbmRasch", unload = TRUE) # not needed if you haven't loaded the package in your current session
 devtools::install_github("pgmj/RISEkbmRasch")
 ```
-
-Please see the [NEWS.md](https://github.com/pgmj/RISEkbmRasch/blob/main/NEWS.md) file for notes on updates.
 
 ## Usage
 
