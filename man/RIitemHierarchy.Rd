@@ -4,15 +4,15 @@
 \alias{RIitemHierarchy}
 \title{Create a figure showing items and thresholds (with 95\% CI)}
 \usage{
-RIitemHierarchy(dfin, ci = "95")
+RIitemHierarchy(dfin, numbers = TRUE)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
-\item{ci}{Show 95\% CI (default) around each threshold location, or "none"}
+\item{numbers}{Display text in figure with item threshold locations}
 }
 \description{
-Items are sorted by item location.
+Items are sorted by item average location.
 }
 \details{
 Only works for PCM models currently. For dichotomous data, use

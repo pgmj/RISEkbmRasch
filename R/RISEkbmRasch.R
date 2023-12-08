@@ -2452,15 +2452,15 @@ RIdifFigureRM <- function(dfin, dif.var) {
 
 #' Create a figure showing items and thresholds (with 95% CI)
 #'
-#' Items are sorted by item location.
+#' Items are sorted by item average location.
 #'
 #' Only works for PCM models currently. For dichotomous data, use
 #' `df.erm<-RM(data)` followed by `plotPImap(df.erm, sorted = T)`
 #'
 #' @param dfin Dataframe with item data only
-#' @param ci Show 95% CI (default) around each threshold location, or "none"
+#' @param numbers Display text in figure with item threshold locations
 #' @export
-RIitemHierarchy <- function(dfin, ci = "95"){
+RIitemHierarchy <- function(dfin, numbers = TRUE){
   df.erm <- PCM(dfin)
   item.estimates <- eRm::thresholds(df.erm)
   item_difficulty <- item.estimates[["threshtable"]][["1"]]
@@ -2521,22 +2521,33 @@ RIitemHierarchy <- function(dfin, ci = "95"){
 
   # use the ordering and create plot
 
-  if(ci == "none"){
+  if(numbers == FALSE){
     itemLocs %>%
       mutate(Item = factor(itemnr, levels = itemOrder)) %>%
       ggplot(aes(x = Item, color = Threshold)) +
-      geom_point(aes(y = Locations)) +
-      geom_text(aes(y = Locations, label = Threshold), hjust = 1, vjust = 1.3) +
       geom_point(aes(y = Location),
                  size = 4,
                  shape = 18,
-                 color = "black") +
-      theme(legend.position = "none") +
+                 color = "black"
+      ) +
+      geom_point(aes(y = Locations),
+                 position = position_nudge()) +
+      geom_errorbar(aes(ymin = Locations - 1.96*ThreshSEM, ymax = Locations + 1.96*ThreshSEM),
+                    width = 0.11
+      ) +
+      geom_text(aes(y = Locations, label = Threshold), hjust = 0.5, vjust = 1.4,
+                show.legend = FALSE) +
+      geom_rug(aes(y = Locations), color = "darkgrey", sides = "l", length = unit(0.02, "npc")) +
       scale_x_discrete(labels = str_wrap(paste0(itemOrder, " - ", itemLabels), width = 36)) +
       coord_flip() +
-      labs(caption = str_wrap("Note. Item locations are indicated by black diamond shapes. Item threshold locations are indicated by colored dots.")) +
-      theme(plot.caption = element_text(hjust = 0, face = "italic")) +
-      scale_color_brewer(palette = "Dark2")
+      #scale_color_brewer(palette = "Dark2", guide = "none") +
+      scale_color_viridis_d(guide = "none", option = "H") + # enables any number of thresholds to be colorized with good contrast between adjacent categories
+      labs(caption = glue("Note. Item locations are indicated by black diamond shapes.
+            Item threshold locations are indicated by colored dots and colored text.
+            Horizontal error bars indicate 95% confidence intervals around threshold locations.")) +
+      theme(plot.caption = element_text(hjust = 0, face = "italic"),
+            legend.position = "none") +
+      theme_bw()
 
   }
   else {
@@ -2576,7 +2587,8 @@ RIitemHierarchy <- function(dfin, ci = "95"){
             Item threshold locations are indicated by colored dots and colored text.
             Horizontal error bars indicate 95% confidence intervals around threshold locations.")) +
       theme(plot.caption = element_text(hjust = 0, face = "italic"),
-            legend.position = "none")
+            legend.position = "none") +
+      theme_bw()
   }
 }
 
