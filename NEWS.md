@@ -3,7 +3,7 @@
 ### 0.1.30.2
 
 - Fix for `kbl()` tables to accomodate changes in Quarto 1.3+ and get desired rendering.
-- Added `tbl_width` option for functions rendering item fit tables and residual correlation table.
+- Added `tbl_width` option for functions rendering tables (item fit, residual correlations, item parameters, etc)
 
 ### 0.1.30.1
 
