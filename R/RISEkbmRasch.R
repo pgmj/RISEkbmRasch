@@ -1830,7 +1830,8 @@ RIitemparams <- function(dfin, fontsize = 15, output = "table",
       column_spec(1, bold = T) %>%
       kable_classic(html_font = "Lato") %>%
       # for latex/PDF output
-      kable_styling(latex_options = c("striped","scale_down"))
+      kable_styling(latex_options = c("striped","scale_down")) %>%
+      footnote(general = "Item location is the average of the thresholds for each item.")
   }
   else if (output == "table" & detail == "all") {
     item_params %>%
@@ -1851,7 +1852,11 @@ RIitemparams <- function(dfin, fontsize = 15, output = "table",
                     fixed_thead = T) %>% # when there is a long list in the table
       column_spec(1, bold = T) %>%
       kable_classic(html_font = "Lato") %>%
-      kable_styling(latex_options = c("striped","scale_down"))
+      kable_styling(latex_options = c("striped","scale_down")) %>%
+      footnote(general = "Item location is the average of the thresholds for each item.
+      Relative item location is the difference between the item location and the average of the item locations for all items.
+               Relative lowest threshold is the difference between the lowest threshold and the average of all item locations.
+               Relative highest threshold is the difference between the highest threshold and the average of all item locations.")
   }
 
 }
