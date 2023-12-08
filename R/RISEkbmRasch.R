@@ -1762,7 +1762,8 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
 #' @param tbl_width Width of table
 #' @export
 RIitemparams <- function(dfin, fontsize = 15, output = "table",
-                         detail = "thresholds", filename = "item_params.csv") {
+                         detail = "thresholds", filename = "item_params.csv",
+                         tbl_width = 90) {
   df.erm <- PCM(dfin)
   item.estimates <- eRm::thresholds(df.erm)
   item_difficulty <- item.estimates[["threshtable"]][["1"]]
