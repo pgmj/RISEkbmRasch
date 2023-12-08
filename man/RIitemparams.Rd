@@ -22,6 +22,8 @@ RIitemparams(
 \item{detail}{Set to "all" to get more detailed summary output}
 
 \item{filename}{Name of file to save output to}
+
+\item{tbl_width}{Width of table}
 }
 \description{
 Displays a table with item threshold locations. Can also output a dataframe or

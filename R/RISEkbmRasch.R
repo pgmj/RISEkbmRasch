@@ -69,7 +69,7 @@ theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15,
 kbl_rise <- function(data, tbl_width = 65, fontsize = 14, fontfamily = "Arial",
                      options = c("striped", "hover"), ...) {
   kbl(data, booktabs = T, escape = F,
-      table.attr = glue("data-quarto-disable-processing='true' style='width:{width}%;'")) %>%
+      table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
     kable_styling(
       bootstrap_options = options,
       position = "left",
@@ -1759,6 +1759,7 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
 #' @param output Defaults to "table, can be set to "dataframe" or "file"
 #' @param detail Set to "all" to get more detailed summary output
 #' @param filename Name of file to save output to
+#' @param tbl_width Width of table
 #' @export
 RIitemparams <- function(dfin, fontsize = 15, output = "table",
                          detail = "thresholds", filename = "item_params.csv") {
@@ -1815,7 +1816,8 @@ RIitemparams <- function(dfin, fontsize = 15, output = "table",
       relocate(Location, .after = last_col()) %>%
       mutate(Location = cell_spec(Location, bold = T, align = "right")) %>%
       dplyr::rename('Item location' = Location) %>%
-      kbl(booktabs = T, escape = F) %>%
+      kbl(booktabs = T, escape = F,
+          table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
       # bootstrap options are for HTML output
       kable_styling(bootstrap_options = c("striped", "hover"),
                     position = "left",
@@ -1836,7 +1838,8 @@ RIitemparams <- function(dfin, fontsize = 15, output = "table",
                     'Relative lowest threshold' = relative_lowest_tloc,
                     'Relative highest threshold' = relative_highest_tloc) %>%
       select(!all_item_avg) %>%
-      kbl(booktabs = T, escape = F) %>%
+      kbl(booktabs = T, escape = F,
+          table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
       # bootstrap options are for HTML output
       kable_styling(bootstrap_options = c("striped", "hover"),
                     position = "left",
