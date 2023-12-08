@@ -68,7 +68,8 @@ theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15,
 #' @export
 kbl_rise <- function(data, width = 65, fontsize = 14, fontfamily = "Arial",
                      options = c("striped", "hover"), ...) {
-  kbl(data, booktabs = T, escape = F, table.attr = glue("style='width:{width}%;'")) %>%
+  kbl(data, booktabs = T, escape = F,
+      table.attr = glue("data-quarto-disable-processing='true' style='width:{width}%;'")) %>%
     kable_styling(
       bootstrap_options = options,
       position = "left",
@@ -533,7 +534,7 @@ RIallresp <- function(dfin, pdf.out, fontsize = 15) {
         "Number of responses" = "n",
         "Percent" = "percent"
       ) %>%
-      kbl(booktabs = T, escape = F, table.attr = "style='width:40%;'") %>%
+      kbl(booktabs = T, escape = F, table.attr = "data-quarto-disable-processing='true' style='width:40%;'") %>%
       # options for HTML output
       kable_styling(
         bootstrap_options = c("striped", "hover"),
@@ -576,7 +577,7 @@ RIpcmPCA <- function(dfin, no.table, fontsize = 15) {
       head(5) %>%
       as_tibble() %>%
       dplyr::rename("Eigenvalues" = "value") %>%
-      kbl(booktabs = T, escape = F, table.attr = "style='width:25%;'") %>%
+      kbl(booktabs = T, escape = F, table.attr = "data-quarto-disable-processing='true' style='width:25%;'") %>%
       # options for HTML output
       kable_styling(
         bootstrap_options = c("striped", "hover"),
@@ -635,7 +636,7 @@ RIrmPCA <- function(dfin, no.table, fontsize = 15) {
       head(5) %>%
       as_tibble() %>%
       dplyr::rename("Eigenvalues" = "value") %>%
-      kbl(booktabs = T, escape = F, table.attr = "style='width:25%;'") %>%
+      kbl(booktabs = T, escape = F, table.attr = "data-quarto-disable-processing='true' style='width:25%;'") %>%
       # options for HTML output
       kable_styling(
         bootstrap_options = c("striped", "hover"),
@@ -789,11 +790,12 @@ RIrawdist <- function(dfin) {
 #' @param msq_max Upper cutoff level for MSQ
 #' @param fontsize Set fontsize for table
 #' @param fontfamily Set font family for table
-#' @param table Set to TRUE = table, and FALSE = dataframe `itemfitPCM`
+#' @param table Set to TRUE to output a table, and FALSE for a dataframe
+#' @param tbl_width Set table width in percent
 #' @export
 RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
                          msq_min = 0.7, msq_max = 1.3, fontsize = 15, fontfamily = "Lato",
-                         table = TRUE) {
+                         table = TRUE, tbl_width = 65) {
 
   if (missing(samplesize)) {
     df.erm <- PCM(dfin) # run PCM model
@@ -824,7 +826,8 @@ RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2
       mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
         ifelse(InfitMSQ > msq_max, "red", "black")
       ))) %>%
-        kbl(booktabs = T, escape = F) %>%
+        kbl(booktabs = T, escape = F,
+            table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
         # bootstrap options are for HTML output
         kable_styling(
           bootstrap_options = c("striped", "hover"),
@@ -839,7 +842,7 @@ RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2
         # latex_options are for PDF output
         kable_styling(latex_options = c("striped", "scale_down"))
     } else {
-      itemFitPCM <<- item.fit.table
+      return(item.fit.table)
     }
   } else {
     df.erm <- PCM(dfin) # run PCM model
@@ -882,7 +885,8 @@ RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2
       mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
         ifelse(InfitMSQ > msq_max, "red", "black")
       ))) %>%
-        kbl(booktabs = T, escape = F) %>%
+        kbl(booktabs = T, escape = F,
+            table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
         # bootstrap options are for HTML output
         kable_styling(
           bootstrap_options = c("striped", "hover"),
@@ -897,7 +901,7 @@ RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2
         # latex_options are for PDF output
         kable_styling(latex_options = c("striped", "scale_down"))
       } else {
-        itemfitPCM <<- item.fit.table
+        return(item.fit.table)
       }
   }
 }
@@ -927,11 +931,12 @@ RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2
 #' @param fontsize Set fontsize for table
 #' @param fontfamily Set font family for table
 #' @param table Set to FALSE if you want a dataframe instead of a table output
+#' @param tbl_width Set table width in percent
 #' @export
 RIitemfitPCM2 <- function(dfin, samplesize = 300, nsamples = 10, cpu = 4,
                           zstd_min = -2, zstd_max = 2, msq_min = 0.7,
                           msq_max = 1.3, fontsize = 15, fontfamily = "Lato",
-                          table = TRUE) {
+                          table = TRUE, tbl_width = 65) {
   library(doParallel)
   registerDoParallel(cores = cpu)
   df.erm <- PCM(dfin) # run PCM model
@@ -986,7 +991,8 @@ RIitemfitPCM2 <- function(dfin, samplesize = 300, nsamples = 10, cpu = 4,
     mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
       ifelse(InfitMSQ > msq_max, "red", "black")
     ))) %>%
-    kbl(booktabs = T, escape = F) %>%
+    kbl(booktabs = T, escape = F,
+        table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
     # bootstrap options are for HTML output
     kable_styling(
       bootstrap_options = c("striped", "hover"),
@@ -1001,7 +1007,7 @@ RIitemfitPCM2 <- function(dfin, samplesize = 300, nsamples = 10, cpu = 4,
     # latex_options are for PDF output
     kable_styling(latex_options = c("striped", "scale_down"))
   } else {
-    itemFitPCM <<- item.fit.table
+    return(item.fit.table)
   }
 }
 
@@ -1024,10 +1030,11 @@ RIitemfitPCM2 <- function(dfin, samplesize = 300, nsamples = 10, cpu = 4,
 #' @param fontsize Set font size for table
 #' @param fontfamily Set font family for table
 #' @param table Set to FALSE if you want a dataframe instead of a table output
+#' @param tbl_width Set table width in percent
 #' @export
 RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
                         msq_min = 0.7, msq_max = 1.3, fontsize = 15, fontfamily = "Lato",
-                        table = TRUE) {
+                        table = TRUE, tbl_width = 65) {
   if(missing(samplesize)) {
     df.erm <- RM(dfin) # run Rasch model
     # get estimates
@@ -1055,7 +1062,8 @@ RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
                                                              ifelse(OutfitMSQ > msq_max, "red", "black")))) %>%
       mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
                                                            ifelse(InfitMSQ > msq_max, "red", "black")))) %>%
-      kbl(booktabs = T, escape = F) %>%
+      kbl(booktabs = T, escape = F,
+          table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
       # bootstrap options are for HTML output
       kable_styling(bootstrap_options = c("striped", "hover"),
                     position = "left",
@@ -1067,7 +1075,7 @@ RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
       # latex_options are for PDF output
       kable_styling(latex_options = c("striped","scale_down"))
     } else {
-      itemFitRM <<- item.fit.table
+      return(item.fit.table)
     }
   } else {
     df.erm <- RM(dfin) # run Rasch model
@@ -1108,7 +1116,8 @@ RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
                                                              ifelse(OutfitMSQ > msq_max, "red", "black")))) %>%
       mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
                                                            ifelse(InfitMSQ > msq_max, "red", "black")))) %>%
-      kbl(booktabs = T, escape = F) %>%
+      kbl(booktabs = T, escape = F,
+          table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
       # bootstrap options are for HTML output
       kable_styling(bootstrap_options = c("striped", "hover"),
                     position = "left",
@@ -1120,7 +1129,7 @@ RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
       # latex_options are for PDF output
       kable_styling(latex_options = c("striped","scale_down"))
     } else {
-      itemFitRM <<- item.fit.table
+      return(item.fit.table)
     }
   }
 }
@@ -1135,8 +1144,9 @@ RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
 #' @param cutoff Relative value above the average of all item residual correlations
 #' @param fontsize Set font size for table
 #' @param fontfamily Set font family for table
+#' @param tbl_width
 #' @export
-RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato") {
+RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_width = 70) {
 
   sink(nullfile()) # suppress output from the rows below
 
@@ -1164,7 +1174,7 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato") {
     resid %>%
       mutate(across(everything(), ~ cell_spec(.x, color = case_when(.x > dyn.cutoff ~ "red", TRUE ~ "black")))) %>%
       kbl(booktabs = T, escape = F,
-          table.attr = "style='width:70%;'") %>%
+          table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
       # bootstrap options are for HTML output
       kable_styling(bootstrap_options = c("striped", "hover"),
                     position = "left",
@@ -1181,7 +1191,7 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato") {
     resid %>%
       mutate(across(everything(), ~ cell_spec(.x, color = case_when(.x > -dyn.cutoff ~ "red", TRUE ~ "black")))) %>%
       kbl(booktabs = T, escape = F,
-          table.attr = "style='width:70%;'") %>%
+          table.attr = glue("data-quarto-disable-processing='true' style='width:{width}%;'")) %>%
       # bootstrap options are for HTML output
       kable_styling(bootstrap_options = c("striped", "hover"),
                     position = "left",
