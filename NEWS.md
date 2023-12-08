@@ -1,5 +1,10 @@
 ## Changelog
 
+### 0.1.30.2
+
+- Fix for `kbl()` tables to accomodate changes in Quarto 1.3+ and get desired rendering.
+- Added `tbl_width` option for functions rendering item fit tables and residual correlation table.
+
 ### 0.1.30.1
 
 - `RIitemhierarchy()` new option `numbers = FALSE` to remove numbers from the plot.
