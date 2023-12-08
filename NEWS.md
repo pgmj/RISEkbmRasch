@@ -1,5 +1,9 @@
 ## Changelog
 
+### 0.1.30.1
+
+- `RIitemhierarchy()` new option `numbers = FALSE` to remove numbers from the plot.
+
 ### 0.1.30.0
 
 Minor fixes:
