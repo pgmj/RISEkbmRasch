@@ -1786,12 +1786,14 @@ RIitemparams <- function(dfin, fontsize = 15, output = "table",
     filter(t_location == max(t_location)) %>%
     ungroup() %>%
     dplyr::select(itemnr, t_location) %>%
-    dplyr::rename(relative_highest_tloc = t_location)
+    dplyr::rename(highest_tloc = t_location)
 
   # join the highest threshold location to the item_params df
   item_params <- item_params %>%
     left_join(highest_loc, by = "itemnr") %>%
+    mutate(relative_highest_tloc = highest_tloc - all_item_avg) %>%
     relocate(all_item_avg, .after = relative_highest_tloc) %>%
+    select(-highest_tloc) %>%
     as.data.frame()
 
   if (output == "file" & detail == "thresholds") {
