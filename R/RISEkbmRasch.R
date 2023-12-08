@@ -61,12 +61,12 @@ theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15,
 #' A kableExtra function to simplify table code
 #'
 #' @param data Dataframe/tibble to create table from
-#' @param width Width of table (0-100)
+#' @param tbl_width Width of table (0-100)
 #' @param fontsize Font size
 #' @param fontfamily Font family
 #' @param ... Passes options to kbl()
 #' @export
-kbl_rise <- function(data, width = 65, fontsize = 14, fontfamily = "Arial",
+kbl_rise <- function(data, tbl_width = 65, fontsize = 14, fontfamily = "Arial",
                      options = c("striped", "hover"), ...) {
   kbl(data, booktabs = T, escape = F,
       table.attr = glue("data-quarto-disable-processing='true' style='width:{width}%;'")) %>%
@@ -1144,7 +1144,7 @@ RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
 #' @param cutoff Relative value above the average of all item residual correlations
 #' @param fontsize Set font size for table
 #' @param fontfamily Set font family for table
-#' @param tbl_width
+#' @param tbl_width Set table width in percent
 #' @export
 RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_width = 70) {
 

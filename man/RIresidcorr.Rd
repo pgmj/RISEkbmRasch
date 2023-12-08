@@ -4,7 +4,7 @@
 \alias{RIresidcorr}
 \title{Correlation matrix of Rasch residuals}
 \usage{
-RIresidcorr(dfin, cutoff, fontsize = 15, fontfamily = "Lato")
+RIresidcorr(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_width = 70)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
@@ -14,6 +14,8 @@ RIresidcorr(dfin, cutoff, fontsize = 15, fontfamily = "Lato")
 \item{fontsize}{Set font size for table}
 
 \item{fontfamily}{Set font family for table}
+
+\item{tbl_width}{Set table width in percent}
 }
 \description{
 Mandatory option to set relative cutoff-value over

@@ -6,7 +6,7 @@
 \usage{
 kbl_rise(
   data,
-  width = 65,
+  tbl_width = 65,
   fontsize = 14,
   fontfamily = "Arial",
   options = c("striped", "hover"),
@@ -16,7 +16,7 @@ kbl_rise(
 \arguments{
 \item{data}{Dataframe/tibble to create table from}
 
-\item{width}{Width of table (0-100)}
+\item{tbl_width}{Width of table (0-100)}
 
 \item{fontsize}{Font size}
 

@@ -15,7 +15,8 @@ RIitemfitPCM2(
   msq_max = 1.3,
   fontsize = 15,
   fontfamily = "Lato",
-  table = TRUE
+  table = TRUE,
+  tbl_width = 65
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ RIitemfitPCM2(
 \item{fontfamily}{Set font family for table}
 
 \item{table}{Set to FALSE if you want a dataframe instead of a table output}
+
+\item{tbl_width}{Set table width in percent}
 }
 \description{
 Special version of RIitemfitPCM that utilizes multiple CPU cores to improve

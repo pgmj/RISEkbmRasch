@@ -14,7 +14,8 @@ RIitemfitRM(
   msq_max = 1.3,
   fontsize = 15,
   fontfamily = "Lato",
-  table = TRUE
+  table = TRUE,
+  tbl_width = 65
 )
 }
 \arguments{
@@ -37,6 +38,8 @@ RIitemfitRM(
 \item{fontfamily}{Set font family for table}
 
 \item{table}{Set to FALSE if you want a dataframe instead of a table output}
+
+\item{tbl_width}{Set table width in percent}
 }
 \description{
 ZSTD is inflated with large samples (N > 500). Optional function to reduce
