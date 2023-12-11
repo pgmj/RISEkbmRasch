@@ -15,12 +15,6 @@
 
 ### 0.1.30.0
 
-Minor fixes:
-
-- `RIestThetas()` and the parallel processing version `RIestThetas2()` now use `as.data.frame()` instead of `as_tibble()` to avoid a warning message.
-- The x axis of all figures showing the logit scale should now have a consistent label ("Location (logit scale)")
-- Begun some work to clean up the code and make it more consistent, primarily ggplot labels using `labs()`.
-
 Major updates:
 
 #### `RItargeting()`
@@ -49,6 +43,13 @@ Major updates:
   - other output options include "table" (default) and "dataframe".
   - you can choose level of detail in the output, using `detail = "thresholds"` or `output = "all"`. This applies to any type of output.
   - `detail = "all"` adds information about avg/max/min values relative to the mean item location
+  
+Minor fixes:
+
+- `RIestThetas()` and the parallel processing version `RIestThetas2()` now use `as.data.frame()` instead of `as_tibble()` to avoid a warning message.
+- The x axis of all figures showing the logit scale should now have a consistent label ("Location (logit scale)")
+- Begun some work to clean up the code and make it more consistent, primarily ggplot labels using `labs()`.
+
 
 ### 0.1.20.1
 
