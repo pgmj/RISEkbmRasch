@@ -1784,7 +1784,7 @@ RIitemparams <- function(dfin, fontsize = 15, output = "table",
                  names_to = "threshold",
                  values_to = "t_location") %>%
     group_by(itemnr) %>%
-    filter(t_location == max(t_location)) %>%
+    filter(t_location == max(t_location, na.rm = TRUE)) %>%
     ungroup() %>%
     dplyr::select(itemnr, t_location) %>%
     dplyr::rename(highest_tloc = t_location)
