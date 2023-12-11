@@ -1,5 +1,9 @@
 ## Changelog
 
+### 0.1.30.3
+
+- Fix for `RIitemparams()` to get relative_highest_tloc values for all items even when there are different number of thresholds (added `na.rm = TRUE` to `max()` function call).
+
 ### 0.1.30.2
 
 - Fix for `kbl()` tables to accomodate changes in Quarto 1.3+ and get desired rendering.
