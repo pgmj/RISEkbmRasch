@@ -1191,7 +1191,7 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_wi
     resid %>%
       mutate(across(everything(), ~ cell_spec(.x, color = case_when(.x > -dyn.cutoff ~ "red", TRUE ~ "black")))) %>%
       kbl(booktabs = T, escape = F,
-          table.attr = glue("data-quarto-disable-processing='true' style='width:{width}%;'")) %>%
+          table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
       # bootstrap options are for HTML output
       kable_styling(bootstrap_options = c("striped", "hover"),
                     position = "left",
