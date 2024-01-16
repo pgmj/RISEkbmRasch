@@ -1579,7 +1579,8 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33) {
 
   TIFplot <- ggplot(psimatrix) +
     geom_line(aes(x = psX, y = psY, group = 1), color = "black", linewidth = 1) +
-    geom_hline(yintercept = 3.33, color = "#e83c63", linetype = 2, size = 0.5) +
+    geom_hline(yintercept = cutoff, color = "orange", linetype = 2, size = 0.6) +
+    geom_hline(yintercept = 3.33, color = "#e83c63", linetype = 2, size = 0.6) +
     geom_hline(yintercept = 5, color = "#e83c63", linetype = 2, size = 0.7) +
     scale_y_continuous(breaks = seq(0, 8, by = 1)) +
     scale_x_continuous(breaks = seq(lo, hi, by = 1)) +

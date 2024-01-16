@@ -1,5 +1,9 @@
 ## Changelog
 
+### 0.1.30.4
+
+- `RItif()` draws an oranged dashed horizontal line for the cutoff (optionally) chosen.
+
 ### 0.1.30.3
 
 - Fix for `RIitemparams()` to get relative_highest_tloc values for all items even when there are different number of thresholds (added `na.rm = TRUE` to `max()` function call).
