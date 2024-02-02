@@ -2887,13 +2887,16 @@ RIdifTableLR <- function(dfin, dif.var, sort = FALSE,
   groups <- levels(droplevels(dif.var)) # remove unused factor levels
   nr.groups <- length(groups) # get number of subgroups
 
-  # get item location for each subgroup
-  itemthresh <- lrt.out[["betalist"]][[1]] %>%
+  # get item location for each subgroupx
+  itemthresh <- thresholds(lrt.out[["fitobj"]][["1"]]) %>%
+    .[["threshpar"]] %>%
     as.data.frame() %>%
     rownames()
+
   lrt.locs <- data.frame(matrix(ncol = 1, nrow = length(lrt.out[["betalist"]][[1]])))
   for (i in 1:nr.groups){
-    lrt.locs[[i]] <- lrt.out[["betalist"]][[i]] %>%
+    lrt.locs[[i]] <- thresholds(lrt.out[["fitobj"]][[i]]) %>%
+      .[["threshpar"]] %>%
       as.data.frame(nm = groups[i]) %>%
       pull(groups[i])
   }
@@ -2901,24 +2904,29 @@ RIdifTableLR <- function(dfin, dif.var, sort = FALSE,
   lrt.locs$Item <- itemthresh
 
   # get thresholds from non-DIF-split model
-  lrt.locs$All <- erm.out[["betapar"]] %>%
-    as.data.frame(nm = "All") %>%
-    pull(All)
+  erm.par <- eRm::thresholds(erm.out)
+  lrt.locs$All <- erm.par[["threshpar"]] %>%
+    as.data.frame(nm = "Location") %>%
+    pull(Location)
 
   # bind in one df
   lrt.diff <- lrt.locs %>%
-    mutate_if(is.numeric, ~ .x * -1) %>%
     mutate_if(is.numeric, ~ round(.x, 3)) %>%
-    separate(Item, c(NA,"Item"), sep = " ") %>%
+    separate(Item, c(NA,"Item"), sep = "beta ") %>%
     separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
   # add standard errors for all subgroups + whole group
   lrt.se <- data.frame(matrix(ncol = 1, nrow = length(lrt.out$selist[[1]])))
   for (i in 1:nr.groups){
-    lrt.se[[i]] <- lrt.out$selist[[i]]
+    lrt.se[[i]] <- thresholds(lrt.out[["fitobj"]][[i]]) %>%
+      .[["se.thresh"]] %>%
+      as.data.frame(nm = "Location") %>%
+      pull(Location)
   }
-  lrt.se$All <- erm.out$se.beta
+  lrt.se$All <- erm.par$se.thresh %>%
+    as.data.frame(nm = "sem") %>%
+    pull(sem)
   lrt.se <- setNames(lrt.se, c(groups,"All"))
   lrt.se$Item <- lrt.diff$Item
   lrt.se$Threshold <- lrt.diff$Threshold
@@ -3035,19 +3043,22 @@ RIdifTableLR <- function(dfin, dif.var, sort = FALSE,
 #' @param fontfamily Set table font
 #' @export
 RIdifThreshTblLR <- function(dfin, dif.var,
-                              fontfamily = "sans-serif", cutoff = 0.5) {
+                             fontfamily = "sans-serif", cutoff = 0.5) {
   erm.out <- PCM(dfin)
-  lrt.out <- LRtest(erm.out, splitcr = dif.var)
+  lrt.out <- LRtest(erm.out, splitcr = droplevels(dif.var))
   groups <- levels(droplevels(dif.var)) # remove unused factor levels
   nr.groups <- length(groups) # get number of subgroups
 
-  # get item location for each subgroup
-  itemthresh <- lrt.out[["betalist"]][[1]] %>%
+  # get item location for each subgroupx
+  itemthresh <- thresholds(lrt.out[["fitobj"]][["1"]]) %>%
+    .[["threshpar"]] %>%
     as.data.frame() %>%
     rownames()
+
   lrt.locs <- data.frame(matrix(ncol = 1, nrow = length(lrt.out[["betalist"]][[1]])))
   for (i in 1:nr.groups){
-    lrt.locs[[i]] <- lrt.out[["betalist"]][[i]] %>%
+    lrt.locs[[i]] <- thresholds(lrt.out[["fitobj"]][[i]]) %>%
+      .[["threshpar"]] %>%
       as.data.frame(nm = groups[i]) %>%
       pull(groups[i])
   }
@@ -3055,24 +3066,29 @@ RIdifThreshTblLR <- function(dfin, dif.var,
   lrt.locs$Item <- itemthresh
 
   # get thresholds from non-DIF-split model
-  lrt.locs$All <- erm.out[["betapar"]] %>%
-    as.data.frame(nm = "All") %>%
-    pull(All)
+  erm.par <- eRm::thresholds(erm.out)
+  lrt.locs$All <- erm.par[["threshpar"]] %>%
+    as.data.frame(nm = "Location") %>%
+    pull(Location)
 
   # bind in one df
   lrt.diff <- lrt.locs %>%
-    mutate_if(is.numeric, ~ .x * -1) %>%
     mutate_if(is.numeric, ~ round(.x, 3)) %>%
-    separate(Item, c(NA,"Item"), sep = " ") %>%
+    separate(Item, c(NA,"Item"), sep = "beta ") %>%
     separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
   # add standard errors for all subgroups + whole group
   lrt.se <- data.frame(matrix(ncol = 1, nrow = length(lrt.out$selist[[1]])))
   for (i in 1:nr.groups){
-    lrt.se[[i]] <- lrt.out$selist[[i]]
+    lrt.se[[i]] <- thresholds(lrt.out[["fitobj"]][[i]]) %>%
+      .[["se.thresh"]] %>%
+      as.data.frame(nm = "Location") %>%
+      pull(Location)
   }
-  lrt.se$All <- erm.out$se.beta
+  lrt.se$All <- erm.par$se.thresh %>%
+    as.data.frame(nm = "sem") %>%
+    pull(sem)
   lrt.se <- setNames(lrt.se, c(groups,"All"))
   lrt.se$Item <- lrt.diff$Item
   lrt.se$Threshold <- lrt.diff$Threshold
@@ -3112,6 +3128,7 @@ RIdifThreshTblLR <- function(dfin, dif.var,
 
   lrt.avg$SE <- lrt.avg.se$SE
 
+  # prepare table
   lrt.plot <- lrt.diff %>%
     pivot_longer(any_of(c(groups,"All")),
                  names_to = "DIFgroup",
@@ -3154,16 +3171,16 @@ RIdifThreshTblLR <- function(dfin, dif.var,
     kbl_rise() %>%
     pack_rows(index = table(lrt.table$Item)) %>%
     column_spec(column = c(1,nr.groups+2),
-                 bold = T) %>%
+                bold = T) %>%
     column_spec(column = c(nr.groups+3,(ncol(lrt.table)-1)),
-               italic = T) %>%
-    add_header_above(c(" " = 1, "Treshold locations" = nr.groups+2, "Standard errors" = nr.groups+1),
+                italic = T) %>%
+    add_header_above(c(" " = 1, "Threshold locations" = nr.groups+2, "Standard errors" = nr.groups+1),
                      bold = T,
                      line_sep = 5) %>%
     footnote(general = paste0("Values highlighted in red are above the chosen cutoff ",
                               cutoff,
                               " logits. Background color brown and blue indicate the lowest and highest values among the DIF groups.")
-             )
+    )
 
 }
 
@@ -3184,16 +3201,19 @@ RIdifThreshTblLR <- function(dfin, dif.var,
 RIdifFigureLR <- function(dfin, dif.var) {
   erm.out <- PCM(dfin)
   lrt.out <- LRtest(erm.out, splitcr = droplevels(dif.var))
-  groups <- levels(droplevels(dif.var))
-  nr.groups <- length(groups)
+  groups <- levels(droplevels(dif.var)) # remove unused factor levels
+  nr.groups <- length(groups) # get number of subgroups
 
-  # get item location for each subgroup
-  itemthresh <- lrt.out[["betalist"]][[1]] %>%
+  # get item location for each subgroupx
+  itemthresh <- thresholds(lrt.out[["fitobj"]][["1"]]) %>%
+    .[["threshpar"]] %>%
     as.data.frame() %>%
     rownames()
+
   lrt.locs <- data.frame(matrix(ncol = 1, nrow = length(lrt.out[["betalist"]][[1]])))
   for (i in 1:nr.groups){
-    lrt.locs[[i]] <- lrt.out[["betalist"]][[i]] %>%
+    lrt.locs[[i]] <- thresholds(lrt.out[["fitobj"]][[i]]) %>%
+      .[["threshpar"]] %>%
       as.data.frame(nm = groups[i]) %>%
       pull(groups[i])
   }
@@ -3201,24 +3221,29 @@ RIdifFigureLR <- function(dfin, dif.var) {
   lrt.locs$Item <- itemthresh
 
   # get thresholds from non-DIF-split model
-  lrt.locs$All <- erm.out[["betapar"]] %>%
-    as.data.frame(nm = "All") %>%
-    pull(All)
+  erm.par <- eRm::thresholds(erm.out)
+  lrt.locs$All <- erm.par[["threshpar"]] %>%
+    as.data.frame(nm = "Location") %>%
+    pull(Location)
 
   # bind in one df
   lrt.diff <- lrt.locs %>%
-    mutate_if(is.numeric, ~ .x * -1) %>%
     mutate_if(is.numeric, ~ round(.x, 3)) %>%
-    separate(Item, c(NA,"Item"), sep = " ") %>%
+    separate(Item, c(NA,"Item"), sep = "beta ") %>%
     separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
   # add standard errors for all subgroups + whole group
   lrt.se <- data.frame(matrix(ncol = 1, nrow = length(lrt.out$selist[[1]])))
   for (i in 1:nr.groups){
-    lrt.se[[i]] <- lrt.out$selist[[i]]
+    lrt.se[[i]] <- thresholds(lrt.out[["fitobj"]][[i]]) %>%
+      .[["se.thresh"]] %>%
+      as.data.frame(nm = "Location") %>%
+      pull(Location)
   }
-  lrt.se$All <- erm.out$se.beta
+  lrt.se$All <- erm.par$se.thresh %>%
+    as.data.frame(nm = "sem") %>%
+    pull(sem)
   lrt.se <- setNames(lrt.se, c(groups,"All"))
   lrt.se$Item <- lrt.diff$Item
   lrt.se$Threshold <- lrt.diff$Threshold
@@ -3304,16 +3329,19 @@ RIdifFigureLR <- function(dfin, dif.var) {
 RIdifThreshFigLR <- function(dfin, dif.var) {
   erm.out <- PCM(dfin)
   lrt.out <- LRtest(erm.out, splitcr = droplevels(dif.var))
-  groups <- levels(droplevels(dif.var))
-  nr.groups <- length(groups)
+  groups <- levels(droplevels(dif.var)) # remove unused factor levels
+  nr.groups <- length(groups) # get number of subgroups
 
-  # get item location for each subgroup
-  itemthresh <- lrt.out[["betalist"]][[1]] %>%
+  # get item location for each subgroupx
+  itemthresh <- thresholds(lrt.out[["fitobj"]][["1"]]) %>%
+    .[["threshpar"]] %>%
     as.data.frame() %>%
     rownames()
+
   lrt.locs <- data.frame(matrix(ncol = 1, nrow = length(lrt.out[["betalist"]][[1]])))
   for (i in 1:nr.groups){
-    lrt.locs[[i]] <- lrt.out[["betalist"]][[i]] %>%
+    lrt.locs[[i]] <- thresholds(lrt.out[["fitobj"]][[i]]) %>%
+      .[["threshpar"]] %>%
       as.data.frame(nm = groups[i]) %>%
       pull(groups[i])
   }
@@ -3321,24 +3349,29 @@ RIdifThreshFigLR <- function(dfin, dif.var) {
   lrt.locs$Item <- itemthresh
 
   # get thresholds from non-DIF-split model
-  lrt.locs$All <- erm.out[["betapar"]] %>%
-    as.data.frame(nm = "All") %>%
-    pull(All)
+  erm.par <- eRm::thresholds(erm.out)
+  lrt.locs$All <- erm.par[["threshpar"]] %>%
+    as.data.frame(nm = "Location") %>%
+    pull(Location)
 
   # bind in one df
   lrt.diff <- lrt.locs %>%
-    mutate_if(is.numeric, ~ .x * -1) %>%
     mutate_if(is.numeric, ~ round(.x, 3)) %>%
-    separate(Item, c(NA,"Item"), sep = " ") %>%
+    separate(Item, c(NA,"Item"), sep = "beta ") %>%
     separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
   # add standard errors for all subgroups + whole group
   lrt.se <- data.frame(matrix(ncol = 1, nrow = length(lrt.out$selist[[1]])))
   for (i in 1:nr.groups){
-    lrt.se[[i]] <- lrt.out$selist[[i]]
+    lrt.se[[i]] <- thresholds(lrt.out[["fitobj"]][[i]]) %>%
+      .[["se.thresh"]] %>%
+      as.data.frame(nm = "Location") %>%
+      pull(Location)
   }
-  lrt.se$All <- erm.out$se.beta
+  lrt.se$All <- erm.par$se.thresh %>%
+    as.data.frame(nm = "sem") %>%
+    pull(sem)
   lrt.se <- setNames(lrt.se, c(groups,"All"))
   lrt.se$Item <- lrt.diff$Item
   lrt.se$Threshold <- lrt.diff$Threshold
@@ -3411,12 +3444,12 @@ RIdifThreshFigLR <- function(dfin, dif.var) {
     geom_point(data = subset(lrt.plot, DIFgroup == "All"),
                aes(x = (nr.groups+1)/2+0.15,
                    y = Location
-                   ),
+               ),
                shape = 18,
                color = "black",
                size = 3,
                alpha = 0.6
-               ) +
+    ) +
     xlab("DIF group") +
     facet_wrap(~Item) +
     labs(title = "Item threshold locations",

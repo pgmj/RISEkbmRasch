@@ -2,7 +2,7 @@
 
 ### 0.1.30.4
 
-- `RItif()` draws an oranged dashed horizontal line for the cutoff (optionally) chosen.
+- `RItif()` draws an orange dashed horizontal line for the cutoff (optionally) chosen.
 
 ### 0.1.30.3
 
