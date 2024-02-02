@@ -1,5 +1,9 @@
 ## Changelog
 
+### 0.1.31.0
+
+- Fix for all 4 DIF-functions using the `LRtest()` function from `eRm` to make item threshold locations correct.
+
 ### 0.1.30.4
 
 - `RItif()` draws an orange dashed horizontal line for the cutoff (optionally) chosen.
