@@ -9,7 +9,8 @@ RIitemparams(
   fontsize = 15,
   output = "table",
   detail = "thresholds",
-  filename = "item_params.csv"
+  filename = "item_params.csv",
+  tbl_width = 90
 )
 }
 \arguments{

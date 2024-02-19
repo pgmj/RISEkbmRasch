@@ -1478,14 +1478,16 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", b
 #' Reliability of test
 #'
 #' Test information shows the reliability curve of the test (not the sample).
+#'
 #' Use option `samplePSI = TRUE` to add graphical and written representation of
-#' the current sample's theta mean/SD, test information (TIF) mean/SD , and
+#' the current sample's theta mean/SD, test information (TIF) mean/SD, and
 #' Person Separation Index (PSI). According to Wright & Stone (1999), PSI is
 #' calculated as \eqn{\frac{\mathrm{SSD}-\mathrm{MSE}}{\mathrm{SSD}}}{(SSD-MSE)/SSD},
 #' see `?eRm::SepRel` for details. According to Embretson & Reise (2000),
 #' PSI = 1 - SEM^2, and TIF = 1/SEM^2, and the values reported in
 #' this function are based on sample average SEM.
 #'
+#' For reference:
 #' TIF 2.5 corresponds to PSI 0.6
 #' TIF 3.33 -> PSI 0.7
 #' TIF 5 -> PSI 0.8
@@ -1496,34 +1498,54 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", b
 #' @param hi Upper limit of x axis (default = 5)
 #' @param samplePSI Adds information about sample characteristics
 #' @param cutoff Caption text will generate information relative to this TIF value
+#' @param dich Set to TRUE if you have dichotomous data
 #' @export
-RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33) {
-  df.erm <- PCM(dfin)
-  item.estimates <- eRm::thresholds(df.erm)
-  item_difficulty <- item.estimates[["threshtable"]][["1"]]
-  item_difficulty <- as.data.frame(item_difficulty)
-  person.locations.estimate <- person.parameter(df.erm)
-  # person locations
-  thetas<-as.data.frame(person.locations.estimate$theta.table)
-  pthetas<-thetas$`Person Parameter`
-  # item locations
-  thresholds<-c()
-  for (i in 2:ncol(item_difficulty)) {
-    thresholds<-c(thresholds,item_difficulty[,i])
+RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich = FALSE) {
+  # convert TIF to PSI, if cutoff is set manually
+  psi_tif <- round(1-(1/sqrt(cutoff))^2,2)
+
+  if (dich == FALSE) {
+    df.erm <- PCM(dfin)
+    item.estimates <- eRm::thresholds(df.erm)
+    item_difficulty <- item.estimates[["threshtable"]][["1"]]
+    item_difficulty <- as.data.frame(item_difficulty)
+    person.locations.estimate <- person.parameter(df.erm)
+    # person locations
+    thetas<-as.data.frame(person.locations.estimate$theta.table)
+    pthetas<-thetas$`Person Parameter`
+    # item locations
+    thresholds<-c()
+    for (i in 2:ncol(item_difficulty)) {
+      thresholds<-c(thresholds,item_difficulty[,i])
+    }
   }
-  #create data frame with 0 rows and 3 columns
+
+  if (dich == TRUE) {
+    df.erm <- RM(dfin)
+    item_difficulty <- df.erm$etapar %>%
+      as.data.frame(nm = "location") %>%
+      rownames_to_column("item")
+    person.locations.estimate <- person.parameter(df.erm)
+    # person locations
+    thetas <- as.data.frame(person.locations.estimate$theta.table)
+    pthetas <- thetas$`Person Parameter`
+    # item locations
+    thresholds <- item_difficulty$location
+  }
+
+  #create data frame with 0 rows and 2 columns
   df.locations <- data.frame(matrix(ncol = 2, nrow = 0))
   #provide column names
   colnames(df.locations) <- c('type', 'locations')
   # change type of data
-  df.locations$type<-as.character(df.locations$type)
-  df.locations$locations<-as.numeric(df.locations$locations)
+  df.locations$type <- as.character(df.locations$type)
+  df.locations$locations <- as.numeric(df.locations$locations)
   # insert labels in accurate amounts (N+items)
-  nper<-nrow(dfin)
-  nperp<-nper+1
-  nthr<-length(thresholds)+nper
-  df.locations[1:nper,1]<-paste0("Persons")
-  df.locations[nperp:nthr,1]<-paste0("Item thresholds")
+  nper <- nrow(dfin)
+  nperp <- nper + 1
+  nthr <- length(thresholds) + nper
+  df.locations[1:nper, 1] <- paste0("Persons")
+  df.locations[nperp:nthr, 1] <- paste0("Item thresholds")
   # insert data from vectors with thetas and thresholds
   df.locations$locations<-c(pthetas,thresholds)
   # change type to class factor
@@ -1541,10 +1563,22 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33) {
   peak.tif <- psimatrix %>% slice(which.max(psY)) %>% dplyr::select(psY) %>% pull()
 
   if (peak.tif > cutoff - 0.01) {
+    # Indicate which values are above below by a new variable with TRUE/FALSE
+    psimatrix <- psimatrix %>%
+      mutate(tif_above_cutoff = case_when(psY >= cutoff ~ TRUE,
+                                          TRUE ~ FALSE))
     # now find where the cutoff points are for 3.33 on the theta (x) variable
     # this provides the highest and lowest value into two variables
-    psep_min <- psimatrix %>% dplyr::filter(psX < 0) %>% slice(which.min(abs(psY - cutoff))) %>% dplyr::select(psX) %>% pull()
-    psep_max <- psimatrix %>% dplyr::filter(psX > 0) %>%  slice(which.min(abs(psY - cutoff))) %>% dplyr::select(psX) %>% pull()
+    psep_min <- psimatrix %>%
+      dplyr::filter(tif_above_cutoff ==TRUE) %>%
+      slice(which.min(psX)) %>%
+      pull(psX)
+
+    psep_max <- psimatrix %>%
+      dplyr::filter(tif_above_cutoff ==TRUE) %>%
+      slice(which.max(psX)) %>%
+      pull(psX)
+
     # calculate how many participants cross the cutoffs
     nCeilingRel<-length(which(pthetas > psep_max))
     nFloorRel<-length(which(pthetas < psep_min))
@@ -1564,10 +1598,12 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33) {
     # calculate how many participants cross the cutoffs
     nCeilingThresh<-length(which(pthetas > max_thresh))
     nFloorThresh<-length(which(pthetas < min_thresh))
-    psep_caption <- paste0("Test Information ",cutoff, " is reached between ", round(psep_min,2), " and ", round(psep_max,2), " logits, where ",
+
+    psep_caption <- paste0("Test Information ",cutoff, " (PSI = ",psi_tif,") is reached between ", round(psep_min,2), " and ", round(psep_max,2), " logits, where ",
                            round(nWithinRel/length(pthetas)*100,1), "% of the participants are located. \n",
-                           round(nCeilingRel/length(pthetas)*100,1), "% of participants have locations above the upper cutoff, and ",
-                           round(nFloorRel/length(pthetas)*100,1), "% are below the lower cutoff. \n",
+                           round(nCeilingRel/length(pthetas)*100,1), "% of participants have locations above the area where the scale reaches TIF = ", cutoff,
+                           " and ",
+                           round(nFloorRel/length(pthetas)*100,1), "% are located below. \n",
                            round(nCeilingThresh/length(pthetas)*100,1), "% have person locations above the highest item threshold (",
                            round(max_thresh,2), ") and ", round(nFloorThresh/length(pthetas)*100,1), "% are below the lowest item threshold (",
                            round(min_thresh,2), ").")
@@ -1579,9 +1615,15 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33) {
 
   TIFplot <- ggplot(psimatrix) +
     geom_line(aes(x = psX, y = psY, group = 1), color = "black", linewidth = 1) +
-    geom_hline(yintercept = cutoff, color = "orange", linetype = 2, size = 0.6) +
-    geom_hline(yintercept = 3.33, color = "#e83c63", linetype = 2, size = 0.6) +
-    geom_hline(yintercept = 5, color = "#e83c63", linetype = 2, size = 0.7) +
+    geom_hline(yintercept = cutoff, color = "orange", linetype = 2, linewidth = 0.6) +
+    geom_hline(yintercept = 3.33, color = "#e83c63", linetype = 2, linewidth = 0.6) +
+    geom_hline(yintercept = 5, color = "#e83c63", linetype = 2, linewidth = 0.7) +
+    annotate("text", label = "PSI = 0.7", fontface = "italic",
+             x = lo+0.2, y = 3.2,
+             color = "#e83c63") +
+    annotate("text", label = "PSI = 0.8", fontface = "italic",
+             x = lo+0.2, y = 4.9,
+             color = "#e83c63") +
     scale_y_continuous(breaks = seq(0, 8, by = 1)) +
     scale_x_continuous(breaks = seq(lo, hi, by = 1)) +
     labs(x = "Location (logit scale)", y = "Test information") +
@@ -1601,7 +1643,7 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33) {
   } else {
     # estimate person location/theta mean and SD
     ple <- person.locations.estimate$theta.table %>%
-      as_tibble() %>%
+      as.data.frame() %>%
       dplyr::filter(Interpolated == FALSE)
     pleMean <- mean(ple$`Person Parameter`)
     pleSD <- sd(ple$`Person Parameter`)

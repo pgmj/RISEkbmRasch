@@ -1,5 +1,11 @@
 ## Changelog
 
+### 0.1.32.0
+
+- Fix for how `RItif()` retrieves max/min theta values of the chosen TIF cutoff
+- `RItif()` added PSI values in figure and hopefully improved interpretability of caption text.
+- `RItif()` now has new option for dichotomous data, `dich = TRUE`, although it seems to produce the same output as the default partial credit model.
+
 ### 0.1.31.0
 
 - Fix for all 4 DIF-functions using the `LRtest()` function from `eRm` to make item threshold locations correct.

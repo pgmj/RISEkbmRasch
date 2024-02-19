@@ -4,7 +4,7 @@
 \alias{RItif}
 \title{Reliability of test}
 \usage{
-RItif(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33)
+RItif(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich = FALSE)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
@@ -16,18 +16,22 @@ RItif(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33)
 \item{samplePSI}{Adds information about sample characteristics}
 
 \item{cutoff}{Caption text will generate information relative to this TIF value}
+
+\item{dich}{Set to TRUE if you have dichotomous data}
 }
 \description{
 Test information shows the reliability curve of the test (not the sample).
+}
+\details{
 Use option \code{samplePSI = TRUE} to add graphical and written representation of
-the current sample's theta mean/SD, test information (TIF) mean/SD , and
+the current sample's theta mean/SD, test information (TIF) mean/SD, and
 Person Separation Index (PSI). According to Wright & Stone (1999), PSI is
 calculated as \eqn{\frac{\mathrm{SSD}-\mathrm{MSE}}{\mathrm{SSD}}}{(SSD-MSE)/SSD},
 see \code{?eRm::SepRel} for details. According to Embretson & Reise (2000),
 PSI = 1 - SEM^2, and TIF = 1/SEM^2, and the values reported in
 this function are based on sample average SEM.
-}
-\details{
+
+For reference:
 TIF 2.5 corresponds to PSI 0.6
 TIF 3.33 -> PSI 0.7
 TIF 5 -> PSI 0.8
