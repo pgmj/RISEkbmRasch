@@ -1619,10 +1619,10 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich 
     geom_hline(yintercept = 3.33, color = "#e83c63", linetype = 2, linewidth = 0.6) +
     geom_hline(yintercept = 5, color = "#e83c63", linetype = 2, linewidth = 0.6) +
     annotate("text", label = "PSI = 0.7", fontface = "italic",
-             x = lo+0.2, y = 3.2,
+             x = lo+0.2, y = 3.15,
              color = "#e83c63") +
     annotate("text", label = "PSI = 0.8", fontface = "italic",
-             x = lo+0.2, y = 4.88,
+             x = lo+0.2, y = 4.83,
              color = "#e83c63") +
     scale_y_continuous(breaks = seq(0, 8, by = 1)) +
     scale_x_continuous(breaks = seq(lo, hi, by = 1)) +
@@ -1687,7 +1687,7 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich 
     TIFplot +
       geom_hline(yintercept = cutoff, color = "orange", linetype = 2, linewidth = 0.6) +
       annotate("text", label = paste0("PSI = ",psi_tif), fontface = "italic",
-               x = lo+0.2, y = cutoff-0.1,
+               x = lo+0.2, y = cutoff-0.15,
                color = "orange")
   }
   else if (cutoff == 3.33 && samplePSI == FALSE) {
@@ -1699,7 +1699,7 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich 
     TIFplotPSI +
       geom_hline(yintercept = cutoff, color = "orange", linetype = 2, linewidth = 0.6) +
       annotate("text", label = paste0("PSI = ",psi_tif), fontface = "italic",
-               x = lo+0.2, y = cutoff-0.1,
+               x = lo+0.2, y = cutoff-0.15,
                color = "orange")
   }
 }
