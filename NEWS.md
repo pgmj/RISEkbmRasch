@@ -1,5 +1,9 @@
 ## Changelog
 
+### 0.1.32.1
+
+- Added some flexibility to `RItif()` to make optional cutoff settings displayed in figure, with or without sample PSI.
+
 ### 0.1.32.0
 
 - Fix for how `RItif()` retrieves max/min theta values of the chosen TIF cutoff

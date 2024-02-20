@@ -1613,16 +1613,16 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich 
     psep_caption <- paste0("Test information is not above ",cutoff, " at any part of the scale.")
   }
 
+  # make basic plot
   TIFplot <- ggplot(psimatrix) +
     geom_line(aes(x = psX, y = psY, group = 1), color = "black", linewidth = 1) +
-    geom_hline(yintercept = cutoff, color = "orange", linetype = 2, linewidth = 0.6) +
     geom_hline(yintercept = 3.33, color = "#e83c63", linetype = 2, linewidth = 0.6) +
-    geom_hline(yintercept = 5, color = "#e83c63", linetype = 2, linewidth = 0.7) +
+    geom_hline(yintercept = 5, color = "#e83c63", linetype = 2, linewidth = 0.6) +
     annotate("text", label = "PSI = 0.7", fontface = "italic",
              x = lo+0.2, y = 3.2,
              color = "#e83c63") +
     annotate("text", label = "PSI = 0.8", fontface = "italic",
-             x = lo+0.2, y = 4.9,
+             x = lo+0.2, y = 4.88,
              color = "#e83c63") +
     scale_y_continuous(breaks = seq(0, 8, by = 1)) +
     scale_x_continuous(breaks = seq(lo, hi, by = 1)) +
@@ -1638,52 +1638,72 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich 
       panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
                                       colour = "white")
     )
-  if (samplePSI == FALSE) {
-    TIFplot
-  } else {
-    # estimate person location/theta mean and SD
-    ple <- person.locations.estimate$theta.table %>%
-      as.data.frame() %>%
-      dplyr::filter(Interpolated == FALSE)
-    pleMean <- mean(ple$`Person Parameter`)
-    pleSD <- sd(ple$`Person Parameter`)
 
-    # estimate person theta SE mean and sd
-    ple.se <- person.locations.estimate$se.theta %>%
-      as_tibble()
-    pleSEmean <- round(mean(ple.se$NAgroup1),2)
-    pleSEsd <- round(sd(ple.se$NAgroup1),2)
-    # test information = 1/SE^2, and PSI = 1-SE^2
-    ple.se <- ple.se %>%
-      mutate(TIF = 1/NAgroup1^2,
-             PSI = 1-NAgroup1^2)
+  ## Add PSI info for optional use
 
-    sampleTIFmean <- 1/pleSEmean^2
-    sampleTIFsd <- sd(ple.se$TIF)
-    sampleTIFse <- sampleTIFsd/sqrt(length(ple.se$NAgroup1))
-    sampleTIFci95 <- sampleTIFse*1.96
-    samplePSImean <- round(mean(ple.se$PSI),2)
-    samplePSIsd <- sd(ple.se$PSI)
-    samplePSIse <- samplePSIsd/sqrt(length(ple.se$NAgroup1))
-    samplePSIci95 <- round(samplePSIse*1.96,2)
-    ermpsi <- eRm::SepRel(person.locations.estimate)
+  # estimate person location/theta mean and SD
+  ple <- person.locations.estimate$theta.table %>%
+    as.data.frame() %>%
+    dplyr::filter(Interpolated == FALSE)
+  pleMean <- mean(ple$`Person Parameter`)
+  pleSD <- sd(ple$`Person Parameter`)
 
-    TIFplot +
-      geom_segment(aes(x = pleMean-pleSD, xend = pleMean+pleSD, y = sampleTIFmean, yend = sampleTIFmean),
-                   alpha = 0.9, color = "darkgrey", linetype = 1) +
-      geom_errorbar(aes(x = pleMean, ymin = sampleTIFmean-sampleTIFsd, ymax = sampleTIFmean+sampleTIFsd),
-                    alpha = 0.8, color = "darkgrey", linetype = 1, width = 0.2) +
-      geom_point(aes(x = pleMean, y = sampleTIFmean,),
-                 size = 4, shape = 18, alpha = 0.8, color = "#e83c63") +
-      annotate('label', label = glue("Characteristics of current sample:\n
+  # estimate person theta SE mean and sd
+  ple.se <- person.locations.estimate$se.theta %>%
+    as_tibble()
+  pleSEmean <- round(mean(ple.se$NAgroup1),2)
+  pleSEsd <- round(sd(ple.se$NAgroup1),2)
+  # test information = 1/SE^2, and PSI = 1-SE^2
+  ple.se <- ple.se %>%
+    mutate(TIF = 1/NAgroup1^2,
+           PSI = 1-NAgroup1^2)
+
+  sampleTIFmean <- 1/pleSEmean^2
+  sampleTIFsd <- sd(ple.se$TIF)
+  sampleTIFse <- sampleTIFsd/sqrt(length(ple.se$NAgroup1))
+  sampleTIFci95 <- sampleTIFse*1.96
+  samplePSImean <- round(mean(ple.se$PSI),2)
+  samplePSIsd <- sd(ple.se$PSI)
+  samplePSIse <- samplePSIsd/sqrt(length(ple.se$NAgroup1))
+  samplePSIci95 <- round(samplePSIse*1.96,2)
+  ermpsi <- eRm::SepRel(person.locations.estimate)
+
+  TIFplotPSI <- TIFplot +
+    geom_segment(aes(x = pleMean-pleSD, xend = pleMean+pleSD, y = sampleTIFmean, yend = sampleTIFmean),
+                 alpha = 0.9, color = "darkgrey", linetype = 1) +
+    geom_errorbar(aes(x = pleMean, ymin = sampleTIFmean-sampleTIFsd, ymax = sampleTIFmean+sampleTIFsd),
+                  alpha = 0.8, color = "darkgrey", linetype = 1, width = 0.2) +
+    geom_point(aes(x = pleMean, y = sampleTIFmean,),
+               size = 4, shape = 18, alpha = 0.8, color = "#e83c63") +
+    annotate('label', label = glue("Characteristics of current sample:\n
                                       Person theta mean (red dot) and standard deviation (horizontal line)\n
                                       and TIF mean (dot) and SD (vertical line). SEM mean/SD is {pleSEmean}/{pleSEsd}.\n
                                       Person Separation Index (Wright & Stone, 1999) = {round(ermpsi$sep.rel,2)},\n
                                       (Embretson & Reise, 2000) = {samplePSImean}."),
-               x = -2, y = 0.7, lineheight = .5, hjust = 0, vjust = 0.5,
-               label.padding = unit(0.4, "lines"), alpha = 0.7)
+             x = -2, y = 0.7, lineheight = .5, hjust = 0, vjust = 0.5,
+             label.padding = unit(0.4, "lines"), alpha = 0.7)
+
+  if (cutoff != 3.33 && samplePSI == FALSE) {
+    TIFplot +
+      geom_hline(yintercept = cutoff, color = "orange", linetype = 2, linewidth = 0.6) +
+      annotate("text", label = paste0("PSI = ",psi_tif), fontface = "italic",
+               x = lo+0.2, y = cutoff-0.1,
+               color = "orange")
+  }
+  else if (cutoff == 3.33 && samplePSI == FALSE) {
+    TIFplot
+  } else if (cutoff == 3.33 && samplePSI == TRUE) {
+    TIFplotPSI
+  }
+  else if (cutoff != 3.33 && samplePSI == TRUE) {
+    TIFplotPSI +
+      geom_hline(yintercept = cutoff, color = "orange", linetype = 2, linewidth = 0.6) +
+      annotate("text", label = paste0("PSI = ",psi_tif), fontface = "italic",
+               x = lo+0.2, y = cutoff-0.1,
+               color = "orange")
   }
 }
+
 
 #' Person fit
 #'
