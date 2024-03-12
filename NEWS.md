@@ -1,5 +1,9 @@
 ## Changelog
 
+### 0.1.33.1
+
+- Fixed the optional grouping variable for `RIpfit()` and added an option to output a vector of row numbers for respondents with deviant infit ZSTD.
+
 ### 0.1.33
 
 - Added check of duplicate theta values in `RIscoreSE()` which gives a warning that you should extend the score_range option. Please also use the same range when estimating theta values with `RIestThetas()`. 

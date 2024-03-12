@@ -4,7 +4,15 @@
 \alias{RIpfit}
 \title{Person fit}
 \usage{
-RIpfit(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30, group)
+RIpfit(
+  dfin,
+  model = "PCM",
+  pointsize = 2.5,
+  alpha = 0.5,
+  bins = 30,
+  group,
+  output = c("hist", "heatmap")
+)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
@@ -17,10 +25,17 @@ RIpfit(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30, group)
 
 \item{bins}{Number of bins for hexplot}
 
-\item{group}{Grouping variable. Needs to be a vector, such as DIF variables}
+\item{group}{Optional grouping variable}
+
+\item{output}{Can also be "rowid" for a vector of rownumbers}
 }
 \description{
 Outputs a histogram of person fit ZSTD and a plot with person fit ZSTD and
-person location/score. Defaults to use a hex heatmap. Option to
-display grouped output with colorized points.
+person location/score. Defaults to output a histogram and a hex heatmap.
+}
+\details{
+Optional grouped output with colorized points.
+
+You can also get a vector with row numbers for persons with infit ZSTD
+over/under +/- 2 by using \code{output = "rowid"}.
 }

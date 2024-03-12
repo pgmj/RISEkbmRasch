@@ -1730,17 +1730,23 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich 
 #' Person fit
 #'
 #' Outputs a histogram of person fit ZSTD and a plot with person fit ZSTD and
-#' person location/score. Defaults to use a hex heatmap. Option to
-#' display grouped output with colorized points.
+#' person location/score. Defaults to output a histogram and a hex heatmap.
+#'
+#' Optional grouped output with colorized points.
+#'
+#' You can also get a vector with row numbers for persons with infit ZSTD
+#' over/under +/- 2 by using `output = "rowid"`.
 #'
 #' @param dfin Dataframe with item data only
 #' @param model Rasch model to use, "PCM" or "RM"
 #' @param pointsize Size of datapoints for grouped view
 #' @param alpha Transparency of points (0-1 where 1 = not transparent)
 #' @param bins Number of bins for hexplot
-#' @param group Grouping variable. Needs to be a vector, such as DIF variables
+#' @param group Optional grouping variable
+#' @param output Can also be "rowid" for a vector of rownumbers
 #' @export
-RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30, group) {
+RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
+                   group, output = c("hist","heatmap")) {
   if (model == "PCM") {
     df.erm <- PCM(dfin)
   } else {
@@ -1755,59 +1761,40 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
   nFloorPfit <- length(which(person.fit$p.infitZ < -2))
   nPgoodfit <- (nPfit - (nCeilingPfit + nFloorPfit))
 
-  hist(person.fit$p.infitZ, col = "#009ca6", xlim = c(-4, 6), xlab = "Person infit ZSTD", main = "Histogram of Person infit ZSTD")
-
+  if ("hist" %in% output) {
+    hist(person.fit$p.infitZ, col = "#009ca6", xlim = c(-4, 6), xlab = "Person infit ZSTD", main = "Histogram of Person infit ZSTD")
+  }
   # check whether there are excluded observations, and if found, adjust thetas2 df
   if (length(person.fit$excl_obs_num) > 0L) {
     thetas2[person.fit$excl_obs_num, ] <- NA
     thetas2 <- na.omit(thetas2)
   }
-  df.pfit <- data.frame(matrix(ncol = 2, nrow = nrow(thetas2)))
-  # provide column names
-  colnames(df.pfit) <- c("Person locations", "Person infit ZSTD")
-  df.pfit$`Person locations` <- thetas2$`Person Parameter`
-  df.pfit$`Person infit ZSTD` <- person.fit$p.infitZ
 
-  if (missing(group)) {
-  # figure
-  df.pfit %>%
-    ggplot(aes(x = `Person infit ZSTD`, y = `Person locations`, label = "")) +
-    geom_vline(xintercept = -2, color = "#e83c63", linetype = 2, size = 0.7) +
-    geom_vline(xintercept = 2, color = "#e83c63", linetype = 2, size = 0.7) +
-    geom_hex(bins = bins) +
-    scale_fill_viridis_c('Count', option = "inferno", begin = 0.1) +
-    scale_y_continuous(breaks = seq(-5, 5, by = 1)) +
-    scale_x_continuous(breaks = seq(-5, 7, by = 1)) +
-    labs(caption = paste0(
-      round(nFloorPfit / nPfit * 100, 1), "% of participants have person infit ZSTD below -2.0, and ",
-      round(nCeilingPfit / nPfit * 100, 1), "% are above 2.0. \nThus, ", round(nPgoodfit / nPfit * 100, 1), "% of participants without floor/ceiling effects are within +/- 2 infit ZSTD.\nNote: ",length(person.fit$excl_obs_num)," (",round(length(person.fit$excl_obs_num)/nrow(dfin)*100,1),"%) observations were excluded due to max/min score."
-    )) +
-    theme(plot.caption = element_text(hjust = 0, face = "italic")) +
-    theme(
-      panel.background = element_rect(
-        fill = "#ebf5f0",
-        colour = "#ebf5f0",
-        linewidth = 0.5, linetype = "solid"
-      ),
-      panel.grid.major = element_line(
-        linewidth = 0.5, linetype = "solid",
-        colour = "white"
-      ),
-      panel.grid.minor = element_line(
-        linewidth = 0.25, linetype = "solid",
-        colour = "white"
-      )
-    )
+  df.pfit <- data.frame(
+    p_locs = thetas2$`Person Parameter`,
+    p_infit = person.fit$p.infitZ
+  ) %>%
+    rownames_to_column("rownumber") %>%
+    mutate(rownumber = gsub(pattern = "P","", rownumber)) %>%
+    mutate(rownumber = as.integer(rownumber)) %>%
+    rename(`Person locations` = p_locs,
+           `Person infit ZSTD` = p_infit)
+
+  if ("rowid" %in% output) {
+    rowid <- df.pfit %>%
+      filter(`Person infit ZSTD` > 2 | `Person infit ZSTD` < -2) %>%
+      pull(rownumber)
+    return(rowid)
   }
-  else {
-    group[person.fit$excl_obs_num] <- NA # remove max/min scoring individuals from grouping variable
-    df.pfit$grp <- na.omit(group)
+
+  if (missing(group) && "heatmap" %in% output) {
+    # figure
     df.pfit %>%
-      ggplot(aes(x = `Person infit ZSTD`, y = `Person locations`, label = "", color = grp)) +
+      ggplot(aes(x = `Person infit ZSTD`, y = `Person locations`, label = "")) +
       geom_vline(xintercept = -2, color = "#e83c63", linetype = 2, size = 0.7) +
       geom_vline(xintercept = 2, color = "#e83c63", linetype = 2, size = 0.7) +
-      geom_point(size = pointsize, alpha = alpha) +
-      scale_color_viridis_d('Group', begin = 0.3, end = 0.9, option = 7) +
+      geom_hex(bins = bins) +
+      scale_fill_viridis_c('Count', option = "inferno", begin = 0.1) +
       scale_y_continuous(breaks = seq(-5, 5, by = 1)) +
       scale_x_continuous(breaks = seq(-5, 7, by = 1)) +
       labs(caption = paste0(
@@ -1828,6 +1815,39 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
         panel.grid.minor = element_line(
           linewidth = 0.25, linetype = "solid",
           colour = "white"
+        )
+      )
+  }
+  else if (!missing(group) && "heatmap" %in% output) {
+    group[person.fit$excl_obs_num] <- NA # remove max/min scoring individuals from grouping variable
+    df.pfit$grp <- na.omit(as.factor(group))
+    df.pfit %>%
+      ggplot(aes(x = `Person infit ZSTD`, y = `Person locations`, label = "", color = grp)) +
+      geom_vline(xintercept = -2, color = "#e83c63", linetype = 2, size = 0.7) +
+      geom_vline(xintercept = 2, color = "#e83c63", linetype = 2, size = 0.7) +
+      geom_hex(bins = bins, linewidth = 1) +
+      #scale_color_brewer('Group', type = "qual", palette= "Dark2") +
+      scale_fill_viridis_c('Count', option = "inferno", begin = 0.1) +
+      scale_y_continuous(breaks = seq(-5, 5, by = 1)) +
+      scale_x_continuous(breaks = seq(-5, 7, by = 1)) +
+      labs(caption = paste0(
+        round(nFloorPfit / nPfit * 100, 1), "% of participants have person infit ZSTD below -2.0, and ",
+        round(nCeilingPfit / nPfit * 100, 1), "% are above 2.0. \nThus, ", round(nPgoodfit / nPfit * 100, 1), "% of participants without floor/ceiling effects are within +/- 2 infit ZSTD.\nNote: ",length(person.fit$excl_obs_num)," (",round(length(person.fit$excl_obs_num)/nrow(dfin)*100,1),"%) observations were excluded due to max/min score."
+      )) +
+      theme(plot.caption = element_text(hjust = 0, face = "italic")) +
+      theme(
+        panel.background = element_rect(
+          fill = "white",
+          colour = "white",
+          linewidth = 0.5, linetype = "solid"
+        ),
+        panel.grid.major = element_line(
+          linewidth = 0.4, linetype = "solid",
+          colour = "grey"
+        ),
+        panel.grid.minor = element_line(
+          linewidth = 0.2, linetype = "solid",
+          colour = "grey"
         )
       )
   }
