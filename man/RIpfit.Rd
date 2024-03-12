@@ -27,7 +27,7 @@ RIpfit(
 
 \item{group}{Optional grouping variable}
 
-\item{output}{Can also be "rowid" for a vector of rownumbers}
+\item{output}{Can also be "rowid" for a dataframe with rownumbers}
 }
 \description{
 Outputs a histogram of person fit ZSTD and a plot with person fit ZSTD and
@@ -36,6 +36,6 @@ person location/score. Defaults to output a histogram and a hex heatmap.
 \details{
 Optional grouped output with colorized points.
 
-You can also get a vector with row numbers for persons with infit ZSTD
+You can also get a dataframe with row numbers for persons with infit ZSTD
 over/under +/- 2 by using \code{output = "rowid"}.
 }

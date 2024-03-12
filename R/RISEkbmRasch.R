@@ -1734,7 +1734,7 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich 
 #'
 #' Optional grouped output with colorized points.
 #'
-#' You can also get a vector with row numbers for persons with infit ZSTD
+#' You can also get a dataframe with row numbers for persons with infit ZSTD
 #' over/under +/- 2 by using `output = "rowid"`.
 #'
 #' @param dfin Dataframe with item data only
@@ -1743,7 +1743,7 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich 
 #' @param alpha Transparency of points (0-1 where 1 = not transparent)
 #' @param bins Number of bins for hexplot
 #' @param group Optional grouping variable
-#' @param output Can also be "rowid" for a vector of rownumbers
+#' @param output Can also be "rowid" for a dataframe with rownumbers
 #' @export
 RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
                    group, output = c("hist","heatmap")) {
@@ -1783,7 +1783,7 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
   if ("rowid" %in% output) {
     rowid <- df.pfit %>%
       filter(`Person infit ZSTD` > 2 | `Person infit ZSTD` < -2) %>%
-      pull(rownumber)
+      janitor::clean_names()
     return(rowid)
   }
 
