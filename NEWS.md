@@ -1,5 +1,11 @@
 ## Changelog
 
+### 0.1.33
+
+- Added check of duplicate theta values in `RIscoreSE()` which gives a warning that you should extend the score_range option. Please also use the same range when estimating theta values with `RIestThetas()`. 
+- Added checks for `RItargeting()` and auto-adjustment of xlim range if person/item locations are outside the (default) xlim values
+- *NOTE:* these changes have not been extensively checked yet, please email me at <magnus.p.johansson@ri.se> if you encounter any issues.
+
 ### 0.1.32.1
 
 - Added some flexibility to `RItif()` to make optional cutoff settings displayed in figure, with or without sample PSI.

@@ -1260,6 +1260,28 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", b
   # person locations
   thetas <- as.data.frame(person.locations.estimate$theta.table)
   pthetas <- thetas$`Person Parameter`
+
+  # check if xlim upper is below the highest person locations/thetas
+  # and adjust if needed
+  if (max(pthetas, na.rm = TRUE) > xlim[2]) {
+    xlim[2] <- ceiling(max(pthetas, na.rm = TRUE))
+  }
+  # check if xlim lower is above the lowest person locations/thetas
+  # and adjust if needed
+  if (min(pthetas, na.rm = TRUE) < xlim[1]) {
+    xlim[1] <- floor(min(pthetas, na.rm = TRUE))
+  }
+  # and then check if any item threshold is outside xlim
+  if (max(itemloc.long$par_values, na.rm = TRUE) > xlim[2]) {
+    xlim[2] <- ceiling(max(itemloc.long$par_values, na.rm = TRUE))
+  }
+
+    if (min(itemloc.long$par_values, na.rm = TRUE) < xlim[1]) {
+    xlim[1] <- floor(min(itemloc.long$par_values, na.rm = TRUE))
+  }
+
+
+
   # item locations
   thresholds <- c()
   for (i in 2:ncol(item_difficulty)) {
@@ -1296,8 +1318,8 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", b
     na.omit() %>%
     sd() %>%
     round(2)
-  person.mean <- round(mean(pthetas), 2)
-  person.sd <- round(sd(pthetas), 2)
+  person.mean <- round(mean(pthetas, na.rm = TRUE), 2)
+  person.sd <- round(sd(pthetas, na.rm = TRUE), 2)
   #provide column names
   colnames(pi.locations) <- c('','Mean', 'SD')
   pi.locations[1,1] <- "Items"
@@ -1307,8 +1329,8 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", b
   pi.locations[2,2] <- round(mean(item_difficulty$Location),2)
   pi.locations[2,3] <- item.thresh.sd
   pi.locations[3,1] <- "Persons"
-  pi.locations[3,2] <- round(mean(pthetas),2)
-  pi.locations[3,3] <- round(sd(pthetas),2)
+  pi.locations[3,2] <- round(mean(pthetas, na.rm = TRUE),2)
+  pi.locations[3,3] <- round(sd(pthetas, na.rm = TRUE),2)
 
   targeting_plots <- list()
 
@@ -1316,7 +1338,7 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", b
   targeting_plots$p1 <- ggplot() +
     geom_histogram(
       data = subset(df.locations, type == "Persons"),
-      aes(locations, fill = "Persons", y = after_stat(count)),
+      aes(locations, fill = "Persons"),
       bins = bins
     ) +
     xlab("") +
@@ -1408,23 +1430,23 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", b
     #
     item.mean <- round(mean(item_difficulty$Location),2)
     item.sd <- round(sd(item_difficulty$Location),2)
-    person.mean <- round(mean(pthetas),2)
-    person.sd <- round(sd(pthetas),2)
+    person.mean <- round(mean(pthetas, na.rm = TRUE),2)
+    person.sd <- round(sd(pthetas, na.rm = TRUE),2)
     #provide column names
     colnames(pi.locations) <- c('','Mean', 'SD')
     pi.locations[1,1] <- "Items"
     pi.locations[1,2] <- round(mean(item_difficulty$Location),2)
     pi.locations[1,3] <- round(sd(item_difficulty$Location),2)
     pi.locations[2,1] <- "Persons"
-    pi.locations[2,2] <- round(mean(pthetas),2)
-    pi.locations[2,3] <- round(sd(pthetas),2)
+    pi.locations[2,2] <- round(mean(pthetas, na.rm = TRUE),2)
+    pi.locations[2,3] <- round(sd(pthetas, na.rm = TRUE),2)
 
     targeting_plots <- list()
 
     # Person location histogram
     targeting_plots$p1 <- ggplot() +
       geom_histogram(data=subset(df.locations, type=="Persons"),
-                     aes(locations, fill="Persons", y= after_stat(count)),
+                     aes(locations, fill="Persons"),
                      bins = bins
                      ) +
       xlab('') +
@@ -1570,12 +1592,12 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich 
     # now find where the cutoff points are for 3.33 on the theta (x) variable
     # this provides the highest and lowest value into two variables
     psep_min <- psimatrix %>%
-      dplyr::filter(tif_above_cutoff ==TRUE) %>%
+      dplyr::filter(tif_above_cutoff == TRUE) %>%
       slice(which.min(psX)) %>%
       pull(psX)
 
     psep_max <- psimatrix %>%
-      dplyr::filter(tif_above_cutoff ==TRUE) %>%
+      dplyr::filter(tif_above_cutoff == TRUE) %>%
       slice(which.max(psX)) %>%
       pull(psX)
 
@@ -1619,10 +1641,10 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich 
     geom_hline(yintercept = 3.33, color = "#e83c63", linetype = 2, linewidth = 0.6) +
     geom_hline(yintercept = 5, color = "#e83c63", linetype = 2, linewidth = 0.6) +
     annotate("text", label = "PSI = 0.7", fontface = "italic",
-             x = lo+0.2, y = 3.15,
+             x = lo+0.2, y = 3.12,
              color = "#e83c63") +
     annotate("text", label = "PSI = 0.8", fontface = "italic",
-             x = lo+0.2, y = 4.83,
+             x = lo+0.2, y = 4.8,
              color = "#e83c63") +
     scale_y_continuous(breaks = seq(0, 8, by = 1)) +
     scale_x_continuous(breaks = seq(lo, hi, by = 1)) +
@@ -1699,7 +1721,7 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich 
     TIFplotPSI +
       geom_hline(yintercept = cutoff, color = "orange", linetype = 2, linewidth = 0.6) +
       annotate("text", label = paste0("PSI = ",psi_tif), fontface = "italic",
-               x = lo+0.2, y = cutoff-0.15,
+               x = lo+0.2, y = cutoff-0.18,
                color = "orange")
   }
 }
@@ -2691,12 +2713,12 @@ RIitemHierarchy <- function(dfin, numbers = TRUE){
 #' @param error_multiplier Range of error bars to multiply with SEM
 #' @param score_range Range of theta/person score/location/measure
 #' @param samplesize Sample size for simulated data
-#' @param sdx Multiplier for item location SD for simulated data dispersion
+#' @param sdx Standard deviation for simulated data
 #' @param ... Options for `kbl_rise()` for table creation
 #' @export
 RIscoreSE <- function(dfin, output = "table", point_size = 3,
                       error_width = 0.5, error_multiplier = 1.96,
-                      score_range = c(-4, 4), samplesize = 250, sdx = 5, ...) {
+                      score_range = c(-4, 4), samplesize = 250, sdx = 4, ...) {
   # get item threshold location parameters
   df.erm <- PCM(dfin)
   item.estimates <- eRm::thresholds(df.erm)
@@ -2725,7 +2747,7 @@ RIscoreSE <- function(dfin, output = "table", point_size = 3,
   abilities <- rnorm(
     n = samplesize,
     mean = itemMean,
-    sd = itemSD * sdx
+    sd = sdx
   )
 
   # simulate a dataset
@@ -2775,6 +2797,13 @@ RIscoreSE <- function(dfin, output = "table", point_size = 3,
     remove_rownames() %>%
     mutate(across(where(is.numeric), ~ round(.x, 3)))
 
+  # check for duplicated theta values
+  dupes <- unique(scoreTable$`Logit score`[duplicated(scoreTable$`Logit score`)])
+
+  if (any(duplicated(scoreTable$`Logit score`)) == TRUE) {
+    warning(paste0("You should extend `score_range` due to non-unique theta value(s): ", dupes))
+  }
+
   if (output == "table") {
     kbl_rise(scoreTable, ...)
   } else if (output == "dataframe") {
@@ -2794,6 +2823,7 @@ RIscoreSE <- function(dfin, output = "table", point_size = 3,
       theme_bw()
   }
 }
+
 
 
 #' Person location estimation
