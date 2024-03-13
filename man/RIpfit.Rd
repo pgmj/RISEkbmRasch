@@ -36,6 +36,11 @@ person location/score. Defaults to output a histogram and a hex heatmap.
 \details{
 Optional grouped output with colorized points.
 
-You can also get a dataframe with row numbers for persons with infit ZSTD
-over/under +/- 2 by using \code{output = "rowid"}.
+You can also get a vector with row numbers for persons with infit ZSTD
+over/under +/- 2 by using \code{output = "rowid"}. Or the full dataframe
+with all respondents infit ZSTD and estimated theta values with
+\verb{output = "dataframe}.
+
+Note: theta estimation is done using ML, which is not optimal but should
+be sufficient for this analysis.
 }

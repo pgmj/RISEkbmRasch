@@ -1734,8 +1734,13 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich 
 #'
 #' Optional grouped output with colorized points.
 #'
-#' You can also get a dataframe with row numbers for persons with infit ZSTD
-#' over/under +/- 2 by using `output = "rowid"`.
+#' You can also get a vector with row numbers for persons with infit ZSTD
+#' over/under +/- 2 by using `output = "rowid"`. Or the full dataframe
+#' with all respondents infit ZSTD and estimated theta values with
+#' `output = "dataframe`.
+#'
+#' Note: theta estimation is done using ML, which is not optimal but should
+#' be sufficient for this analysis.
 #'
 #' @param dfin Dataframe with item data only
 #' @param model Rasch model to use, "PCM" or "RM"
@@ -1783,8 +1788,12 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
   if ("rowid" %in% output) {
     rowid <- df.pfit %>%
       filter(`Person infit ZSTD` > 2 | `Person infit ZSTD` < -2) %>%
-      janitor::clean_names()
+      pull(rownumber)
     return(rowid)
+  }
+
+  if ("dataframe" %in% output) {
+    return(df.pfit)
   }
 
   if (missing(group) && "heatmap" %in% output) {
