@@ -11,7 +11,8 @@ RIpfit(
   alpha = 0.5,
   bins = 30,
   group,
-  output = c("hist", "heatmap")
+  output = c("hist", "heatmap"),
+  infit_lim = c(-1.96, 1.96)
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ RIpfit(
 \item{group}{Optional grouping variable}
 
 \item{output}{Can also be "rowid" for a dataframe with rownumbers}
+
+\item{infit_lim}{Lower/upper limit for person infit ZSTD}
 }
 \description{
 Outputs a histogram of person fit ZSTD and a plot with person fit ZSTD and
@@ -37,9 +40,11 @@ person location/score. Defaults to output a histogram and a hex heatmap.
 Optional grouped output with colorized points.
 
 You can also get a vector with row numbers for persons with infit ZSTD
-over/under +/- 2 by using \code{output = "rowid"}. Or the full dataframe
+over/under +/- 1.96 by using \code{output = "rowid"}. Or the full dataframe
 with all respondents infit ZSTD and estimated theta values with
 \verb{output = "dataframe}.
+
+If you desire another cutoff than +/- 1.96, it can be set with \code{infit_lim}.
 
 Note: theta estimation is done using ML, which is not optimal but should
 be sufficient for this analysis.

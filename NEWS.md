@@ -1,5 +1,10 @@
 ## Changelog
 
+
+### 0.1.33.2
+
+- More fixes for `RIpfit()` and added an option to set cutoff values for infit ZSTD (default is +/- 1.96).
+
 ### 0.1.33.1
 
 - Fixed the optional grouping variable for `RIpfit()` and added an option to output a vector of row numbers for respondents with deviant infit ZSTD.
