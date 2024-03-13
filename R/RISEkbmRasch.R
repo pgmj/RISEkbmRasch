@@ -1769,8 +1769,14 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
   nFloorPfit <- length(which(person.fit$p.infitZ < infit_lim[1]))
   nPgoodfit <- (nPfit - (nCeilingPfit + nFloorPfit))
 
+  # find highest/lowest fit and location to set limits for plots automatically
+  xlim_max <- ceiling(max(person.fit$p.infitZ, na.rm = TRUE))
+  xlim_min <- floor(min(person.fit$p.infitZ, na.rm = TRUE))
+  ylim_max <- ceiling(max(thetas2$`Person Parameter`, na.rm = TRUE))
+  ylim_min <- floor(min(thetas2$`Person Parameter`, na.rm = TRUE))
+
   if ("hist" %in% output) {
-    hist(person.fit$p.infitZ, col = "#009ca6", xlim = c(-6, 6), xlab = "Person infit ZSTD", main = "Histogram of Person infit ZSTD")
+    hist(person.fit$p.infitZ, col = "#009ca6", xlim = c(xlim_min, xlim_max), xlab = "Person infit ZSTD", main = "Histogram of Person infit ZSTD")
   }
   # check whether there are excluded observations, and if found, adjust thetas2 df
   if (length(person.fit$excl_obs_num) > 0L) {
@@ -1807,8 +1813,8 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
       geom_vline(xintercept = infit_lim[2], color = "#e83c63", linetype = 2, linewidth = 0.7) +
       geom_hex(bins = bins, linewidth = 0.1, color = "darkgrey") +
       scale_fill_viridis_c('Count', option = "inferno", begin = 0.1) +
-      scale_y_continuous(breaks = seq(-5, 5, by = 1)) +
-      scale_x_continuous(breaks = seq(-5, 7, by = 1)) +
+      scale_y_continuous(breaks = seq(ylim_min, ylim_max, by = 1)) +
+      scale_x_continuous(breaks = seq(xlim_min, xlim_max, by = 1)) +
       labs(caption = paste0(
         round(nFloorPfit / nPfit * 100, 1), "% of participants have person infit ZSTD below ",infit_lim[1],", and ",
         round(nCeilingPfit / nPfit * 100, 1), "% are above ",infit_lim[1],". \nThus, ", round(nPgoodfit / nPfit * 100, 1),
@@ -1841,8 +1847,8 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
       geom_hex(bins = bins, linewidth = 0.5) +
       scale_color_brewer('Group', type = "qual", palette= "Dark2") +
       scale_fill_viridis_c('Count', option = "inferno", begin = 0.2) +
-      scale_y_continuous(breaks = seq(-5, 5, by = 1)) +
-      scale_x_continuous(breaks = seq(-5, 7, by = 1)) +
+      scale_y_continuous(breaks = seq(ylim_min, ylim_max, by = 1)) +
+      scale_x_continuous(breaks = seq(xlim_min, xlim_max, by = 1)) +
       labs(caption = paste0(
         round(nFloorPfit / nPfit * 100, 1), "% of participants have person infit ZSTD below ",infit_lim[1],", and ",
         round(nCeilingPfit / nPfit * 100, 1), "% are above ",infit_lim[1],". \nThus, ", round(nPgoodfit / nPfit * 100, 1),
@@ -1854,6 +1860,7 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
       theme(strip.text = element_text(size = 12))
   }
 }
+
 
 
 

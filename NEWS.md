@@ -1,5 +1,8 @@
 ## Changelog
 
+### 0.1.33.3
+
+- Sorry for the multitude of minor fixes... I have now implemented a way to automatically set axis limits in figures based on the data in `RIpfit()` figure outputs, similar to what was done in `RItargeting()` recently. This will be implemented in more functions at some point.
 
 ### 0.1.33.2
 
