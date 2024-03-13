@@ -1770,7 +1770,7 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
   nPgoodfit <- (nPfit - (nCeilingPfit + nFloorPfit))
 
   if ("hist" %in% output) {
-    hist(person.fit$p.infitZ, col = "#009ca6", xlim = c(-4, 6), xlab = "Person infit ZSTD", main = "Histogram of Person infit ZSTD")
+    hist(person.fit$p.infitZ, col = "#009ca6", xlim = c(-6, 6), xlab = "Person infit ZSTD", main = "Histogram of Person infit ZSTD")
   }
   # check whether there are excluded observations, and if found, adjust thetas2 df
   if (length(person.fit$excl_obs_num) > 0L) {
@@ -1836,11 +1836,11 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
     df.pfit$grp <- na.omit(as.factor(group))
     df.pfit %>%
       ggplot(aes(x = `Person infit ZSTD`, y = `Person locations`, label = "", color = grp)) +
-      geom_vline(xintercept = -2, color = "#e83c63", linetype = 2, linewidth = 0.7) +
-      geom_vline(xintercept = 2, color = "#e83c63", linetype = 2, linewidth = 0.7) +
-      geom_hex(bins = bins, linewidth = 1) +
+      geom_vline(xintercept = infit_lim[1], color = "#e83c63", linetype = 2, linewidth = 0.7) +
+      geom_vline(xintercept = infit_lim[2], color = "#e83c63", linetype = 2, linewidth = 0.7) +
+      geom_hex(bins = bins, linewidth = 1, alpha = 0.7) +
       #scale_color_brewer('Group', type = "qual", palette= "Dark2") +
-      scale_fill_viridis_c('Count', option = "inferno", begin = 0.1) +
+      scale_fill_viridis_c('Count', option = "inferno", begin = 0.2) +
       scale_y_continuous(breaks = seq(-5, 5, by = 1)) +
       scale_x_continuous(breaks = seq(-5, 7, by = 1)) +
       labs(caption = paste0(
