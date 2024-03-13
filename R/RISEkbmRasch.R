@@ -1805,7 +1805,7 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
       ggplot(aes(x = `Person infit ZSTD`, y = `Person locations`, label = "")) +
       geom_vline(xintercept = infit_lim[1], color = "#e83c63", linetype = 2, linewidth = 0.7) +
       geom_vline(xintercept = infit_lim[2], color = "#e83c63", linetype = 2, linewidth = 0.7) +
-      geom_hex(bins = bins) +
+      geom_hex(bins = bins, linewidth = 0.1, color = "darkgrey") +
       scale_fill_viridis_c('Count', option = "inferno", begin = 0.1) +
       scale_y_continuous(breaks = seq(-5, 5, by = 1)) +
       scale_x_continuous(breaks = seq(-5, 7, by = 1)) +
@@ -1838,8 +1838,8 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
       ggplot(aes(x = `Person infit ZSTD`, y = `Person locations`, label = "", color = grp)) +
       geom_vline(xintercept = infit_lim[1], color = "#e83c63", linetype = 2, linewidth = 0.7) +
       geom_vline(xintercept = infit_lim[2], color = "#e83c63", linetype = 2, linewidth = 0.7) +
-      geom_hex(bins = bins, linewidth = 1, alpha = 0.7) +
-      #scale_color_brewer('Group', type = "qual", palette= "Dark2") +
+      geom_hex(bins = bins, linewidth = 0.5) +
+      scale_color_brewer('Group', type = "qual", palette= "Dark2") +
       scale_fill_viridis_c('Count', option = "inferno", begin = 0.2) +
       scale_y_continuous(breaks = seq(-5, 5, by = 1)) +
       scale_x_continuous(breaks = seq(-5, 7, by = 1)) +
@@ -1847,25 +1847,14 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
         round(nFloorPfit / nPfit * 100, 1), "% of participants have person infit ZSTD below ",infit_lim[1],", and ",
         round(nCeilingPfit / nPfit * 100, 1), "% are above ",infit_lim[1],". \nThus, ", round(nPgoodfit / nPfit * 100, 1),
         "% of participants without floor/ceiling effects are within infit ZSTD limits.\nNote: ",length(person.fit$excl_obs_num)," (",round(length(person.fit$excl_obs_num)/nrow(dfin)*100,1),"%) observations were excluded due to max/min score."
-      )) +
-      theme(plot.caption = element_text(hjust = 0, face = "italic")) +
-      theme(
-        panel.background = element_rect(
-          fill = "white",
-          colour = "white",
-          linewidth = 0.5, linetype = "solid"
-        ),
-        panel.grid.major = element_line(
-          linewidth = 0.4, linetype = "solid",
-          colour = "grey"
-        ),
-        panel.grid.minor = element_line(
-          linewidth = 0.2, linetype = "solid",
-          colour = "grey"
-        )
-      )
+      ))  +
+      facet_wrap(~grp) +
+      guides(color = "none") +
+      theme_rise(fontfamily = "Arial") +
+      theme(strip.text = element_text(size = 12))
   }
 }
+
 
 
 #' Item parameters summary
