@@ -1394,7 +1394,7 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", b
     #names(item.locations) <- paste0("T", c(1:ncol(item.locations))) #re-number items
     itemloc.long <- item.locations %>%
       rownames_to_column() %>%
-      separate(rowname, c(NA, "names"), sep = " ")
+      tidyr::separate(rowname, c(NA, "names"), sep = " ")
 
     ### create df for ggplot histograms
     # person locations
@@ -1802,7 +1802,7 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
   }
 
   if ("dataframe" %in% output) {
-    return(df.pfit)
+    return(janitor::clean_names(df.pfit))
   }
 
   if (missing(group) && "heatmap" %in% output) {
@@ -2471,8 +2471,8 @@ RIdifFigThresh <- function(dfin, dif.var) {
       as.data.frame() %>%
       rownames_to_column("Threshh") %>%
       pivot_longer(where(is.numeric)) %>%
-      separate(Threshh, c("Item", "Threshold"), sep = "-") %>%
-      separate(Item, c(NA, "Item"), sep = "ata") %>%
+      tidyr::separate(Threshh, c("Item", "Threshold"), sep = "-") %>%
+      tidyr::separate(Item, c(NA, "Item"), sep = "ata") %>%
       dplyr::rename(
         "DIF node" = name,
         Location = value
@@ -2629,8 +2629,8 @@ RIitemHierarchy <- function(dfin, numbers = TRUE){
   names(Tthresh) <- paste0("c",c(1:100))
   # create df and recode c1 to T1, etc
   itemSE <- itemSE %>%
-    separate(itemThresh, c(NA,"itemThresh"), sep = "beta ") %>%
-    separate(itemThresh, c("itemnr","threshnr"), sep = "\\.") %>%
+    tidyr::separate(itemThresh, c(NA,"itemThresh"), sep = "beta ") %>%
+    tidyr::separate(itemThresh, c("itemnr","threshnr"), sep = "\\.") %>%
     mutate(Threshold = dplyr::recode(threshnr, !!!Tthresh)) %>%
     dplyr::select(!threshnr)
 
@@ -3034,8 +3034,8 @@ RIdifTableLR <- function(dfin, dif.var, sort = FALSE,
   # bind in one df
   lrt.diff <- lrt.locs %>%
     mutate_if(is.numeric, ~ round(.x, 3)) %>%
-    separate(Item, c(NA,"Item"), sep = "beta ") %>%
-    separate(Item, c("Item","Threshold"), sep = "\\.") %>%
+    tidyr::separate(Item, c(NA,"Item"), sep = "beta ") %>%
+    tidyr::separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
   # add standard errors for all subgroups + whole group
@@ -3067,7 +3067,7 @@ RIdifTableLR <- function(dfin, dif.var, sort = FALSE,
     mutate(Location = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
+    tidyr::separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   ### add SE
   # pivot_wider for easier calculation
@@ -3084,7 +3084,7 @@ RIdifTableLR <- function(dfin, dif.var, sort = FALSE,
     mutate(SE = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
+    tidyr::separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   lrt.avg$SE <- lrt.avg.se$SE
 
@@ -3196,8 +3196,8 @@ RIdifThreshTblLR <- function(dfin, dif.var,
   # bind in one df
   lrt.diff <- lrt.locs %>%
     mutate_if(is.numeric, ~ round(.x, 3)) %>%
-    separate(Item, c(NA,"Item"), sep = "beta ") %>%
-    separate(Item, c("Item","Threshold"), sep = "\\.") %>%
+    tidyr::separate(Item, c(NA,"Item"), sep = "beta ") %>%
+    tidyr::separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
   # add standard errors for all subgroups + whole group
@@ -3229,7 +3229,7 @@ RIdifThreshTblLR <- function(dfin, dif.var,
     mutate(Location = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
+    tidyr::separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   ### add SE
   # pivot_wider for easier calculation
@@ -3246,7 +3246,7 @@ RIdifThreshTblLR <- function(dfin, dif.var,
     mutate(SE = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
+    tidyr::separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   lrt.avg$SE <- lrt.avg.se$SE
 
@@ -3351,8 +3351,8 @@ RIdifFigureLR <- function(dfin, dif.var) {
   # bind in one df
   lrt.diff <- lrt.locs %>%
     mutate_if(is.numeric, ~ round(.x, 3)) %>%
-    separate(Item, c(NA,"Item"), sep = "beta ") %>%
-    separate(Item, c("Item","Threshold"), sep = "\\.") %>%
+    tidyr::separate(Item, c(NA,"Item"), sep = "beta ") %>%
+    tidyr::separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
   # add standard errors for all subgroups + whole group
@@ -3384,7 +3384,7 @@ RIdifFigureLR <- function(dfin, dif.var) {
     mutate(Location = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
+    tidyr::separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   ### add SE
   # pivot_wider for easier calculation
@@ -3401,7 +3401,7 @@ RIdifFigureLR <- function(dfin, dif.var) {
     mutate(SE = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
+    tidyr::separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   lrt.avg$SE <- lrt.avg.se$SE
 
@@ -3479,8 +3479,8 @@ RIdifThreshFigLR <- function(dfin, dif.var) {
   # bind in one df
   lrt.diff <- lrt.locs %>%
     mutate_if(is.numeric, ~ round(.x, 3)) %>%
-    separate(Item, c(NA,"Item"), sep = "beta ") %>%
-    separate(Item, c("Item","Threshold"), sep = "\\.") %>%
+    tidyr::separate(Item, c(NA,"Item"), sep = "beta ") %>%
+    tidyr::separate(Item, c("Item","Threshold"), sep = "\\.") %>%
     mutate(Item = factor(Item, levels = names(dfin)))
 
   # add standard errors for all subgroups + whole group
@@ -3512,7 +3512,7 @@ RIdifThreshFigLR <- function(dfin, dif.var) {
     mutate(Location = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
+    tidyr::separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   ### add SE
   # pivot_wider for easier calculation
@@ -3529,7 +3529,7 @@ RIdifThreshFigLR <- function(dfin, dif.var) {
     mutate(SE = rowMeans(., na.rm = T)) %>%
     mutate_if(is.double, round, digits = 3) %>%
     rownames_to_column("groupitem") %>%
-    separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
+    tidyr::separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
   lrt.avg$SE <- lrt.avg.se$SE
 
