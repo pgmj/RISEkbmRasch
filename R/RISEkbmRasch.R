@@ -1158,7 +1158,7 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_wi
   diag(resid) <- NA # make the diagonal of correlation matrix NA instead of 1
   resid <- as.data.frame(resid)
   mean.resid <- resid %>%
-    select_if(is.numeric) %>%
+    dplyr::select_if(is.numeric) %>%
     apply(2, mean, na.rm=T) %>%
     mean()
   dyn.cutoff <- mean.resid + cutoff # create variable indicating dynamic cutoff above average correlation
@@ -1909,7 +1909,7 @@ RIitemparams <- function(dfin, fontsize = 15, output = "table",
     left_join(highest_loc, by = "itemnr") %>%
     mutate(relative_highest_tloc = highest_tloc - all_item_avg) %>%
     relocate(all_item_avg, .after = relative_highest_tloc) %>%
-    select(-highest_tloc) %>%
+    dplyr::select(-highest_tloc) %>%
     as.data.frame()
 
   if (output == "file" & detail == "thresholds") {
@@ -1956,7 +1956,7 @@ RIitemparams <- function(dfin, fontsize = 15, output = "table",
                     'Relative item location' = relative_avg_loc,
                     'Relative lowest threshold' = relative_lowest_tloc,
                     'Relative highest threshold' = relative_highest_tloc) %>%
-      select(!all_item_avg) %>%
+      dplyr::select(!all_item_avg) %>%
       kbl(booktabs = T, escape = F,
           table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
       # bootstrap options are for HTML output
@@ -2264,7 +2264,7 @@ RIloadLoc <- function(dfin, output = "figure", pcx = c("PC1","PC2","PC3")) {
   } else {
     pcaloadings <- pcaloadings %>%
       rownames_to_column(var = "itemnr") %>%
-      select(itemnr,Location,all_of(pcx))
+      dplyr::select(itemnr,Location,all_of(pcx))
     return(pcaloadings)
   }
 }
@@ -2755,7 +2755,7 @@ RIscoreSE <- function(dfin, output = "table", point_size = 3,
   # put them in a matrix object
   itemParameters <- item.estimates[["threshtable"]][["1"]] %>%
     as.data.frame() %>%
-    select(!Location) %>%
+    dplyr::select(!Location) %>%
     as.matrix()
   # get mean/SD item locations
   itemMean <- item.estimates[["threshtable"]][["1"]] %>%

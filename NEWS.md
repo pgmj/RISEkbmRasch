@@ -1,5 +1,9 @@
 ## Changelog
 
+### 0.1.33.5
+
+- Specified the use of `select()` to be `dplyr::select()` across all functions.
+
 ### 0.1.33.4
 
 - Specified the use of `separate()` to be `tidyr::separate()` across all functions to avoid namespace issues (hello `lordif::separate()`). 
