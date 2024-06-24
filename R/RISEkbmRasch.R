@@ -551,61 +551,49 @@ RIallresp <- function(dfin, pdf.out, fontsize = 15) {
 }
 
 #' Fits the Rasch PCM model using eRm, and
-#' conducts a PCA of residuals to get eigenvalues.
+#' conducts a PCA of residuals to get eigenvalues using `psych::pca()`
+#' and reports the top 5 values. Proportion of explained variance is calculated
+#' using `stats::prcomp()`.
+#'
+#' Note from `?psych::pca`:
+#' The eigen vectors are rescaled by the sqrt of the eigen values to produce
+#' the component loadings more typical in factor analysis.
 #'
 #' @param dfin Dataframe with item data only
-#' @param no.table Set to TRUE to avoid output of table
-#' @param fontsize Set font size
+#' @param output Defaults to "table", optional "dataframe"
+#' @param fontsize Set font size for table
 #' @export
-RIpcmPCA <- function(dfin, no.table, fontsize = 15) {
+RIpcmPCA <- function(dfin, output = "table", fontsize = 15) {
 
-  if (missing(no.table)) {
-    df.erm <- PCM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
-    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-    item.estimates <- eRm::thresholds(df.erm)
-    item_difficulty <- item.estimates[["threshtable"]][["1"]]
-    item_difficulty <- as.data.frame(item_difficulty)
-    item.se <- item.estimates$se.thresh
-    person.locations.estimate <- person.parameter(df.erm)
-    item.fit <- eRm::itemfit(person.locations.estimate)
-    std.resids <- item.fit$st.res
-    # PCA of Rasch residuals
-    pca <- pca(std.resids, nfactors = ncol(dfin), rotate = "oblimin")
-    # create table with top 5 eigenvalues
-    pca$values %>%
-      round(2) %>%
-      head(5) %>%
-      as_tibble() %>%
-      dplyr::rename("Eigenvalues" = "value") %>%
-      kbl(booktabs = T, escape = F, table.attr = "data-quarto-disable-processing='true' style='width:25%;'") %>%
-      # options for HTML output
-      kable_styling(
-        bootstrap_options = c("striped", "hover"),
-        position = "left",
-        full_width = T,
-        font_size = fontsize,
-        fixed_thead = F
-      ) %>%
-      column_spec(1, bold = T) %>%
-      kable_classic(html_font = "Lato") %>%
-      # latex_options are for PDF output
-      kable_styling(latex_options = c("striped", "scale_down"))
+  df.erm <- PCM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
+  # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+  person.locations.estimate <- person.parameter(df.erm)
+  item.fit <- eRm::itemfit(person.locations.estimate)
+  std.resids <- item.fit$st.res
+
+  if (ncol(dfin) > 5) {
+    n_factors = 5
   } else {
-    df.erm <- PCM(dfin) # run PCM model, replace with RSM (rating scale) or RM (dichotomous) for other models
-    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-    item.estimates <- eRm::thresholds(df.erm)
-    item_difficulty <- item.estimates[["threshtable"]][["1"]]
-    item_difficulty <- as.data.frame(item_difficulty)
-    item.se <- item.estimates$se.thresh
-    person.locations.estimate <- person.parameter(df.erm)
-    item.fit <- eRm::itemfit(person.locations.estimate)
-    std.resids <- item.fit$st.res
-    # PCA of Rasch residuals
-    pca <- pca(std.resids, nfactors = ncol(dfin), rotate = "oblimin")
-    # create vector with top 5 eigenvalues
-    eigenv <- pca$values %>%
-      round(2) %>%
-      head(5)
+    n_factors = ncol(dfin)
+  }
+  # PCA of Rasch residuals
+  pca <- pca(std.resids, nfactors = n_factors, rotate = "oblimin")
+  # get proportion of explained variance
+  pca2 <- prcomp(std.resids, rank. = n_factors)
+  PoV <- pca2$sdev^2/sum(pca2$sdev^2)
+  # create table with top (max) 5 eigenvalues
+  table <- pca$values %>%
+    round(2) %>%
+    head(n_factors) %>%
+    as.data.frame(nm = "Eigenvalues") %>%
+    add_column("Proportion of variance" = paste0(round(100*PoV[1:n_factors],1),"%"))
+
+  if (output == "table") {
+    return(kbl_rise(table))
+  }
+
+  if (output == "dataframe") {
+    return(table)
   }
 }
 
@@ -937,7 +925,7 @@ RIitemfitPCM2 <- function(dfin, samplesize = 300, nsamples = 10, cpu = 4,
                           zstd_min = -2, zstd_max = 2, msq_min = 0.7,
                           msq_max = 1.3, fontsize = 15, fontfamily = "Lato",
                           table = TRUE, tbl_width = 65) {
-  library(doParallel)
+  require(doParallel)
   registerDoParallel(cores = cpu)
   df.erm <- PCM(dfin) # run PCM model
   # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
@@ -2586,17 +2574,21 @@ RIdifFigureRM <- function(dfin, dif.var) {
   }
 }
 
-#' Create a figure showing items and thresholds (with 95% CI)
+#' Create a figure showing items and thresholds (with CI)
 #'
-#' Items are sorted by item average location.
+#' Items are sorted by item average location. Confidence intervals are 84% by
+#' default to enable visual interpretation of statistically significant
+#' differences (Payton et al., 2003). The CI can be changed using the
+#' `sem_multiplier` option.
 #'
 #' Only works for PCM models currently. For dichotomous data, use
 #' `df.erm<-RM(data)` followed by `plotPImap(df.erm, sorted = T)`
 #'
 #' @param dfin Dataframe with item data only
 #' @param numbers Display text in figure with item threshold locations
+#' @param sem_multiplier For confidence intervals displayed in figure
 #' @export
-RIitemHierarchy <- function(dfin, numbers = TRUE){
+RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
   df.erm <- PCM(dfin)
   item.estimates <- eRm::thresholds(df.erm)
   item_difficulty <- item.estimates[["threshtable"]][["1"]]
@@ -2668,7 +2660,7 @@ RIitemHierarchy <- function(dfin, numbers = TRUE){
       ) +
       geom_point(aes(y = Locations),
                  position = position_nudge()) +
-      geom_errorbar(aes(ymin = Locations - 1.96*ThreshSEM, ymax = Locations + 1.96*ThreshSEM),
+      geom_errorbar(aes(ymin = Locations - sem_multiplier*ThreshSEM, ymax = Locations + sem_multiplier*ThreshSEM),
                     width = 0.11
       ) +
       geom_text(aes(y = Locations, label = Threshold), hjust = 0.5, vjust = 1.4,
@@ -2703,7 +2695,7 @@ RIitemHierarchy <- function(dfin, numbers = TRUE){
       geom_text(aes(y = Location, label = round(Location-mean(Location),2)),
                 hjust = 0.5, vjust = 2, color = "darkgrey", size = 3,
                 show.legend = FALSE) +
-      geom_errorbar(aes(ymin = Locations - 1.96*ThreshSEM, ymax = Locations + 1.96*ThreshSEM),
+      geom_errorbar(aes(ymin = Locations - sem_multiplier*ThreshSEM, ymax = Locations + sem_multiplier*ThreshSEM),
                     width = 0.11
       ) +
       geom_text(aes(y = Locations, label = Threshold), hjust = 0.5, vjust = 1.4,

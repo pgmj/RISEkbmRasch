@@ -1,11 +1,11 @@
 # RISEkbmRasch
-R package for Rasch Measurement Theory based psychometric analysis, intended for use with [Quarto](https://quarto.org) for documentation and presentation of analysis process and results. This package uses other packages for the Rasch analyses, such as [eRm](https://cran.r-project.org/web/packages/eRm/), [mirt](https://cran.r-project.org/web/packages/mirt/), [psychotree](https://cran.r-project.org/web/packages/psychotree/), and [catR](https://cran.r-project.org/web/packages/catR/index.html). The package simplifies the Rasch analysis process and provides easy creation of tables and figures with functions that have few options. The package has been tested on MacOS and Windows with R 4.1 and 4.2.
+R package for Rasch Measurement Theory based psychometric analysis, intended for use with [Quarto](https://quarto.org) for documentation and presentation of analysis process and results. This package uses other packages for the Rasch analyses, such as [eRm](https://cran.r-project.org/web/packages/eRm/), [mirt](https://cran.r-project.org/web/packages/mirt/), [psychotree](https://cran.r-project.org/web/packages/psychotree/), and [catR](https://cran.r-project.org/web/packages/catR/index.html). The package simplifies the Rasch analysis process and provides easy creation of tables and figures with functions that have few options. The package has been tested on MacOS and Windows with R 4.1 to 4.3.
 
 Please see the [NEWS.md](https://github.com/pgmj/RISEkbmRasch/blob/main/NEWS.md) file for notes on updates.
 
 There is now a [vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html) that is recommended reading after you skimmed this README. You will find a sample Rasch analysis in the vignette, with output from most of the package functions. The vignette is produced using Quarto, and its source code is of course also [available](https://github.com/pgmj/pgmj.github.io/blob/main/raschrvignette/RaschRvign.qmd).
 
-Most functions have been developed with polytomous data analysis in mind, using the partial credit model. Also, the choice was made to rely primarily on conditional maximum likelihood estimation for item parameters, since it is robust under various conditions and enables "person-free assessment".
+Most functions have been developed with polytomous data analysis in mind, using the Rasch partial credit model (PCM). Also, the choice was made to rely primarily on conditional maximum likelihood (CML) estimation for item parameters, since it is robust under various conditions and enables "person-free assessment".
 
 ## Installation
 
@@ -32,7 +32,7 @@ devtools::install_github("pgmj/RISEkbmRasch")
 
 ## Usage
 
-Most functions in this package are relatively simple wrappers that create outputs such as tables and figures to make the Rasch analysis process quick and visual. There is a [companion Quarto template file](https://github.com/pgmj/RISEkbmRasch/tree/main/Quarto) that shows suggested ways to use this package.
+Most functions in this package are relatively simple wrappers that create outputs such as tables and figures to make the Rasch analysis process quick and visual. There is a [companion Quarto template repository](https://github.com/pgmj/RISEraschTemplate) that shows suggested ways to use this package. The primary introduction is of course the [vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html).
 
 There are two basic data structure requirements:
 
@@ -45,19 +45,17 @@ There are two basic data structure requirements:
 
 For most Rasch-related functions in the package, there are separate functions for polytomous data (more than two response options for each item) and dichotomous data, except `RItargeting()` which defaults to polytomous data and has the option `dich = TRUE` for dichotomous data. For instance, `RIitemfitPCM()` for the Partial Credit Model and `RIitemfitRM()` for the dichotomous Rasch Model. The Rating Scale Model (RSM) for polytomous data has not been implemented in any of the functions.
 
-Please see the [vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html) for a practical use example with code included. You can find a Quarto template file in the [subfolder Quarto](https://github.com/pgmj/RISEkbmRasch/tree/main/Quarto), which provides code examples on how to structure your Quarto document and make use of panel-tabsets. You may need to copy all the text from the .qmd template file and paste it into a new file, since GitHub does not allow any simple way to just download a file(?). Since Quarto/qmd files are just text files, this is hopefully not too inconvenient.
-
 ### Notes on known issues
 
 There are currently no checks on whether data input in functions are correct. This means that you need to make sure to follow the instructions above, or you may have unexpected outputs or difficult to interpret error messages. Start by using the functions for descriptive analysis and look closely at the output, which usually reveals mistakes in data coding or demographic variables left in the item dataset.
 
-If there is too much missingness in your data, some functions may have issues or take a lot of time to run. In the Quarto template file there is a script for choosing how many responses a participant needs to have to be included in the analysis. You can experiment with this if you run in to trouble. Currently, the `RIloadLoc()` function does not work with any missing data (due to the PCA function), and the workaround for now is to run this command with `na.omit()` around the dataframe (ie. `RIloadLoc(na.omit(df))`. Other reasons for functions taking longer time to run is having a lot of items (30+), and/or if you have a lot of response categories that are disordered (commonly happens with more than 4-5 response categories, especially if they are unlabeled in the questionnaire).
+If there is too much missingness in your data, some functions may have issues or take a lot of time to run. In the Quarto template file there is a script for choosing how many responses a participant needs to have to be included in the analysis. You can experiment with this if you run in to trouble. Currently, the `RIloadLoc()` function does not work with any missing data (due to the PCA function), and the workaround for now is to run this command with `na.omit()` "around"" the dataframe (ie. `RIloadLoc(na.omit(df))`. Other reasons for functions taking longer time to run is having a lot of items (30+), and/or if you have a lot of response categories that are disordered (often happens with more than 4-5 response categories, especially if they are unlabeled in the questionnaire).
 
 The `RIitemfitPCM2()` function, that makes use of multiple random subsamples to avoid inflated infit/outfit ZSTD values and runs on multiple CPU's/cores, will fail if there is a lot of missing data or very few responses in some categories. Increasing the sample size and/or decreasing the number of parallel CPUs/cores can help. If that fails, revert to the function `RIitemfitPCM()` that only uses one CPU/core.
 
 ### For the curious
 
-For those new to R, it may be useful to know that you can easily access the code in each function by using the base R `View()` function. For example, `View(RItargeting)` shows the code for the `RItargeting()` function that creates a Wright map style figure (after installing and loading the RISEkbmRasch package).
+For those new to R, it may be useful to know that you can easily access the code in each function by using the base R `View()` function. For example, `View(RItargeting)` shows the code for the `RItargeting()` function that creates a Wright map style figure (after installing and loading the RISEkbmRasch package). You can also find the documentation/help on each command by using the command `?RItargeting` in the console (replace `RItargeting` with the function you are interested in).
 
 If you are new to R, [Hadley Wickham's book "R for data science"](https://r4ds.hadley.nz/) is a great place to start.
 

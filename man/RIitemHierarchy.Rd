@@ -2,17 +2,22 @@
 % Please edit documentation in R/RISEkbmRasch.R
 \name{RIitemHierarchy}
 \alias{RIitemHierarchy}
-\title{Create a figure showing items and thresholds (with 95\% CI)}
+\title{Create a figure showing items and thresholds (with CI)}
 \usage{
-RIitemHierarchy(dfin, numbers = TRUE)
+RIitemHierarchy(dfin, numbers = TRUE, sem_multiplier = 1.405)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
 \item{numbers}{Display text in figure with item threshold locations}
+
+\item{sem_multiplier}{For confidence intervals displayed in figure}
 }
 \description{
-Items are sorted by item average location.
+Items are sorted by item average location. Confidence intervals are 84\% by
+default to enable visual interpretation of statistically significant
+differences (Payton et al., 2003). The CI can be changed using the
+\code{sem_multiplier} option.
 }
 \details{
 Only works for PCM models currently. For dichotomous data, use

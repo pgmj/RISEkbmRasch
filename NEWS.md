@@ -1,5 +1,11 @@
 ## Changelog
 
+### 0.1.34
+
+- Added "proportion of variance" to the `RIpcmPCA()` function output.
+- Added option to set CI for `RIitemHierarchy()`
+  - confidence intervals are now 84% by default to enable visual interpretation of statistically significant differences (see Payton et al., 2003). The CI can be changed using the `sem_multiplier` option.
+
 ### 0.1.33.5
 
 - Specified the use of `select()` to be `dplyr::select()` across all functions.

@@ -3,18 +3,21 @@
 \name{RIpcmPCA}
 \alias{RIpcmPCA}
 \title{Fits the Rasch PCM model using eRm, and
-conducts a PCA of residuals to get eigenvalues.}
+conducts a PCA of residuals to get eigenvalues using \code{psych::pca()}
+and reports the top 5 values. Proportion of explained variance is calculated
+using \code{stats::prcomp()}.}
 \usage{
-RIpcmPCA(dfin, no.table, fontsize = 15)
+RIpcmPCA(dfin, output = "table", fontsize = 15)
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
-\item{no.table}{Set to TRUE to avoid output of table}
+\item{output}{Defaults to "table", optional "dataframe"}
 
-\item{fontsize}{Set font size}
+\item{fontsize}{Set font size for table}
 }
 \description{
-Fits the Rasch PCM model using eRm, and
-conducts a PCA of residuals to get eigenvalues.
+Note from \code{?psych::pca}:
+The eigen vectors are rescaled by the sqrt of the eigen values to produce
+the component loadings more typical in factor analysis.
 }
