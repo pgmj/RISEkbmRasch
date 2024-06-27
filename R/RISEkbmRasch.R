@@ -389,21 +389,37 @@ RIdemographics <- function(dif.var, diflabel, ...) {
 #' Create tile plot for all items, also showing the count of
 #' responses in each response category for each item
 #'
-#' @param dfin Dataframe with item data only
+#' @param data Dataframe with item data only
+#' @param cutoff Conditional highlighting of text in cells with n below cutoff
+#' @param highlight Defaults to TRUE. Set to FALSE to disable text highlighting
 #' @export
-RItileplot <- function(dfin) {
-  dfin %>%
+RItileplot <- function(data, cutoff = 10, highlight = TRUE) {
+
+  tileplot <-
+    data %>%
     pivot_longer(everything()) %>%
     dplyr::count(name, value) %>%
-    mutate(name = factor(name, levels = rev(names(dfin)))) %>%
+    mutate(name = factor(name, levels = rev(names(data)))) %>%
+
     ggplot(aes(x = value, y = name, fill = n)) +
     geom_tile() +
     scale_fill_viridis_c(expression(italic(n)), limits = c(0, NA)) +
-    scale_x_continuous("Response category", expand = c(0, 0), breaks = 0:max(dfin, na.rm = T)) + # change breaks to fit number of response categories
-    ggtitle("Items") +
-    ylab("") +
-    theme(axis.text.x = element_text(size = 8)) +
-    geom_text(aes(label = n), colour = "orange")
+    scale_x_continuous("Response category", expand = c(0, 0), breaks = 0:max(data, na.rm = T)) + # change breaks to fit number of response categories
+    labs(y = "Items") +
+    theme(axis.text.x = element_text(size = 8))
+
+  if(highlight == TRUE) {
+    tileplot +
+      geom_text(aes(label = n,
+                    color = ifelse(n < cutoff,"red","orange"))) +
+      guides(color = "none") +
+      scale_color_identity()
+
+  } else {
+
+    tileplot +
+      geom_text(aes(label = n), colour = "orange")
+  }
 }
 
 #' Create a stacked bar graph to show response distribution

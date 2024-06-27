@@ -1,5 +1,9 @@
 ## Changelog
 
+### 0.1.34.1
+
+- Added new default setting to `RItileplot()` to highlight text in cells with less than 10 responses with red color. Highlighting can be turned off, and the cutoff value can be changed.
+
 ### 0.1.34
 
 - Added "proportion of variance" to the `RIpcmPCA()` function output.
