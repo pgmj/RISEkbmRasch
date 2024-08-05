@@ -30,7 +30,8 @@ Depends:
 Suggests:
     HH,
     foreach,
-    furrr
+    furrr,
+    doParallel
 License: `use_ccby_license()`
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

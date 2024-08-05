@@ -1,9 +1,9 @@
 # RISEkbmRasch
-R package for Rasch Measurement Theory based psychometric analysis, intended for use with [Quarto](https://quarto.org) for documentation and presentation of analysis process and results. This package uses other packages for the Rasch analyses, such as [eRm](https://cran.r-project.org/web/packages/eRm/), [mirt](https://cran.r-project.org/web/packages/mirt/), [psychotree](https://cran.r-project.org/web/packages/psychotree/), and [catR](https://cran.r-project.org/web/packages/catR/index.html). The package simplifies the Rasch analysis process and provides easy creation of tables and figures with functions that have few options. The package has been tested on MacOS and Windows with R 4.1 to 4.3.
+R package for Rasch Measurement Theory based psychometric analysis, intended for use with [Quarto](https://quarto.org) for documentation and presentation of analysis process and results. This package uses other packages for the Rasch analyses, primarily [eRm](https://cran.r-project.org/web/packages/eRm/), and also [mirt](https://cran.r-project.org/web/packages/mirt/), [psychotree](https://cran.r-project.org/web/packages/psychotree/), and [catR](https://cran.r-project.org/web/packages/catR/index.html). The package is intended to simplify the Rasch analysis process and provides easy creation of tables and figures with functions that have few options. The package has been tested on MacOS and Windows with R 4.1 to 4.4.
 
 Please see the [NEWS.md](https://github.com/pgmj/RISEkbmRasch/blob/main/NEWS.md) file for notes on updates.
 
-There is now a [vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html) that is recommended reading after you skimmed this README. You will find a sample Rasch analysis in the vignette, with output from most of the package functions. The vignette is produced using Quarto, and its source code is of course also [available](https://github.com/pgmj/pgmj.github.io/blob/main/raschrvignette/RaschRvign.qmd).
+There is a [vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html) that is recommended reading after you skimmed this README. You will find a sample Rasch analysis in the vignette, with output from most of the package functions. The vignette is produced using Quarto, and its source code is of course also [available](https://github.com/pgmj/pgmj.github.io/blob/main/raschrvignette/RaschRvign.qmd). 
 
 Most functions have been developed with polytomous data analysis in mind, using the Rasch partial credit model (PCM). Also, the choice was made to rely primarily on conditional maximum likelihood (CML) estimation for item parameters, since it is robust under various conditions and enables "person-free assessment".
 
@@ -30,18 +30,18 @@ detach("package:RISEkbmRasch", unload = TRUE) # not needed if you haven't loaded
 devtools::install_github("pgmj/RISEkbmRasch")
 ```
 
-## Usage
+## Using the package
 
-Most functions in this package are relatively simple wrappers that create outputs such as tables and figures to make the Rasch analysis process quick and visual. There is a [companion Quarto template repository](https://github.com/pgmj/RISEraschTemplate) that shows suggested ways to use this package. The primary introduction is of course the [vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html).
+Most functions in this package are relatively simple wrappers that create outputs such as tables and figures to make the Rasch analysis process quick and visual. The primary introduction to using the package is the [vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html).
 
-There are two basic data structure requirements:
+There are two data structure requirements:
 
-- you need to create a dataframe object named `itemlabels` that consists of two variables/columns:
-  - the **first one** named `itemnr`, containing variable names exactly as they are named in the dataframe containing data (for example q1, q2, q3, etc)
-  - the **second one** named `item`, containing either the questionnaire item or a description of it (or description of a task)
-- the data you want to analyze needs to be in a dataframe with participants as rows and items as columns/variables
+1. you need to create a dataframe object named `itemlabels` that consists of two variables/columns:
+  - the **first variable** named `itemnr`, containing variable names exactly as they are named in the dataframe containing data (for example q1, q2, q3, etc)
+  - the **second variable** named `item`, containing either the questionnaire item or a description of it (or description of a task, etc)
+2. the data you want to analyze needs to be in a dataframe with participants as rows and items as columns/variables
   - the lowest response category needs to be zero (0). Recode as needed, the Quarto template file contains code for this.
-  - during data import, you will need to separate any demographic variables into vectors (preferrably as labeled factors), for analysis of differential item functioning (DIF), and then remove them from the dataframe with item data. **The dataframe with item data can only contain item data for the analysis functions to work** (no ID variable or other demographic variables).
+  - during data import, you will need to separate any demographic variables into a separate dataframe or separate vectors (preferrably as labeled factors), for analysis of differential item functioning (DIF), and then remove these variables from the dataframe with item data. **The dataframe with item data can only contain item data for the analysis functions to work** (no ID variable or other demographic variables).
 
 For most Rasch-related functions in the package, there are separate functions for polytomous data (more than two response options for each item) and dichotomous data, except `RItargeting()` which defaults to polytomous data and has the option `dich = TRUE` for dichotomous data. For instance, `RIitemfitPCM()` for the Partial Credit Model and `RIitemfitRM()` for the dichotomous Rasch Model. The Rating Scale Model (RSM) for polytomous data has not been implemented in any of the functions.
 
@@ -57,7 +57,7 @@ The `RIitemfitPCM2()` function, that makes use of multiple random subsamples to 
 
 For those new to R, it may be useful to know that you can easily access the code in each function by using the base R `View()` function. For example, `View(RItargeting)` shows the code for the `RItargeting()` function that creates a Wright map style figure (after installing and loading the RISEkbmRasch package). You can also find the documentation/help on each command by using the command `?RItargeting` in the console (replace `RItargeting` with the function you are interested in).
 
-If you are new to R, [Hadley Wickham's book "R for data science"](https://r4ds.hadley.nz/) is a great place to start.
+If you are new to R, [Hadley Wickham's book "R for data science"](https://r4ds.hadley.nz/) is a great place to start. Also have a look at [Introduction to R with Tidyverse](https://introduction-r-tidyverse.netlify.app/) by Sophie Lee.
 
 ## Author
 
