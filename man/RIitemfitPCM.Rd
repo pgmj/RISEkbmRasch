@@ -8,20 +8,21 @@ RIitemfitPCM(
   dfin,
   samplesize,
   nsamples,
-  zstd_min = -2,
-  zstd_max = 2,
+  zstd_min = -1.96,
+  zstd_max = 1.96,
   msq_min = 0.7,
   msq_max = 1.3,
   fontsize = 15,
   fontfamily = "Lato",
-  table = TRUE,
-  tbl_width = 65
+  output = "table",
+  tbl_width = 65,
+  method = "conditional"
 )
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
-\item{samplesize}{Desired sample size in multisampling (recommended range 250-500)}
+\item{samplesize}{Desired sample size in multisampling (recommended range 200-500)}
 
 \item{nsamples}{Desired number of samples (recommended range 10-50)}
 
@@ -37,16 +38,26 @@ RIitemfitPCM(
 
 \item{fontfamily}{Set font family for table}
 
-\item{table}{Set to TRUE to output a table, and FALSE for a dataframe}
+\item{output}{Defaults to output a table. Optional "dataframe" or "quarto"}
 
 \item{tbl_width}{Set table width in percent}
+
+\item{method}{Defaults to "conditional". Optional "unconditional"}
 }
 \description{
-ZSTD is inflated with large samples (N > 500). Optional function to reduce
-sample size and run analysis using multiple random samples to get average ZSTD
+Defaults to using conditional estimates for MSQ values (Müller, 2020)
+estimated using the \code{iarm} package. Use \code{method = "unconditional"} for the
+"old" unconditional MSQ values (using \code{eRm}).
+}
+\details{
+ZSTD is inflated with large samples (N > 500). There is an optional function
+to use a reduced sample size and run analysis using multiple random samples
+to get the average ZSTD for each item over all runs.
+
 If you are using Quarto, the YAML execute setting "cache: yes" will be a
-useful chunk option to speed things up. 50 samples seems to give stable
-output, but 10 is probably sufficient for a quick look at the approximate
-ZSTD statistics. It is recommended to use sample size 250-500, based on
-Hagell & Westergren, 2016.
+useful chunk option to speed things up if you render often. 30-50 samples
+seems to produce stable output, but 4-8 is probably sufficient for a quick
+look at the approximate ZSTD statistics.
+It is recommended to use sample size 200-500, based on
+Hagell & Westergren (2016) & Müller (2020).
 }

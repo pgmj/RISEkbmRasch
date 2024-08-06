@@ -106,7 +106,7 @@ RImissing <- function(data, itemStart) {
       mutate(Item = factor(Item, levels = rev(Item))) %>%
       ggplot(aes(x = Item, y = Percentage)) +
       geom_col(fill = "#009ca6") +
-      geom_text(aes(label = glue("{round(Percentage,1)}%")),
+      geom_text(aes(label = paste0(round(Percentage,1),"%")),
                 hjust = 1.5, vjust = 0.5,
                 color = "white"
       ) +
@@ -130,7 +130,7 @@ RImissing <- function(data, itemStart) {
     mutate(Item = factor(Item, levels = rev(Item))) %>%
     ggplot(aes(x = Item, y = Percentage)) +
     geom_col(fill = "#009ca6") +
-    geom_text(aes(label = glue("{round(Percentage,1)}%")),
+    geom_text(aes(label = paste0(round(Percentage,1),"%")),
       hjust = 1.5, vjust = 0.5,
       color = "white"
     ) +
@@ -179,7 +179,7 @@ RImissingP <- function(data, itemStart, output, n = 10) {
 
         ggplot(.,aes(x = Participant, y = Missing)) +
           geom_col(fill = "#009ca6") +
-          geom_text(aes(label = glue("{round(Missing*100/ncol(data),1)}%")),
+          geom_text(aes(label = paste0(round(Missing*100/ncol(data),1),"%")),
                     hjust = 1.1, vjust = 0.5,
                     color = "white"
           ) +
@@ -192,7 +192,7 @@ RImissingP <- function(data, itemStart, output, n = 10) {
           labs(title = "Missing data per participant",
                x = "Participant rownumber",
                y = "Number of responses missing",
-               caption = glue("Note. Total number of items is {ncol(data)}.")) +
+               caption = paste0("Note. Total number of items is ", ncol(data),".")) +
           theme_minimal()
       }
 
@@ -223,7 +223,7 @@ RImissingP <- function(data, itemStart, output, n = 10) {
 
         ggplot(.,aes(x = Participant, y = Missing)) +
           geom_col(fill = "#009ca6") +
-          geom_text(aes(label = glue("{round(Missing*100/ncol(data),1)}%")),
+          geom_text(aes(label = paste0(round(Missing*100/ncol(data),1),"%")),
                     hjust = 1.1, vjust = 0.5,
                     color = "white"
           ) +
@@ -236,7 +236,7 @@ RImissingP <- function(data, itemStart, output, n = 10) {
           labs(title = "Missing data per participant",
                x = "Participant rownumber",
                y = "Number of responses missing",
-               caption = glue("Note. Total number of items is {ncol(data)}.")) +
+               caption = paste0("Note. Total number of items is ", ncol(data),".")) +
           theme_minimal()
       }
   }
@@ -608,6 +608,10 @@ RIpcmPCA <- function(dfin, output = "table", fontsize = 15) {
     return(kbl_rise(table))
   }
 
+  if (output == "quarto") {
+    return(knitr::kable(table))
+  }
+
   if (output == "dataframe") {
     return(table)
   }
@@ -777,16 +781,23 @@ RIrawdist <- function(dfin) {
 
 #' Create table with Rasch PCM model item fit values for each item.
 #'
-#' ZSTD is inflated with large samples (N > 500). Optional function to reduce
-#' sample size and run analysis using multiple random samples to get average ZSTD
+#' Defaults to using conditional estimates for MSQ values (Müller, 2020)
+#' estimated using the `iarm` package. Use `method = "unconditional"` for the
+#' "old" unconditional MSQ values (using `eRm`).
+#'
+#' ZSTD is inflated with large samples (N > 500). There is an optional function
+#' to use a reduced sample size and run analysis using multiple random samples
+#' to get the average ZSTD for each item over all runs.
+#'
 #' If you are using Quarto, the YAML execute setting "cache: yes" will be a
-#' useful chunk option to speed things up. 50 samples seems to give stable
-#' output, but 10 is probably sufficient for a quick look at the approximate
-#' ZSTD statistics. It is recommended to use sample size 250-500, based on
-#' Hagell & Westergren, 2016.
+#' useful chunk option to speed things up if you render often. 30-50 samples
+#' seems to produce stable output, but 4-8 is probably sufficient for a quick
+#' look at the approximate ZSTD statistics.
+#' It is recommended to use sample size 200-500, based on
+#' Hagell & Westergren (2016) & Müller (2020).
 #'
 #' @param dfin Dataframe with item data only
-#' @param samplesize Desired sample size in multisampling (recommended range 250-500)
+#' @param samplesize Desired sample size in multisampling (recommended range 200-500)
 #' @param nsamples Desired number of samples (recommended range 10-50)
 #' @param zstd_min Lower cutoff level for ZSTD
 #' @param zstd_max Upper cutoff level for ZSTD
@@ -794,44 +805,63 @@ RIrawdist <- function(dfin) {
 #' @param msq_max Upper cutoff level for MSQ
 #' @param fontsize Set fontsize for table
 #' @param fontfamily Set font family for table
-#' @param table Set to TRUE to output a table, and FALSE for a dataframe
+#' @param output Defaults to output a table. Optional "dataframe" or "quarto"
 #' @param tbl_width Set table width in percent
+#' @param method Defaults to "conditional". Optional "unconditional"
 #' @export
-RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
+RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -1.96, zstd_max = 1.96,
                          msq_min = 0.7, msq_max = 1.3, fontsize = 15, fontfamily = "Lato",
-                         table = TRUE, tbl_width = 65) {
+                         output = "table", tbl_width = 65, method = "conditional") {
 
   if (missing(samplesize)) {
     df.erm <- PCM(dfin) # run PCM model
-    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-    person.locations.estimate <- person.parameter(df.erm)
-    item.fit <- eRm::itemfit(person.locations.estimate)
-    # collect data to df
-    item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ,
-                                          item.fit$i.infitMSQ,
-                                          item.fit$i.outfitZ,
-                                          item.fit$i.infitZ)) %>%
-      mutate(across(where(is.numeric), ~ round(.x, 3)))
 
-    colnames(item.fit.table) <- c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+    if (method == "unconditional") {
+      # get unconditional estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+      ple <- person.parameter(df.erm)
+      item.fit <- eRm::itemfit(ple)
 
-    if (table == TRUE) {
-    # create table that highlights cutoff values in red
-    item.fit.table %>%
-      mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
-        ifelse(OutfitZSTD > zstd_max, "red", "black")
-      ))) %>%
-      mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
-        ifelse(InfitZSTD > zstd_max, "red", "black")
-      ))) %>%
-      mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
-        ifelse(OutfitMSQ > msq_max, "red", "black")
-      ))) %>%
-      mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
-        ifelse(InfitMSQ > msq_max, "red", "black")
-      ))) %>%
+      # collect data to df
+      item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ,
+                                            item.fit$i.infitMSQ,
+                                            item.fit$i.outfitZ,
+                                            item.fit$i.infitZ)) %>%
+        mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+        rownames_to_column("Item")
+
+      colnames(item.fit.table) <- c("Item","OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+
+    } else if (method == "conditional") {
+      # get conditional MSQ
+      cfit <- iarm::out_infit(df.erm)
+      # get unconditional MSQ
+      ple <- person.parameter(df.erm)
+      item.fit <- eRm::itemfit(ple)
+
+      item.fit.table <- data.frame(OutfitMSQ = cfit$Outfit,
+                                   InfitMSQ = cfit$Infit,
+                                   OutfitZSTD = item.fit$i.outfitZ,
+                                   InfitZSTD = item.fit$i.infitZ) %>%
+        round(3) %>%
+        rownames_to_column("Item")
+    }
+    if (output == "table") {
+      # create table that highlights cutoff values in red
+      item.fit.table %>%
+        mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
+                                                                 ifelse(OutfitZSTD > zstd_max, "red", "black")
+        ))) %>%
+        mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
+                                                               ifelse(InfitZSTD > zstd_max, "red", "black")
+        ))) %>%
+        mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
+                                                               ifelse(OutfitMSQ > msq_max, "red", "black")
+        ))) %>%
+        mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
+                                                             ifelse(InfitMSQ > msq_max, "red", "black")
+        ))) %>%
         kbl(booktabs = T, escape = F,
-            table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
+            table.attr = paste0("data-quarto-disable-processing='true' style='width:",tbl_width,"%;'")) %>%
         # bootstrap options are for HTML output
         kable_styling(
           bootstrap_options = c("striped", "hover"),
@@ -844,53 +874,83 @@ RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2
         row_spec(0, bold = T) %>%
         kable_classic(html_font = fontfamily) %>%
         # latex_options are for PDF output
-        kable_styling(latex_options = c("striped", "scale_down"))
-    } else {
+        kable_styling(latex_options = c("striped", "scale_down")) %>%
+        footnote(general = paste0("MSQ values based on ", method," estimation. All values\n are based on a sample size of ", nrow(dfin),"."))
+
+    } else if (output == "dataframe") {
       return(item.fit.table)
+    } else if (output == "quarto") {
+      knitr::kable(item.fit.table)
     }
+
   } else {
     df.erm <- PCM(dfin) # run PCM model
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-    person.locations.estimate <- person.parameter(df.erm)
-    item.fit <- eRm::itemfit(person.locations.estimate)
+    ple <- person.parameter(df.erm)
+    item.fit <- eRm::itemfit(ple)
 
     # ZSTD multisample
     outfitZ <- c()
     infitZ <- c()
     for (i in 1:nsamples) {
       df.new <- dfin[sample(1:nrow(dfin), samplesize), ]
-      df.new <- na.omit(df.new)
+      #df.new <- na.omit(df.new)
       df.z <- PCM(df.new)
       ple <- person.parameter(df.z)
       item.fit.z <- eRm::itemfit(ple)
       outfitZ <- cbind(outfitZ, item.fit.z$i.outfitZ)
       infitZ <- cbind(infitZ, item.fit.z$i.infitZ)
     }
-    item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ,
-                                          item.fit$i.infitMSQ,
-                                          rowMeans(outfitZ),
-                                          rowMeans(infitZ))) %>%
-      mutate(across(where(is.numeric), ~ round(.x, 3)))
 
-    colnames(item.fit.table) <- c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+    if (method == "unconditional") {
+      # get unconditional estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+      ple <- person.parameter(df.erm)
+      item.fit <- eRm::itemfit(ple)
 
-    if (table == TRUE) {
-    # create table that highlights cutoff values in red
-    item.fit.table %>%
-      mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
-        ifelse(OutfitZSTD > zstd_max, "red", "black")
-      ))) %>%
-      mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
-        ifelse(InfitZSTD > zstd_max, "red", "black")
-      ))) %>%
-      mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
-        ifelse(OutfitMSQ > msq_max, "red", "black")
-      ))) %>%
-      mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
-        ifelse(InfitMSQ > msq_max, "red", "black")
-      ))) %>%
+      # collect data to df
+      item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ,
+                                            item.fit$i.infitMSQ,
+                                            rowMeans(outfitZ),
+                                            rowMeans(infitZ)
+      )) %>%
+        round(3) %>%
+        rownames_to_column("Item")
+
+      colnames(item.fit.table) <- c("Item","OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+
+    } else if (method == "conditional") {
+      # get conditional MSQ
+      cfit <- iarm::out_infit(df.erm)
+      # get unconditional MSQ
+      ple <- person.parameter(df.erm)
+      item.fit <- eRm::itemfit(ple)
+
+      item.fit.table <- data.frame(OutfitMSQ = cfit$Outfit,
+                                   InfitMSQ = cfit$Infit,
+                                   OutfitZSTD = rowMeans(outfitZ),
+                                   InfitZSTD = rowMeans(infitZ)
+      ) %>%
+        round(3) %>%
+        rownames_to_column("Item")
+    }
+
+    if (output == "table") {
+      # create table that highlights cutoff values in red
+      item.fit.table %>%
+        mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
+                                                                 ifelse(OutfitZSTD > zstd_max, "red", "black")
+        ))) %>%
+        mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
+                                                               ifelse(InfitZSTD > zstd_max, "red", "black")
+        ))) %>%
+        mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
+                                                               ifelse(OutfitMSQ > msq_max, "red", "black")
+        ))) %>%
+        mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
+                                                             ifelse(InfitMSQ > msq_max, "red", "black")
+        ))) %>%
         kbl(booktabs = T, escape = F,
-            table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
+            table.attr = paste0("data-quarto-disable-processing='true' style='width:",tbl_width,"%;'")) %>%
         # bootstrap options are for HTML output
         kable_styling(
           bootstrap_options = c("striped", "hover"),
@@ -903,30 +963,32 @@ RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2
         row_spec(0, bold = T) %>%
         kable_classic(html_font = fontfamily) %>%
         # latex_options are for PDF output
-        kable_styling(latex_options = c("striped", "scale_down"))
-      } else {
-        return(item.fit.table)
-      }
+        kable_styling(latex_options = c("striped", "scale_down")) %>%
+        footnote(general = paste0("MSQ values are based on a sample size of ", nrow(dfin)," respondents,\n using ",method," estimation.\n",
+                                  "ZSTD values are the means from ", nsamples, " subsamples, each consisting\n of ", samplesize, " random respondents."))
+
+    } else if (output == "dataframe") {
+      return(item.fit.table)
+    } else if (output == "quarto") {
+      knitr::kable(item.fit.table)
+    }
+
   }
 }
 
+
 #' Create table with Rasch PCM model item fit values for each item.
 #'
-#' Special version of RIitemfitPCM that utilizes multiple CPU cores to improve
+#' Special version of `RIitemfitPCM()` that utilizes multiple CPU cores to improve
 #' performance. Requires `library(doParallel)`. To find how many cores you
 #' have on your computer, use `parallel::detectCores()`, but remember to keep
 #' some cores free.
 #'
-#' ZSTD is inflated with large samples (N > 500). Optional function to reduce
-#' sample size and run analysis using multiple random samples to get average ZSTD
-#' 25 samples seems to give a stable output, but 10 is probably
-#' sufficient for a reliable look at the approximate ZSTD statistics.
-#' It is recommended #' to use sample size 250-500, based on
-#' Hagell & Westergren, 2016.
+#' See documentation for `RIitemfitPCM()` for more complete information.
 #'
 #' @param dfin Dataframe with item data only
-#' @param samplesize Desired sample size in multisampling (recommended range 250-500)
-#' @param nsamples Desired number of samples (recommended range 10-50)
+#' @param samplesize Desired sample size in multisampling (recommended range 200-500)
+#' @param nsamples Desired number of samples (recommended range 8-50)
 #' @param zstd_min Lower cutoff level for ZSTD
 #' @param zstd_max Upper cutoff level for ZSTD
 #' @param msq_min Lower cutoff level for MSQ
@@ -934,19 +996,18 @@ RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2
 #' @param cpu Number of CPU cores to utilize (default = 4)
 #' @param fontsize Set fontsize for table
 #' @param fontfamily Set font family for table
-#' @param table Set to FALSE if you want a dataframe instead of a table output
+#' @param output Defaults to output a table. Optional "dataframe" or "quarto"
 #' @param tbl_width Set table width in percent
+#' @param method Defaults to "conditional". Optional "unconditional"
 #' @export
-RIitemfitPCM2 <- function(dfin, samplesize = 300, nsamples = 10, cpu = 4,
-                          zstd_min = -2, zstd_max = 2, msq_min = 0.7,
+RIitemfitPCM2 <- function(dfin, samplesize = 200, nsamples = 8, cpu = 4,
+                          zstd_min = -1.96, zstd_max = 1.96, msq_min = 0.7,
                           msq_max = 1.3, fontsize = 15, fontfamily = "Lato",
-                          table = TRUE, tbl_width = 65) {
+                          output = "table", tbl_width = 65,
+                          method = "conditional") {
   require(doParallel)
   registerDoParallel(cores = cpu)
   df.erm <- PCM(dfin) # run PCM model
-  # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-  person.locations.estimate <- person.parameter(df.erm)
-  item.fit <- eRm::itemfit(person.locations.estimate)
 
   # ZSTD multisample
   outfitZ <- c()
@@ -972,57 +1033,90 @@ RIitemfitPCM2 <- function(dfin, samplesize = 300, nsamples = 10, cpu = 4,
     item.fit.z$i.outfitZ
   }
 
-  item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ,
-                                        item.fit$i.infitMSQ,
-                                        rowMeans(outfitZ),
-                                        rowMeans(infitZ))) %>%
-    mutate(across(where(is.numeric), ~ round(.x, 3)))
+  if (method == "unconditional") {
+    # get unconditional estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+    ple <- person.parameter(df.erm)
+    item.fit <- eRm::itemfit(ple)
 
-  colnames(item.fit.table) <- c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+    # collect data to df
+    item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ,
+                                          item.fit$i.infitMSQ,
+                                          rowMeans(outfitZ),
+                                          rowMeans(infitZ)
+    )) %>%
+      round(3) %>%
+      rownames_to_column("Item")
 
-  if (table == TRUE) {
-  # create table that highlights cutoff values in red
-  item.fit.table %>%
-    mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
-      ifelse(OutfitZSTD > zstd_max, "red", "black")
-    ))) %>%
-    mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
-      ifelse(InfitZSTD > zstd_max, "red", "black")
-    ))) %>%
-    mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
-      ifelse(OutfitMSQ > msq_max, "red", "black")
-    ))) %>%
-    mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
-      ifelse(InfitMSQ > msq_max, "red", "black")
-    ))) %>%
-    kbl(booktabs = T, escape = F,
-        table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
-    # bootstrap options are for HTML output
-    kable_styling(
-      bootstrap_options = c("striped", "hover"),
-      position = "left",
-      full_width = F,
-      font_size = fontsize,
-      fixed_thead = T
+    colnames(item.fit.table) <- c("Item","OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+
+  } else if (method == "conditional") {
+    # get conditional MSQ
+    cfit <- iarm::out_infit(df.erm)
+    # get unconditional MSQ
+    ple <- person.parameter(df.erm)
+    item.fit <- eRm::itemfit(ple)
+
+    item.fit.table <- data.frame(OutfitMSQ = cfit$Outfit,
+                                 InfitMSQ = cfit$Infit,
+                                 OutfitZSTD = rowMeans(outfitZ),
+                                 InfitZSTD = rowMeans(infitZ)
     ) %>%
-    column_spec(1, bold = T) %>%
-    row_spec(0, bold = T) %>%
-    kable_classic(html_font = fontfamily) %>%
-    # latex_options are for PDF output
-    kable_styling(latex_options = c("striped", "scale_down"))
-  } else {
+      round(3) %>%
+      rownames_to_column("Item")
+  }
+
+  if (output == "table") {
+    # create table that highlights cutoff values in red
+    item.fit.table %>%
+      mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
+                                                               ifelse(OutfitZSTD > zstd_max, "red", "black")
+      ))) %>%
+      mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
+                                                             ifelse(InfitZSTD > zstd_max, "red", "black")
+      ))) %>%
+      mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
+                                                             ifelse(OutfitMSQ > msq_max, "red", "black")
+      ))) %>%
+      mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
+                                                           ifelse(InfitMSQ > msq_max, "red", "black")
+      ))) %>%
+      kbl(booktabs = T, escape = F,
+          table.attr = paste0("data-quarto-disable-processing='true' style='width:",tbl_width,"%;'")) %>%
+      # bootstrap options are for HTML output
+      kable_styling(
+        bootstrap_options = c("striped", "hover"),
+        position = "left",
+        full_width = F,
+        font_size = fontsize,
+        fixed_thead = T
+      ) %>%
+      column_spec(1, bold = T) %>%
+      row_spec(0, bold = T) %>%
+      kable_classic(html_font = fontfamily) %>%
+      # latex_options are for PDF output
+      kable_styling(latex_options = c("striped", "scale_down")) %>%
+      footnote(general = paste0("MSQ values are based on a sample size of ", nrow(dfin)," respondents,\n using ",method," estimation.\n",
+                                "ZSTD values are the means from ", nsamples, " subsamples, each consisting\n of ", samplesize, " random respondents."))
+
+  } else if (output == "dataframe") {
     return(item.fit.table)
+  } else if (output == "quarto") {
+    knitr::kable(item.fit.table)
   }
 }
 
 #' Create table with Rasch dichotomous model item fit values for each item.
 #'
+#' Defaults to using conditional estimates for MSQ values (Müller, 2020)
+#' estimated using the `iarm` package. Use `method = "unconditional"` for the
+#' "old" unconditional MSQ values (using `eRm`).
+#'
 #' ZSTD is inflated with large samples (N > 500). Optional function to reduce
 #' sample size and run analysis using multiple random samples to get average ZSTD
 #' If you are using Quarto/Rmarkdown, "cache: yes" will be a useful chunk option to
-#' speed things up. 50 samples seems to give stable output, but 10 is probably
+#' speed things up. 50 samples seems to give stable output, but 4-8 is probably
 #' sufficient for a quick look at the approximate ZSTD statistics. It is recommended
-#' to use sample size 250-500, based on Hagell & Westergren, 2016.
+#' to use sample size 200-500, based on Hagell & Westergren, 2016.
 #'
 #' @param dfin Dataframe with item data only
 #' @param samplesize Desired sample size in multisampling (recommended range 250-500)
@@ -1033,60 +1127,82 @@ RIitemfitPCM2 <- function(dfin, samplesize = 300, nsamples = 10, cpu = 4,
 #' @param msq_max Upper cutoff level for MSQ
 #' @param fontsize Set font size for table
 #' @param fontfamily Set font family for table
-#' @param table Set to FALSE if you want a dataframe instead of a table output
+#' @param output Defaults to output a table. Optional "dataframe" or "quarto"
 #' @param tbl_width Set table width in percent
+#' @param method Defaults to "conditional". Optional "unconditional"
 #' @export
-RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
-                        msq_min = 0.7, msq_max = 1.3, fontsize = 15, fontfamily = "Lato",
-                        table = TRUE, tbl_width = 65) {
+RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -1.96, zstd_max = 1.96,
+                            msq_min = 0.7, msq_max = 1.3, fontsize = 15, fontfamily = "Lato",
+                            output = "table", tbl_width = 65,
+                            method = "conditional") {
   if(missing(samplesize)) {
     df.erm <- RM(dfin) # run Rasch model
-    # get estimates
-    #item.estimates <- coef(df.erm, "eta") # item coefficients
-    person.locations.estimate <- person.parameter(df.erm)
-    item.fit <- eRm::itemfit(person.locations.estimate)
-    # collect data to df
-    item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ,
-                                        item.fit$i.infitMSQ,
-                                        item.fit$i.outfitZ,
-                                        item.fit$i.infitZ)) %>%
-      mutate(across(where(is.numeric), ~ round(.x, 3)))
 
-    colnames(item.fit.table) <- c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+    if (method == "unconditional") {
+      # get unconditional estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+      ple <- person.parameter(df.erm)
+      item.fit <- eRm::itemfit(ple)
 
-    if (table == TRUE) {
+      # collect data to df
+      item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ,
+                                            item.fit$i.infitMSQ,
+                                            item.fit$i.outfitZ,
+                                            item.fit$i.infitZ)) %>%
+        round(3) %>%
+        rownames_to_column("Item")
 
-    # create table that highlights cutoff values in red
-    item.fit.table %>%
-      mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
-                                                               ifelse(OutfitZSTD > zstd_max, "red", "black")))) %>%
-      mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
-                                                             ifelse(InfitZSTD > zstd_max, "red", "black")))) %>%
-      mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
-                                                             ifelse(OutfitMSQ > msq_max, "red", "black")))) %>%
-      mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
-                                                           ifelse(InfitMSQ > msq_max, "red", "black")))) %>%
-      kbl(booktabs = T, escape = F,
-          table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
-      # bootstrap options are for HTML output
-      kable_styling(bootstrap_options = c("striped", "hover"),
-                    position = "left",
-                    full_width = F,
-                    font_size = fontsize,
-                    fixed_thead = T) %>% # when there is a long list in the table
-      column_spec(1, bold = T) %>%
-      kable_classic(html_font = fontfamily) %>%
-      # latex_options are for PDF output
-      kable_styling(latex_options = c("striped","scale_down"))
-    } else {
-      return(item.fit.table)
+      colnames(item.fit.table) <- c("Item","OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+
+    } else if (method == "conditional") {
+      # get conditional MSQ
+      cfit <- iarm::out_infit(df.erm)
+      # get unconditional MSQ
+      ple <- person.parameter(df.erm)
+      item.fit <- eRm::itemfit(ple)
+
+      item.fit.table <- data.frame(OutfitMSQ = cfit$Outfit,
+                                   InfitMSQ = cfit$Infit,
+                                   OutfitZSTD = item.fit$i.outfitZ,
+                                   InfitZSTD = item.fit$i.infitZ
+      ) %>%
+        round(3) %>%
+        rownames_to_column("Item")
     }
-  } else {
+
+    if (output == "table") {
+
+      # create table that highlights cutoff values in red
+      item.fit.table %>%
+        mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
+                                                                 ifelse(OutfitZSTD > zstd_max, "red", "black")))) %>%
+        mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
+                                                               ifelse(InfitZSTD > zstd_max, "red", "black")))) %>%
+        mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
+                                                               ifelse(OutfitMSQ > msq_max, "red", "black")))) %>%
+        mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
+                                                             ifelse(InfitMSQ > msq_max, "red", "black")))) %>%
+        kbl(booktabs = T, escape = F,
+            table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
+        # bootstrap options are for HTML output
+        kable_styling(bootstrap_options = c("striped", "hover"),
+                      position = "left",
+                      full_width = F,
+                      font_size = fontsize,
+                      fixed_thead = T) %>% # when there is a long list in the table
+        column_spec(1, bold = T) %>%
+        kable_classic(html_font = fontfamily) %>%
+        # latex_options are for PDF output
+        kable_styling(latex_options = c("striped","scale_down")) %>%
+        footnote(general = paste0("MSQ values based on ", method," estimation. All values\n are based on a sample size of ", nrow(dfin),"."))
+
+    } else if (output == "dataframe") {
+      return(item.fit.table)
+    } else if (output == "quarto") {
+      knitr::kable(item.fit.table)
+    }
+
+  } else { # for multisampling
     df.erm <- RM(dfin) # run Rasch model
-    # get estimates
-    #item.estimates <- coef(df.erm, "eta") # item coefficients
-    person.locations.estimate <- person.parameter(df.erm)
-    item.fit <- eRm::itemfit(person.locations.estimate)
 
     # ZSTD multisample
     outfitZ <- c()
@@ -1100,40 +1216,76 @@ RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -2, zstd_max = 2,
       outfitZ <- cbind(outfitZ, item.fit.z$i.outfitZ)
       infitZ <- cbind(infitZ, item.fit.z$i.infitZ)
     }
-    item.fit.table<-as.data.frame(cbind(item.fit$i.outfitMSQ,
-                                        item.fit$i.infitMSQ,
-                                        rowMeans(outfitZ),
-                                        rowMeans(infitZ))) %>%
-      mutate(across(where(is.numeric), ~ round(.x, 3)))
 
-    colnames(item.fit.table) <- c("OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+    if (method == "unconditional") {
+      # get unconditional estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
+      ple <- person.parameter(df.erm)
+      item.fit <- eRm::itemfit(ple)
 
-    if (table == TRUE) {
+      # collect data to df
+      item.fit.table <- as.data.frame(cbind(item.fit$i.outfitMSQ,
+                                            item.fit$i.infitMSQ,
+                                            rowMeans(outfitZ),
+                                            rowMeans(infitZ)
+      )) %>%
+        round(3) %>%
+        rownames_to_column("Item")
 
-    # create table that highlights cutoff values in red
-    item.fit.table %>%
-      mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
-                                                               ifelse(OutfitZSTD > zstd_max, "red", "black")))) %>%
-      mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
-                                                             ifelse(InfitZSTD > zstd_max, "red", "black")))) %>%
-      mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
-                                                             ifelse(OutfitMSQ > msq_max, "red", "black")))) %>%
-      mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
-                                                           ifelse(InfitMSQ > msq_max, "red", "black")))) %>%
-      kbl(booktabs = T, escape = F,
-          table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
-      # bootstrap options are for HTML output
-      kable_styling(bootstrap_options = c("striped", "hover"),
-                    position = "left",
-                    full_width = F,
-                    font_size = fontsize,
-                    fixed_thead = T) %>% # when there is a long list in the table
-      column_spec(1, bold = T) %>%
-      kable_classic(html_font = fontfamily) %>%
-      # latex_options are for PDF output
-      kable_styling(latex_options = c("striped","scale_down"))
-    } else {
+      colnames(item.fit.table) <- c("Item","OutfitMSQ", "InfitMSQ", "OutfitZSTD", "InfitZSTD")
+
+    } else if (method == "conditional") {
+      # get conditional MSQ
+      cfit <- iarm::out_infit(df.erm)
+      # get unconditional MSQ
+      ple <- person.parameter(df.erm)
+      item.fit <- eRm::itemfit(ple)
+
+      item.fit.table <- data.frame(OutfitMSQ = cfit$Outfit,
+                                   InfitMSQ = cfit$Infit,
+                                   OutfitZSTD = rowMeans(outfitZ),
+                                   InfitZSTD = rowMeans(infitZ)
+      ) %>%
+        round(3) %>%
+        rownames_to_column("Item")
+    }
+
+    if (output == "table") {
+      # create table that highlights cutoff values in red
+      item.fit.table %>%
+        mutate(OutfitZSTD = cell_spec(OutfitZSTD, color = ifelse(OutfitZSTD < zstd_min, "red",
+                                                                 ifelse(OutfitZSTD > zstd_max, "red", "black")
+        ))) %>%
+        mutate(InfitZSTD = cell_spec(InfitZSTD, color = ifelse(InfitZSTD < zstd_min, "red",
+                                                               ifelse(InfitZSTD > zstd_max, "red", "black")
+        ))) %>%
+        mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < msq_min, "red",
+                                                               ifelse(OutfitMSQ > msq_max, "red", "black")
+        ))) %>%
+        mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_min, "red",
+                                                             ifelse(InfitMSQ > msq_max, "red", "black")
+        ))) %>%
+        kbl(booktabs = T, escape = F,
+            table.attr = paste0("data-quarto-disable-processing='true' style='width:",tbl_width,"%;'")) %>%
+        # bootstrap options are for HTML output
+        kable_styling(
+          bootstrap_options = c("striped", "hover"),
+          position = "left",
+          full_width = F,
+          font_size = fontsize,
+          fixed_thead = T
+        ) %>%
+        column_spec(1, bold = T) %>%
+        row_spec(0, bold = T) %>%
+        kable_classic(html_font = fontfamily) %>%
+        # latex_options are for PDF output
+        kable_styling(latex_options = c("striped", "scale_down")) %>%
+        footnote(general = paste0("MSQ values are based on a sample size of ", nrow(dfin)," respondents,\n using ",method," estimation.\n",
+                                  "ZSTD values are the means from ", nsamples, " subsamples, each consisting\n of ", samplesize, " random respondents."))
+
+    } else if (output == "dataframe") {
       return(item.fit.table)
+    } else if (output == "quarto") {
+      knitr::kable(item.fit.table)
     }
   }
 }

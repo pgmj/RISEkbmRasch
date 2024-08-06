@@ -8,14 +8,15 @@ RIitemfitRM(
   dfin,
   samplesize,
   nsamples,
-  zstd_min = -2,
-  zstd_max = 2,
+  zstd_min = -1.96,
+  zstd_max = 1.96,
   msq_min = 0.7,
   msq_max = 1.3,
   fontsize = 15,
   fontfamily = "Lato",
-  table = TRUE,
-  tbl_width = 65
+  output = "table",
+  tbl_width = 65,
+  method = "conditional"
 )
 }
 \arguments{
@@ -37,15 +38,22 @@ RIitemfitRM(
 
 \item{fontfamily}{Set font family for table}
 
-\item{table}{Set to FALSE if you want a dataframe instead of a table output}
+\item{output}{Defaults to output a table. Optional "dataframe" or "quarto"}
 
 \item{tbl_width}{Set table width in percent}
+
+\item{method}{Defaults to "conditional". Optional "unconditional"}
 }
 \description{
+Defaults to using conditional estimates for MSQ values (Müller, 2020)
+estimated using the \code{iarm} package. Use \code{method = "unconditional"} for the
+"old" unconditional MSQ values (using \code{eRm}).
+}
+\details{
 ZSTD is inflated with large samples (N > 500). Optional function to reduce
 sample size and run analysis using multiple random samples to get average ZSTD
 If you are using Quarto/Rmarkdown, "cache: yes" will be a useful chunk option to
-speed things up. 50 samples seems to give stable output, but 10 is probably
+speed things up. 50 samples seems to give stable output, but 4-8 is probably
 sufficient for a quick look at the approximate ZSTD statistics. It is recommended
-to use sample size 250-500, based on Hagell & Westergren, 2016.
+to use sample size 200-500, based on Hagell & Westergren, 2016.
 }

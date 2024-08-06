@@ -6,25 +6,26 @@
 \usage{
 RIitemfitPCM2(
   dfin,
-  samplesize = 300,
-  nsamples = 10,
+  samplesize = 200,
+  nsamples = 8,
   cpu = 4,
-  zstd_min = -2,
-  zstd_max = 2,
+  zstd_min = -1.96,
+  zstd_max = 1.96,
   msq_min = 0.7,
   msq_max = 1.3,
   fontsize = 15,
   fontfamily = "Lato",
-  table = TRUE,
-  tbl_width = 65
+  output = "table",
+  tbl_width = 65,
+  method = "conditional"
 )
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
 
-\item{samplesize}{Desired sample size in multisampling (recommended range 250-500)}
+\item{samplesize}{Desired sample size in multisampling (recommended range 200-500)}
 
-\item{nsamples}{Desired number of samples (recommended range 10-50)}
+\item{nsamples}{Desired number of samples (recommended range 8-50)}
 
 \item{cpu}{Number of CPU cores to utilize (default = 4)}
 
@@ -40,21 +41,18 @@ RIitemfitPCM2(
 
 \item{fontfamily}{Set font family for table}
 
-\item{table}{Set to FALSE if you want a dataframe instead of a table output}
+\item{output}{Defaults to output a table. Optional "dataframe" or "quarto"}
 
 \item{tbl_width}{Set table width in percent}
+
+\item{method}{Defaults to "conditional". Optional "unconditional"}
 }
 \description{
-Special version of RIitemfitPCM that utilizes multiple CPU cores to improve
+Special version of \code{RIitemfitPCM()} that utilizes multiple CPU cores to improve
 performance. Requires \code{library(doParallel)}. To find how many cores you
 have on your computer, use \code{parallel::detectCores()}, but remember to keep
 some cores free.
 }
 \details{
-ZSTD is inflated with large samples (N > 500). Optional function to reduce
-sample size and run analysis using multiple random samples to get average ZSTD
-25 samples seems to give a stable output, but 10 is probably
-sufficient for a reliable look at the approximate ZSTD statistics.
-It is recommended #' to use sample size 250-500, based on
-Hagell & Westergren, 2016.
+See documentation for \code{RIitemfitPCM()} for more complete information.
 }

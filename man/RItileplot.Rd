@@ -5,10 +5,14 @@
 \title{Create tile plot for all items, also showing the count of
 responses in each response category for each item}
 \usage{
-RItileplot(dfin)
+RItileplot(data, cutoff = 10, highlight = TRUE)
 }
 \arguments{
-\item{dfin}{Dataframe with item data only}
+\item{data}{Dataframe with item data only}
+
+\item{cutoff}{Conditional highlighting of text in cells with n below cutoff}
+
+\item{highlight}{Defaults to TRUE. Set to FALSE to disable text highlighting}
 }
 \description{
 Create tile plot for all items, also showing the count of

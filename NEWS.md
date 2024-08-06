@@ -1,5 +1,16 @@
 ## Changelog
 
+### 0.1.40.0
+
+- added dependency on packages `iarm` and `doParallel`.
+- `RIitemfitPCM()` no longer silently removes respondents with missing data when running multiple subsamples for ZSTD estimation.
+- `RIitemfitPCM()` now has a footer in the table output, indicating the sample size, also sample size used for subsampling ZSTD and number of samples.
+- `RIitemfitPCM()` now uses conditional estimates for MSQ values by default, which introduces a dependency on the package `iarm`. The "old" unconditional estimation method (using `eRm`) is available using the option `output = "unconditional"` (only recommended for reproducibility for old analyses).
+  - This decision is based on the paper Müller, M. (2020). Item fit statistics for Rasch analysis: Can we trust them? Journal of Statistical Distributions and Applications, 7(1), 5. https://doi.org/10.1186/s40488-020-00108-7
+- `RIitemfitPCM2()`, which uses multi-core processing for ZSTD estimation, is also updated with conditional estimation as the default option. - `RIitemfitRM()` does the same for dichotomous items, now also defaulting to conditional estimation.
+- started to replace `glue()` with `paste0()` to remove one library dependency (when replacement work is complete).
+- also moving toward consistency in functions having an option for `output`. Most often this is related to getting a dataframe output instead of a HTML table. I will also add an option to get a `knitr::kable()`` output for all functions where relevant, to enable Quarto to directly format the table. This helps when using different output formats from Quarto (revealjs, etc).
+
 ### 0.1.34.1
 
 - Added new default setting to `RItileplot()` to highlight text in cells with less than 10 responses with red color. Highlighting can be turned off, and the cutoff value can be changed.
