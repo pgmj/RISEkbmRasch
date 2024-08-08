@@ -1,5 +1,9 @@
 ## Changelog
 
+### 0.1.40.1
+
+- `RItileplot()` now has an option to display percentage of responses for each item, instead of number of responses, `percent = TRUE`.
+
 ### 0.1.40.0
 
 Major changes:

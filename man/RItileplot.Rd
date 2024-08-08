@@ -5,7 +5,7 @@
 \title{Create tile plot for all items, also showing the count of
 responses in each response category for each item}
 \usage{
-RItileplot(data, cutoff = 10, highlight = TRUE)
+RItileplot(data, cutoff = 10, highlight = TRUE, percent = FALSE)
 }
 \arguments{
 \item{data}{Dataframe with item data only}
@@ -13,6 +13,8 @@ RItileplot(data, cutoff = 10, highlight = TRUE)
 \item{cutoff}{Conditional highlighting of text in cells with n below cutoff}
 
 \item{highlight}{Defaults to TRUE. Set to FALSE to disable text highlighting}
+
+\item{percent}{Set to TRUE to replace n with percentage of item responses}
 }
 \description{
 Create tile plot for all items, also showing the count of

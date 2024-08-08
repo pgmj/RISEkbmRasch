@@ -392,14 +392,18 @@ RIdemographics <- function(dif.var, diflabel, ...) {
 #' @param data Dataframe with item data only
 #' @param cutoff Conditional highlighting of text in cells with n below cutoff
 #' @param highlight Defaults to TRUE. Set to FALSE to disable text highlighting
+#' @param percent Set to TRUE to replace n with percentage of item responses
 #' @export
-RItileplot <- function(data, cutoff = 10, highlight = TRUE) {
+RItileplot <- function(data, cutoff = 10, highlight = TRUE, percent = FALSE) {
 
   tileplot <-
     data %>%
     pivot_longer(everything()) %>%
     dplyr::count(name, value) %>%
     mutate(name = factor(name, levels = rev(names(data)))) %>%
+    group_by(name) %>%
+    mutate(percentage = round(n/sum(n)*100,1)) %>%
+    ungroup() %>%
 
     ggplot(aes(x = value, y = name, fill = n)) +
     geom_tile() +
@@ -408,17 +412,31 @@ RItileplot <- function(data, cutoff = 10, highlight = TRUE) {
     labs(y = "Items") +
     theme(axis.text.x = element_text(size = 8))
 
-  if(highlight == TRUE) {
+  if(highlight == TRUE & percent == FALSE) {
     tileplot +
       geom_text(aes(label = n,
                     color = ifelse(n < cutoff,"red","orange"))) +
       guides(color = "none") +
       scale_color_identity()
 
-  } else {
+  } else if(highlight == FALSE & percent == FALSE) {
 
     tileplot +
-      geom_text(aes(label = n), colour = "orange")
+      geom_text(aes(label = n), color = "orange")
+
+  } else if(highlight == TRUE & percent == TRUE) {
+
+    tileplot +
+      geom_text(aes(label = paste0(percentage,"%"),
+                    color = ifelse(n < cutoff,"red","orange"))) +
+      guides(color = "none") +
+      scale_color_identity()
+
+  } else if(highlight == FALSE & percent == TRUE) {
+
+    tileplot +
+      geom_text(aes(label = paste0(percentage,"%")), color = "orange")
+
   }
 }
 
