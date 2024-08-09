@@ -2886,16 +2886,16 @@ RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
 #' Optional figure or dataframe output. Note that the figure uses `coord_flip()`,
 #' and take this into account if you wish to add theming.
 #'
-#' @param dfin Dataframe with item data only
+#' @param data Dataframe with item data only
 #' @param output Options: "table" (default), "figure", or "dataframe"
 #' @param point_size Point size for figure
 #' @param error_width Width of error bar ends for figure
 #' @param error_multiplier Range of error bars to multiply with SEM
 #' @param ... Options for `kbl_rise()` for table creation
 #' @export
-RIscoreSE <- function(dfin, output = "table", point_size = 3,
+RIscoreSE <- function(data, output = "table", point_size = 3,
                       error_width = 0.5, error_multiplier = 1.96, ...) {
-  erm_out <- PCM(df)
+  erm_out <- PCM(data)
   scoreList <- iarm::person_estimates(erm_out, properties = TRUE)
   scoreTable <- scoreList[[2]] %>%
     as.data.frame() %>%

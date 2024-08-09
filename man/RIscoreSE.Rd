@@ -5,7 +5,7 @@
 \title{Raw sum score to logit score transformation table & figure}
 \usage{
 RIscoreSE(
-  dfin,
+  data,
   output = "table",
   point_size = 3,
   error_width = 0.5,
@@ -14,7 +14,7 @@ RIscoreSE(
 )
 }
 \arguments{
-\item{dfin}{Dataframe with item data only}
+\item{data}{Dataframe with item data only}
 
 \item{output}{Options: "table" (default), "figure", or "dataframe"}
 
