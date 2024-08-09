@@ -4,7 +4,7 @@
 
 Breaking change:
 
-- `RIestThetas()` (and the multicore version `RIestThetas2()`) have now been renamed to `RIestThetasOLD()`
+- `RIestThetas()` and the multicore version `RIestThetas2()` have now been renamed to `RIestThetasOLD()`
   - the new `RIestThetas()` now uses `iarm::person_estimates()` for much faster processing and easier implementation of both polytomous and dichotomous data.
   - the new `RIestThetas()` also outputs measurement error (SEM) automatically.
   - the OLD functions have been updated to use the non-shifted item threshold values.
