@@ -1408,19 +1408,13 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_wi
 #' @param output Default "figure", or "list" to output 3 figures to a list object
 #' @param bins Optionally, set number of bins for histograms
 #' @export
-RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", bins = 30) {
+RItargeting <- function(dfin, dich = FALSE, xlim = c(-6,6), output = "figure", bins = 30) {
   if(dich == FALSE) {
-  df.erm <- PCM(dfin) # run PCM model
-  # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-  item.estimates <- eRm::thresholds(df.erm)
-  item_difficulty <- item.estimates[["threshtable"]][["1"]]
-  item_difficulty <- as.data.frame(item_difficulty)
-  item.se <- item.estimates$se.thresh
-  person.locations.estimate <- person.parameter(df.erm)
-   item.fit <- eRm::itemfit(person.locations.estimate)
+  erm_out <- PCM(dfin) # run PCM model
+  item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
+  #item_difficulty <- item.locations
 
-  item.locations <- item_difficulty[, 2:ncol(item_difficulty)]
-  names(item.locations) <- paste0("t", c(1:ncol(item.locations))) # re-number items
+  names(item.locations) <- paste0("t", c(1:ncol(item.locations))) # re-label variables
   itemloc.long <- item.locations %>%
     rownames_to_column() %>%
     dplyr::rename(names = "rowname") %>%
@@ -1432,8 +1426,9 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", b
     )
   ### create df for ggplot histograms
   # person locations
-  thetas <- as.data.frame(person.locations.estimate$theta.table)
-  pthetas <- thetas$`Person Parameter`
+  pthetas <- iarm::person_estimates(erm_out, allperson = TRUE) %>%
+    as.data.frame() %>%
+    pull(WLE)
 
   # check if xlim upper is below the highest person locations/thetas
   # and adjust if needed
@@ -1454,12 +1449,10 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", b
     xlim[1] <- floor(min(itemloc.long$par_values, na.rm = TRUE))
   }
 
-
-
   # item locations
   thresholds <- c()
-  for (i in 2:ncol(item_difficulty)) {
-    thresholds <- c(thresholds, item_difficulty[, i])
+  for (i in 1:ncol(item.locations)) {
+    thresholds <- c(thresholds, item.locations[, i])
   }
   ### items and persons in the same variable
   #create data frame with 0 rows and 3 columns
@@ -1481,30 +1474,11 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", b
   df.locations$type <- as.factor(df.locations$type)
 
   # get mean/SD for item/person locations
-  pi.locations <- data.frame(matrix(ncol = 3, nrow = 3))
-
-  item.mean <- round(mean(item_difficulty$Location), 2)
-  item.sd <- round(sd(item_difficulty$Location), 2)
-  item.thresh.sd <- item_difficulty %>%
-    dplyr::select(starts_with("Threshold")) %>%
-    pivot_longer(everything()) %>%
-    pull() %>%
-    na.omit() %>%
-    sd() %>%
-    round(2)
+  item.mean <- round(mean(as.matrix(item.locations), na.rm = TRUE), 2)
+  item.sd <- round(sd(as.matrix(item.locations), na.rm = TRUE), 2)
+  item.thresh.sd <- round(sd(as.matrix(item.locations), na.rm = TRUE), 2)
   person.mean <- round(mean(pthetas, na.rm = TRUE), 2)
   person.sd <- round(sd(pthetas, na.rm = TRUE), 2)
-  #provide column names
-  colnames(pi.locations) <- c('','Mean', 'SD')
-  pi.locations[1,1] <- "Items"
-  pi.locations[1,2] <- round(mean(item_difficulty$Location),2)
-  pi.locations[1,3] <- round(sd(item_difficulty$Location),2)
-  pi.locations[2,1] <- "Item thresholds"
-  pi.locations[2,2] <- round(mean(item_difficulty$Location),2)
-  pi.locations[2,3] <- item.thresh.sd
-  pi.locations[3,1] <- "Persons"
-  pi.locations[3,2] <- round(mean(pthetas, na.rm = TRUE),2)
-  pi.locations[3,3] <- round(sd(pthetas, na.rm = TRUE),2)
 
   targeting_plots <- list()
 
@@ -1522,7 +1496,6 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", b
     annotate("rect", ymin = 0, ymax = Inf, xmin = (person.mean - person.sd), xmax = (person.mean + person.sd), alpha = .2) +
     theme_bw() +
     theme(legend.position = "none")
-
 
   # Item Threshold location histogram
   targeting_plots$p2 <- ggplot() +
@@ -1549,8 +1522,8 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", b
     labs(y = "Location (logit scale)",
          x = "Items",
          caption = paste0(
-      "Person location average: ", pi.locations[3, 2], " (SD ", pi.locations[3, 3], "), Item threshold location average: ",
-      pi.locations[2, 2], " (SD ", pi.locations[2, 3], "). Sample size: ",nrow(dfin),"."
+      "Person location average: ", person.mean, " (SD ", person.sd, "), Item threshold location average: ",
+      item.mean, " (SD ", item.thresh.sd, "). Sample size: ",nrow(dfin),"."
     )) +
     theme_bw() +
     theme(plot.caption = element_text(hjust = 0, face = "italic"),
@@ -1558,24 +1531,22 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-5,6), output = "figure", b
 
   } else {
 
-    df.erm <- RM(dfin) # run RM model
+    erm_out <- RM(dfin) # run RM model
     # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-    person.locations.estimate <- person.parameter(df.erm)
-    item.estimates <- coef(df.erm, "beta")*-1 # item coefficients
-    #item.fit <- eRm::itemfit(person.locations.estimate)
+    item.estimates <- coef(erm_out, "beta")*-1 # item coefficients
 
     item.locations <- as.data.frame(item.estimates)
-    #names(item.locations) <- paste0("T", c(1:ncol(item.locations))) #re-number items
     itemloc.long <- item.locations %>%
       rownames_to_column() %>%
       tidyr::separate(rowname, c(NA, "names"), sep = " ")
 
     ### create df for ggplot histograms
     # person locations
-    thetas<-as.data.frame(person.locations.estimate$theta.table)
-    pthetas<-thetas$`Person Parameter`
+    pthetas <- iarm::person_estimates(erm_out, allperson = TRUE) %>%
+      as.data.frame() %>%
+      pull(WLE)
     # item locations
-    thresholds<-itemloc.long$item.estimates
+    thresholds <- itemloc.long$item.estimates
     ### items and persons in the same variable
     #create data frame with 0 rows and 3 columns
     df.locations <- data.frame(matrix(ncol = 2, nrow = 0))
@@ -1701,32 +1672,37 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich 
   psi_tif <- round(1-(1/sqrt(cutoff))^2,2)
 
   if (dich == FALSE) {
-    df.erm <- PCM(dfin)
-    item.estimates <- eRm::thresholds(df.erm)
-    item_difficulty <- item.estimates[["threshtable"]][["1"]]
-    item_difficulty <- as.data.frame(item_difficulty)
-    person.locations.estimate <- person.parameter(df.erm)
+    erm_out <- PCM(dfin)
+    # item locations
+    item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
+
     # person locations
-    thetas<-as.data.frame(person.locations.estimate$theta.table)
-    pthetas<-thetas$`Person Parameter`
+    pthetas <- iarm::person_estimates(erm_out, allperson = TRUE) %>%
+      as.data.frame() %>%
+      pull(WLE)
     # item locations
     thresholds<-c()
-    for (i in 2:ncol(item_difficulty)) {
-      thresholds<-c(thresholds,item_difficulty[,i])
+    for (i in 1:ncol(item.locations)) {
+      thresholds<-c(thresholds,item.locations[,i])
     }
   }
 
   if (dich == TRUE) {
-    df.erm <- RM(dfin)
-    item_difficulty <- df.erm$etapar %>%
-      as.data.frame(nm = "location") %>%
-      rownames_to_column("item")
-    person.locations.estimate <- person.parameter(df.erm)
-    # person locations
-    thetas <- as.data.frame(person.locations.estimate$theta.table)
-    pthetas <- thetas$`Person Parameter`
+    erm_out <- RM(dfin)
+
     # item locations
-    thresholds <- item_difficulty$location
+    item.estimates <- coef(erm_out, "beta")*-1 # item coefficients
+    item.locations <- as.data.frame(item.estimates) %>%
+      rownames_to_column() %>%
+      tidyr::separate(rowname, c(NA, "item"), sep = " ") %>%
+      dplyr::rename(location = item.estimates)
+
+    # person locations
+    pthetas <- iarm::person_estimates(erm_out, allperson = TRUE) %>%
+      as.data.frame() %>%
+      pull(WLE)
+    # item locations
+    thresholds <- item.locations$location
   }
 
   #create data frame with 0 rows and 2 columns
@@ -1751,7 +1727,7 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich 
   psimatrix <- data.frame(matrix(ncol = 2, nrow = 201))
   names(psimatrix) <- c("psY","psX")
   # this gets 1001 "dots" for the scale information variable y
-  psimatrix$psY <- test_info(df.erm, seq(lo, hi, length.out = 201L))
+  psimatrix$psY <- test_info(erm_out, seq(lo, hi, length.out = 201L))
   # this is the x variable in the TIF figure
   psimatrix$psX <- seq(lo, hi, length.out = 201L)
 
@@ -1838,6 +1814,7 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich 
   ## Add PSI info for optional use
 
   # estimate person location/theta mean and SD
+  person.locations.estimate <- person.parameter(erm_out)
   ple <- person.locations.estimate$theta.table %>%
     as.data.frame() %>%
     dplyr::filter(Interpolated == FALSE)
@@ -2053,15 +2030,15 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
 RIitemparams <- function(dfin, fontsize = 15, output = "table",
                          detail = "thresholds", filename = "item_params.csv",
                          tbl_width = 90) {
-  df.erm <- PCM(dfin)
-  item.estimates <- eRm::thresholds(df.erm)
-  item_difficulty <- item.estimates[["threshtable"]][["1"]]
-  item_difficulty <- as.data.frame(item_difficulty) %>%
+  erm_out <- PCM(dfin)
+  item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
+
+  item_difficulty <- item.locations %>%
+    mutate(Location = rowMeans(.), .before = `Threshold 1`) %>%
     mutate(across(where(is.numeric), ~ round(.x, 3)))
 
   # detailed df
   item_params <- item_difficulty %>%
-    #mutate(item_avg_loc = rowMeans(select(., starts_with("Threshold")), na.rm = TRUE)) %>%
     mutate(all_item_avg = mean(Location)) %>%
     mutate(relative_avg_loc = Location - all_item_avg) %>%
     mutate(relative_lowest_tloc = `Threshold 1` - all_item_avg) %>%
@@ -2388,16 +2365,14 @@ RIoutfitLoc <- function(dfin, samplesize, nsamples) {
 #' @export
 #' @return A plot with item locations (y) and loadings (x)
 RIloadLoc <- function(dfin, output = "figure", pcx = c("PC1","PC2","PC3")) {
-  df.erm<-PCM(dfin) # run PCM model
-  # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
-  item.estimates <- eRm::thresholds(df.erm)
-  item_difficulty <- item.estimates[["threshtable"]][["1"]]
-  item_difficulty <- as.data.frame(item_difficulty)
+  erm_out <- PCM(dfin)
+  item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
+  item_difficulty <- item.locations %>%
+    mutate(Location = rowMeans(.), .before = `Threshold 1`) %>%
+    mutate(across(where(is.numeric), ~ round(.x, 3)))
 
-  # item.se <- item.estimates$se.thresh # not used yet
-
-  person.locations.estimate <- person.parameter(df.erm)
-  item.fit <- eRm::itemfit(person.locations.estimate)
+  ple <- person.parameter(erm_out)
+  item.fit <- eRm::itemfit(ple)
   std.resids <- item.fit$st.res
 
   pca2 <- prcomp(std.resids)
@@ -2775,14 +2750,14 @@ RIdifFigureRM <- function(dfin, dif.var) {
 #' @param sem_multiplier For confidence intervals displayed in figure
 #' @export
 RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
-  df.erm <- PCM(dfin)
-  item.estimates <- eRm::thresholds(df.erm)
-  item_difficulty <- item.estimates[["threshtable"]][["1"]]
-  item_difficulty<-as.data.frame(item_difficulty)
 
-  item.locations<-item_difficulty[,2:ncol(item_difficulty)]
-  names(item.locations) <- paste0("T", c(1:ncol(item.locations))) #re-number items
+  erm_out <- PCM(dfin)
+  item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
+  item_difficulty <- item.locations %>%
+    mutate(Location = rowMeans(.), .before = `Threshold 1`) %>%
+    mutate(across(where(is.numeric), ~ round(.x, 3)))
 
+  names(item.locations) <- paste0("T", c(1:ncol(item.locations)))
   itemloc.long <- item.locations %>%
     rownames_to_column() %>%
     dplyr::rename(names = "rowname") %>%
@@ -2796,6 +2771,7 @@ RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
                   Locations = par_values
     )
   # get SEM estimates for each threshold
+  item.estimates <- eRm::thresholds(erm_out)
   itemSE <- as.data.frame(item.estimates[["se.thresh"]]) %>%
     rownames_to_column(var = 'itemThresh') %>%
     dplyr::rename(ThreshSEM = 'item.estimates[["se.thresh"]]')
@@ -2858,7 +2834,7 @@ RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
       scale_color_viridis_d(guide = "none", option = "H") + # enables any number of thresholds to be colorized with good contrast between adjacent categories
       labs(caption = glue("Note. Item locations are indicated by black diamond shapes.
             Item threshold locations are indicated by colored dots and colored text.
-            Horizontal error bars indicate 95% confidence intervals around threshold locations.")) +
+            Horizontal error bars indicate 84% confidence intervals around threshold locations.")) +
       theme(plot.caption = element_text(hjust = 0, face = "italic"),
             legend.position = "none") +
       theme_bw()
@@ -2878,9 +2854,6 @@ RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
       geom_text(aes(y = Location, label = round(Location,2)),
                 hjust = 0.5, vjust = -1.3, color = "black", size = 3,
                 show.legend = FALSE) +
-      geom_text(aes(y = Location, label = round(Location-mean(Location),2)),
-                hjust = 0.5, vjust = 2, color = "darkgrey", size = 3,
-                show.legend = FALSE) +
       geom_errorbar(aes(ymin = Locations - sem_multiplier*ThreshSEM, ymax = Locations + sem_multiplier*ThreshSEM),
                     width = 0.11
       ) +
@@ -2897,9 +2870,8 @@ RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
       #scale_color_brewer(palette = "Dark2", guide = "none") +
       scale_color_viridis_d(guide = "none", option = "H") + # enables any number of thresholds to be colorized with good contrast between adjacent categories
       labs(caption = glue("Note. Item locations are indicated by black diamond shapes and black text.
-            Grey text indicates the deviation of the item location from the mean item location ({round(mean(itemLocs$Location),2)}).
             Item threshold locations are indicated by colored dots and colored text.
-            Horizontal error bars indicate 95% confidence intervals around threshold locations.")) +
+            Horizontal error bars indicate 84% confidence intervals around threshold locations.")) +
       theme(plot.caption = element_text(hjust = 0, face = "italic"),
             legend.position = "none") +
       theme_bw()
@@ -2919,101 +2891,24 @@ RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
 #' @param point_size Point size for figure
 #' @param error_width Width of error bar ends for figure
 #' @param error_multiplier Range of error bars to multiply with SEM
-#' @param score_range Range of theta/person score/location/measure
-#' @param samplesize Sample size for simulated data
-#' @param sdx Standard deviation for simulated data
 #' @param ... Options for `kbl_rise()` for table creation
 #' @export
 RIscoreSE <- function(dfin, output = "table", point_size = 3,
-                      error_width = 0.5, error_multiplier = 1.96,
-                      score_range = c(-4, 4), samplesize = 250, sdx = 4, ...) {
-  # get item threshold location parameters
-  df.erm <- PCM(dfin)
-  item.estimates <- eRm::thresholds(df.erm)
-  # put them in a matrix object
-  itemParameters <- item.estimates[["threshtable"]][["1"]] %>%
+                      error_width = 0.5, error_multiplier = 1.96, ...) {
+  erm_out <- PCM(df)
+  scoreList <- iarm::person_estimates(erm_out, properties = TRUE)
+  scoreTable <- scoreList[[2]] %>%
     as.data.frame() %>%
-    dplyr::select(!Location) %>%
-    as.matrix()
-  # get mean/SD item locations
-  itemMean <- item.estimates[["threshtable"]][["1"]] %>%
-    as.data.frame() %>%
-    pull(Location) %>%
-    mean()
-  itemSD <- item.estimates[["threshtable"]][["1"]] %>%
-    as.data.frame() %>%
-    pull(Location) %>%
-    sd()
-
-  # write them to a list object
-  tlist <- map(1:nrow(itemParameters), ~ assign(paste0("t", .x), as.vector(itemParameters[.x, ]))) %>%
-    setNames(paste0("t", 1:nrow(itemParameters)))
-  # remove any NA values from the list object
-  tlist <- lapply(tlist, function(x) x[!is.na(x)])
-
-  # create a vector of latent scores with wide variation to generate a full set of possible scores
-  abilities <- rnorm(
-    n = samplesize,
-    mean = itemMean,
-    sd = sdx
-  )
-
-  # simulate a dataset
-  simData <- SimPartialScore(
-    deltaslist = tlist,
-    thetavec = abilities
-  ) %>%
-    as.data.frame()
-
-  # estimate person locations
-  estLocations <- RIestThetas(
-    dfin = simData,
-    itemParams = itemParameters, theta_range = score_range
-  )
-
-  # estimate person location standard error
-  semLocations <- c()
-  for (i in 1:length(estLocations)) {
-    p1theta <- estLocations[i]
-    p1responses <- as.numeric(as.vector(simData[i, ]))
-    tmp <- semTheta(
-      thEst = p1theta,
-      it = itemParameters,
-      model = "PCM",
-      method = "WL",
-      range = score_range
-    )
-    semLocations <- c(semLocations, tmp)
-  }
-
-  # combine location+sem
-  tableData <- data.frame(
-    location = round(estLocations, 4),
-    sem = round(semLocations, 4)
-  ) %>%
-    mutate(ordinal_sum_score = rowSums(simData, na.rm = T)) # add ordinal sum scores
-
-  scoreTable <- tableData %>%
-    unique() %>%
-    arrange(ordinal_sum_score) %>%
-    relocate(ordinal_sum_score, .before = "location") %>%
-    dplyr::rename(
-      "Logit score" = "location",
-      "Logit std.error" = "sem",
-      "Ordinal sum score" = "ordinal_sum_score"
-    ) %>%
-    remove_rownames() %>%
-    mutate(across(where(is.numeric), ~ round(.x, 3)))
-
-  # check for duplicated theta values
-  dupes <- unique(scoreTable$`Logit score`[duplicated(scoreTable$`Logit score`)])
-
-  if (any(duplicated(scoreTable$`Logit score`)) == TRUE) {
-    warning(paste0("You should extend `score_range` due to non-unique theta value(s): ", dupes))
-  }
+    select(`Raw Score`, WLE, SEM) %>%
+    dplyr::rename(`Logit score` = WLE,
+                  `Ordinal sum score` = `Raw Score`,
+                  `Logit std.error` = SEM)
+  rownames(scoreTable) <- NULL
 
   if (output == "table") {
-    kbl_rise(scoreTable, ...)
+    scoreTable %>%
+      round(3) %>%
+      kbl_rise(...)
   } else if (output == "dataframe") {
     return(scoreTable)
   } else if (output == "figure") {
@@ -3033,7 +2928,6 @@ RIscoreSE <- function(dfin, output = "table", point_size = 3,
 }
 
 
-
 #' Person location estimation
 #'
 #' NOTE: Does not yet work with dichotomous data
@@ -3045,13 +2939,15 @@ RIscoreSE <- function(dfin, output = "table", point_size = 3,
 #' Defaults to use WL estimation (lower bias than ML) and PCM.
 #' See ?thetaEst for options available.
 #'
+#' A version for multi-core processing is available as `RIestThetasOLD2()`.
+#'
 #' @param dfin Dataframe with response data only (no demographics etc), items as columns
 #' @param itemParams Optional item (threshold) location matrix
 #' @param model Rasch model to use (currently only default PCM works)
 #' @param method Estimation method (defaults to "WL")
 #' @param theta_range Range of theta (person location) values
 #' @export
-RIestThetas <- function(dfin, itemParams, model = "PCM", method = "WL",
+RIestThetasOLD <- function(dfin, itemParams, model = "PCM", method = "WL",
                         theta_range = c(-4,4)) {
 
   # define function to call from purrr::map_dbl later.
@@ -3062,13 +2958,8 @@ RIestThetas <- function(dfin, itemParams, model = "PCM", method = "WL",
   }
   # if no itemParams are given, calculate them based on input dataframe
   if (missing(itemParams) & model == "PCM") {
-    df.erm <- PCM(dfin)
-    item.estimates <- eRm::thresholds(df.erm)
-    item_difficulty <- as.data.frame(item.estimates[["threshtable"]][["1"]])
-    item_difficulty$Location <- NULL
-    itemParams <- item_difficulty %>%
-      mutate_if(is.character, as.numeric) %>%
-      as.matrix()
+    erm_out <- PCM(dfin)
+    itemParams <- thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T)
 
     # Transpose dataframe to make persons to columns, then output a vector with thetas
     dfin %>%
@@ -3096,6 +2987,60 @@ RIestThetas <- function(dfin, itemParams, model = "PCM", method = "WL",
   }
 }
 
+#' Person location estimation
+#'
+#'
+#' Outputs a dataframe of person locations and measurement error (SEM) for each person
+#'
+#' Uses `iarm::person_estimates()` to estimate person locations
+#' (thetas) for a dataframe with item data as columns and persons as rows.
+#'
+#' Defaults to use WLE estimation (lower bias than MLE, see Warm, 1989) and PCM.
+#'
+#' Note: If you want to use a pre-specified set of item parameters, please use
+#' `RIestThetasOLD()`.
+#'
+#' @param dfin Dataframe with response data only (no demographics etc), items as columns
+#' @param model Rasch model to use ("RM" for dichotomous data)
+#' @param method Estimation method (defaults to "WLE")
+#' @param theta_range Range of theta (person location) values
+#' @export
+RIestThetas <- function(data, model = "PCM", method = "WLE") {
+
+  if (model == "PCM") {
+    erm_out <- PCM(data)
+  } else if (model == "RM") {
+    erm_out <- RM(data)
+  }
+
+  thetas <- iarm::person_estimates(erm_out, allperson = TRUE) %>%
+    as.data.frame()
+
+  semList <- iarm::person_estimates(erm_out, properties = TRUE)
+
+  if (method == "WLE") {
+    theta_df <- data.frame(WLE = thetas$WLE)
+    sem_df <- semList[[2]] %>%
+      as.data.frame() %>%
+      select(WLE,SEM)
+
+    theta_df <- left_join(theta_df,sem_df, by = "WLE")
+
+    return(theta_df)
+
+  } else if (method == "MLE") {
+    theta_df <- data.frame(MLE = thetas$MLE)
+    sem_df <- semList[[1]] %>%
+      as.data.frame() %>%
+      select(MLE,SEM)
+
+    theta_df <- left_join(theta_df,sem_df, by = "MLE")
+
+    return(theta_df)
+  }
+}
+
+
 #' Person location estimation with parallel processing
 #'
 #' Yields about 2-3x speed increase when using 4-8 CPU cores.
@@ -3117,7 +3062,7 @@ RIestThetas <- function(dfin, itemParams, model = "PCM", method = "WL",
 #' @param cpu Number of CPUs/cores to utilize (default is 4)
 #' @param theta_range Range of theta (person location) values
 #' @export
-RIestThetas2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4,
+RIestThetasOLD2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4,
                          theta_range = c(-4,4)) {
   library(furrr)
   plan(multisession, workers = cpu)
@@ -3129,13 +3074,8 @@ RIestThetas2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4
   }
   # if no itemParams are given, calculate them based on input dataframe
   if (missing(itemParams) & model == "PCM") {
-    df.erm <- PCM(dfin)
-    item.estimates <- eRm::thresholds(df.erm)
-    item_difficulty <- as.data.frame(item.estimates[["threshtable"]][["1"]])
-    item_difficulty$Location <- NULL
-    itemParams <- item_difficulty %>%
-      mutate_if(is.character, as.numeric) %>%
-      as.matrix()
+    erm_out <- PCM(dfin)
+    itemParams <- thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T)
 
     # Transpose dataframe to make persons to columns, then output a vector with thetas
     dfin %>%

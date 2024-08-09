@@ -1,5 +1,25 @@
 ## Changelog
 
+### 0.1.50.0
+
+Breaking change:
+
+- `RIestThetas()` (and the multicore version `RIestThetas2()`) have now been renamed to `RIestThetasOLD()`
+  - the new `RIestThetas()` now uses `iarm::person_estimates()` for much faster processing and easier implementation of both polytomous and dichotomous data.
+  - the new `RIestThetas()` also outputs measurement error (SEM) automatically.
+  - the OLD functions have been updated to use the non-shifted item threshold values.
+
+Significant changes:
+
+- `RItargeting()` will now show correct (unshifted) item threshold values, and person locations (thetas) are estimated using `iarm::person_estimates()` with Weighted Likelihood Estimation for less bias.
+- `RItif()` bug fix for dichotomous data, now using all item locations. Also updated to use WLS theta estimation for caption text for both polytomous and dichotomous data. Option `samplePSI` still uses MLE theta.
+- These functions will also show unshifted item threshold values:
+  - `RIloadLoc()`
+  - `RIitemparams()`
+  - `RIitemHierarchy()`, which also has updated defaults to shows 84% CI to enable visual interpretation of statistically significant differences (Payton et al., 2003) between item thresholds. You can change the CI, but the caption text is not yet dynamically updated to match the setting (sorry).
+- `RIscoreSE()` now uses `iarm::person_estimates()` for WLE estimation of person locations and SEM
+
+
 ### 0.1.40.1
 
 - `RItileplot()` now has an option to display percentage of responses for each item, instead of number of responses, `percent = TRUE`.
