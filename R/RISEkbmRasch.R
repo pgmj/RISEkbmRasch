@@ -3023,7 +3023,7 @@ RIestThetas <- function(data, model = "PCM", method = "WLE") {
     theta_df <- data.frame(WLE = thetas$WLE)
     sem_df <- semList[[2]] %>%
       as.data.frame() %>%
-      select(WLE,SEM)
+      dplyr::select(WLE,SEM)
 
     theta_df <- left_join(theta_df,sem_df, by = "WLE")
 
@@ -3033,7 +3033,7 @@ RIestThetas <- function(data, model = "PCM", method = "WLE") {
     theta_df <- data.frame(MLE = thetas$MLE)
     sem_df <- semList[[1]] %>%
       as.data.frame() %>%
-      select(MLE,SEM)
+      dplyr::select(MLE,SEM)
 
     theta_df <- left_join(theta_df,sem_df, by = "MLE")
 
