@@ -10,9 +10,6 @@ RIscoreSE(
   point_size = 3,
   error_width = 0.5,
   error_multiplier = 1.96,
-  score_range = c(-4, 4),
-  samplesize = 250,
-  sdx = 4,
   ...
 )
 }
@@ -26,12 +23,6 @@ RIscoreSE(
 \item{error_width}{Width of error bar ends for figure}
 
 \item{error_multiplier}{Range of error bars to multiply with SEM}
-
-\item{score_range}{Range of theta/person score/location/measure}
-
-\item{samplesize}{Sample size for simulated data}
-
-\item{sdx}{Standard deviation for simulated data}
 
 \item{...}{Options for \code{kbl_rise()} for table creation}
 }

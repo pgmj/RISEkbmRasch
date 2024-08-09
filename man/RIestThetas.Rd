@@ -4,33 +4,26 @@
 \alias{RIestThetas}
 \title{Person location estimation}
 \usage{
-RIestThetas(
-  dfin,
-  itemParams,
-  model = "PCM",
-  method = "WL",
-  theta_range = c(-4, 4)
-)
+RIestThetas(data, model = "PCM", method = "WLE")
 }
 \arguments{
+\item{model}{Rasch model to use ("RM" for dichotomous data)}
+
+\item{method}{Estimation method (defaults to "WLE")}
+
 \item{dfin}{Dataframe with response data only (no demographics etc), items as columns}
-
-\item{itemParams}{Optional item (threshold) location matrix}
-
-\item{model}{Rasch model to use (currently only default PCM works)}
-
-\item{method}{Estimation method (defaults to "WL")}
 
 \item{theta_range}{Range of theta (person location) values}
 }
 \description{
-NOTE: Does not yet work with dichotomous data
+Outputs a dataframe of person locations and measurement error (SEM) for each person
 }
 \details{
-Outputs a vector of person locations, one for each row in the dataframe.
-
-Uses thetaEst function from catR package to estimate person locations
+Uses \code{iarm::person_estimates()} to estimate person locations
 (thetas) for a dataframe with item data as columns and persons as rows.
-Defaults to use WL estimation (lower bias than ML) and PCM.
-See ?thetaEst for options available.
+
+Defaults to use WLE estimation (lower bias than MLE, see Warm, 1989) and PCM.
+
+Note: If you want to use a pre-specified set of item parameters, please use
+\code{RIestThetasOLD()}.
 }
