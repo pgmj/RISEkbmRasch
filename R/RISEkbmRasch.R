@@ -2881,10 +2881,11 @@ RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
 #' Raw sum score to logit score transformation table & figure
 #'
 #' By default displays a table with raw sum scores and their corresponding logit score
-#' and logit standard error.
+#' and logit standard error. Currently only implemented for Partial Credit Models.
 #'
-#' Optional figure or dataframe output. Note that the figure uses `coord_flip()`,
-#' and take this into account if you wish to add theming.
+#' Optional figure or dataframe output.
+#'
+#' NOTE: the figure uses `coord_flip()`, take this into account if you wish to add theming.
 #'
 #' @param data Dataframe with item data only
 #' @param output Options: "table" (default), "figure", or "dataframe"
@@ -2899,7 +2900,7 @@ RIscoreSE <- function(data, output = "table", point_size = 3,
   scoreList <- iarm::person_estimates(erm_out, properties = TRUE)
   scoreTable <- scoreList[[2]] %>%
     as.data.frame() %>%
-    select(`Raw Score`, WLE, SEM) %>%
+    dplyr::select(`Raw Score`, WLE, SEM) %>%
     dplyr::rename(`Logit score` = WLE,
                   `Ordinal sum score` = `Raw Score`,
                   `Logit std.error` = SEM)
