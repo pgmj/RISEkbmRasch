@@ -28,9 +28,10 @@ RIscoreSE(
 }
 \description{
 By default displays a table with raw sum scores and their corresponding logit score
-and logit standard error.
+and logit standard error. Depends on functions from package \code{iarm}.
 }
 \details{
-Optional figure or dataframe output. Note that the figure uses \code{coord_flip()},
-and take this into account if you wish to add theming.
+Optional figure or dataframe output.
+
+NOTE: the figure uses \code{coord_flip()}, take this into account if you wish to add theming.
 }

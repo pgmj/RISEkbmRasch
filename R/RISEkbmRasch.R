@@ -58,7 +58,7 @@ theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15,
   )
 }
 
-#' A kableExtra function to simplify table code
+#' A kableExtra function to simplify table creation
 #'
 #' @param data Dataframe/tibble to create table from
 #' @param tbl_width Width of table (0-100)
@@ -69,7 +69,7 @@ theme_rise <- function(fontfamily = "Lato", axissize = 13, titlesize = 15,
 kbl_rise <- function(data, tbl_width = 65, fontsize = 14, fontfamily = "Arial",
                      options = c("striped", "hover"), ...) {
   kbl(data, booktabs = T, escape = F,
-      table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
+      table.attr = paste0("data-quarto-disable-processing='true' style='width:",tbl_width,"%;'")) %>%
     kable_styling(
       bootstrap_options = options,
       position = "left",
@@ -2881,7 +2881,7 @@ RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
 #' Raw sum score to logit score transformation table & figure
 #'
 #' By default displays a table with raw sum scores and their corresponding logit score
-#' and logit standard error. Currently only implemented for Partial Credit Models.
+#' and logit standard error. Depends on functions from package `iarm`.
 #'
 #' Optional figure or dataframe output.
 #'
@@ -2897,7 +2897,7 @@ RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
 RIscoreSE <- function(data, output = "table", point_size = 3,
                       error_width = 0.5, error_multiplier = 1.96, ...) {
   erm_out <- PCM(data)
-  scoreList <- iarm::person_estimates(erm_out, properties = TRUE)
+  scoreList <- RI_iarm_person_estimates(erm_out, properties = TRUE)
   scoreTable <- scoreList[[2]] %>%
     as.data.frame() %>%
     dplyr::select(`Raw Score`, WLE, SEM) %>%
@@ -3700,3 +3700,196 @@ RIdifThreshFigLR <- function(dfin, dif.var) {
 
 }
 
+#' Temporary fix for upstream bug in `iarm::person_estimates()`
+#'
+#' To get `RIscoreSE()` working properly for cases with theta range up til
+#' c(-10,10).
+#'
+#' code from package `iarm`
+#' <https://github.com/cran/iarm/blob/master/R/Person-Fit.R>
+#'
+#' @param object Output from PCM() or RM()
+#' @param properties All properties or not
+#' @param allperson All respondents or not
+#' @export
+
+RI_iarm_person_estimates <- function(object, properties = F, allperson = F){
+  if (!any("Rm"%in%class(object),class(object)%in%c("raschmodel","pcmodel"))) stop("object must be of class Rm, raschmodel or pcmodel!")
+  if(class(object)[1]=="pcmodel") object$model <- "pcmodel"
+  if(class(object)[1]=="raschmodel") object$model <- "raschmodel"
+  if (object$model%in%c("raschmodel","pcmodel")) {X <- object$data
+  } else {X <- object$X
+  }
+  if (object$model%in%c("RM","raschmodel")) {
+    k <- dim(X)[2]
+    if (object$model == "RM") coeff <- (-1)*coef(object)
+    else coeff <- itempar(object)
+    m <- k
+    respm <- rbind(rep(0, k), lower.tri(matrix(1, k, k)) + diag(k))
+  } else {
+    if (object$model == "PCM"){
+      coeff <- thresholds(object)[[3]][[1]][, -1]- mean(thresholds(object)[[3]][[1]][, -1], na.rm=T)
+    } else {
+      coeff <- coef(threshpar(object),type="matrix")
+    }
+    k <- dim(X)[2]
+    mi <- apply(X, 2, max, na.rm = TRUE)
+    m <- sum(mi)
+    respm <- matrix(0, ncol = k, nrow = m + 1)
+    respm[, 1] <- c(0:mi[1], rep(mi[1], nrow(respm) - mi[1] - 1))
+    for (i in 2:k) respm[, i] <- c(rep(0, cumsum(mi)[i - 1] + 1), 1:mi[i], rep(mi[i], nrow(respm) - cumsum(mi)[i]  -1))
+  }
+  if (object$model=="pcmodel"){
+    mode <- "PCM"
+  } else {
+    if (object$model=="raschmodel"){
+      mode  <- "RM"
+    } else {
+      mode <- object$model
+    }
+  }
+  mm <- cbind(0:m, RI_iarm_(respm, coeff, model=mode, type = "MLE" )[, 1],
+              RI_iarm_(respm, coeff, model=mode, type="WLE")[,1])
+  rownames(mm) <- rep(" ", m + 1)
+  colnames(mm) <- c("Raw Score", "MLE", "WLE")
+  if (allperson){
+    properties <- F
+    rv <- rowSums(X, na.rm = TRUE)
+    mm <- mm[rv+1,]
+    mm
+  } else {
+    if (properties == F) {
+      mm
+    } else {
+      if (object$model%in%c("RM","raschmodel")){
+        koeff <- as.list(coeff)
+      } else {
+        koeff <- lapply(as.list(as.data.frame(t(coeff))), function(x) cumsum(na.omit(x)))
+      }
+      gr <- elementary_symmetric_functions(koeff)[[1]]
+      s.theta <- function(r){
+        function(x){
+          ((exp(x*(0:m))*gr)/as.vector(exp(x*(0:m))%*%gr))%*%(0:m) - r
+        }
+      }
+      if (object$model%in%c("pcmodel","raschmodel")) mm[1, 2] <- NA else  mm[1, 2] <- person.parameter(object)$pred.list[[1]]$y[1]
+      try(mm[1, 2] <- uniroot(s.theta(0.25), c(-10, 10))$root)
+      mm[m + 1, 2] <- uniroot(s.theta(m - 0.25), c(-10, 10))$root # this is where the change was made
+      rvec = 0:m
+      pers_prop <- function(x, persons){
+        pr <- (exp(x[2]*rvec)*gr)/as.vector(exp(x[2]*rvec)%*%gr)
+        bias <- pr%*%persons - x[2]
+        sem <- sqrt((persons - as.vector(pr%*%persons))^2%*%pr)
+        rsem <- sqrt((persons - x[2])^2%*%pr)
+        scoresem <- sqrt((rvec- x[1])^2%*%pr)
+        c(SEM = sem, Bias = bias, RMSE = rsem, Score.SEM = scoresem)
+      }
+      result <- list(cbind(mm[, 1:2],t(apply(mm[, c(1, 2)], 1, pers_prop, persons = mm[, 2]))),
+                     cbind(mm[, c(1,3)], t(apply(mm[, c(1, 3)], 1, pers_prop, persons = mm[, 3]))))
+      result
+    }
+  }
+}
+
+#' Temporary fix for upstream bug in `iarm::person_estimates()`
+#'
+#' To get `RIscoreSE()` working properly for cases with theta range up til
+#' c(-10,10).
+#'
+#' code from package `iarm`
+#' <https://github.com/cran/iarm/blob/master/R/Person-Fit.R>
+#'
+#' @param respm temp
+#' @param thresh temp
+#' @param model temp
+#' @param theta temp
+#' @param type temp
+#' @param extreme temp
+#' @param maxit temp
+#' @param maxdelta temp
+#' @param tol temp
+#' @param maxval temp
+#' @export
+
+RI_iarm_persons_mle <- function (respm, thresh, model=c("RM","PCM"), theta = rep(0, dim(respm)[1]),
+                         type = c("MLE","WLE"), extreme=TRUE, maxit = 20, maxdelta = 3, tol = 1e-04, maxval = 9) {
+  # thresh Matrix mit  Schwellenwerten  oder betas
+  n <- dim(respm)[1]
+  k <- dim(respm)[2]
+  rv <- rowSums(respm, na.rm = TRUE)
+  mode <- match.arg(model)
+  typ <- match.arg(type)
+  cll.rasch <- function(theta){
+    ksi   <- exp(theta)
+    mm <- outer(ksi,1/exp(thresh))
+    mm[is.na(respm)] <- 0
+    dll <- rv - rowSums(mm/(1+mm))
+    d2ll <- - rowSums(mm/(1+mm)^2)
+    d3ll <- 0
+    if (typ=="WLE") {
+      d3ll <- - rowSums((mm*(1-mm))/(1+mm)^3)
+      if (extreme==FALSE){
+        d3ll[rv==0] <- 0
+        d3ll[rv==maxr] <- 0
+      }
+    }
+    list(dll=dll,d2ll=d2ll,d3ll=d3ll)
+  }
+  cll.pcm <- function(theta){
+    dlogki <-function(i) {
+      mmn <- exp(outer(theta,1:mi[i]) + matrix(psi.l[[i]],ncol=mi[i],nrow=n,byrow=T))
+      kd <- 1 + rowSums(mmn)
+      kd1 <- rowSums(matrix(1:mi[i],ncol=mi[i],nrow=n,byrow=T)*mmn)
+      kd2 <- rowSums(matrix((1:mi[i])^2,ncol=mi[i],nrow=n,byrow=T)*mmn)
+      kd3 <- rowSums(matrix((1:mi[i])^3,ncol=mi[i],nrow=n,byrow=T)*mmn)
+      cbind(dlli=kd1/kd, d2lli=kd2/kd -(kd1/kd)^2, d3lli=-kd3/kd + 3*kd2*kd1/(kd^2) -2*(kd1/kd)^3)
+    }
+    mm <- sapply(1:k,dlogki)
+    mm[is.na(rbind(respm,respm,respm))] <- 0
+    dll <- rv -rowSums(mm[1:n,])
+    d2ll <- -rowSums(mm[(n+1):(2*n),])
+    d3ll <- 0
+    if (typ=="WLE") {
+      d3ll <- rowSums(mm[(2*n+1):(3*n),])
+      if (extreme==FALSE){
+        d3ll[rv==0] <- 0
+        d3ll[rv==maxr] <- 0
+      }
+    }
+    list(dll=dll,d2ll=d2ll,d3ll=d3ll)
+  }
+  iter <- 1
+  conv <- 1
+  if (mode=="RM") {
+    maxr <- apply(respm,1,function(x) sum(!is.na(x)))
+    clog <- cll.rasch
+  }
+  if (mode=="PCM") {
+    thresh.l <- apply(thresh,1,function(x) as.vector(na.omit(x)), simplify=F)
+    psi.l <- lapply(thresh.l, function(x){(-1)*cumsum(x)})
+    mi <- sapply(psi.l, length)
+    m <- sum(mi)
+    maxr <- apply(respm,1,function(x) sum(mi[!is.na(x)]))
+    clog <- cll.pcm
+  }
+
+  while ((conv > tol) & (iter <= maxit)) {
+    theta0 <- theta
+    fn <- clog(theta)
+    delta <- -fn[[1]]/fn[[2]]
+    if (typ=="WLE") {
+      delta <- -fn[[1]]/fn[[2]] - fn[[3]]/(2 * fn[[2]]^2)
+    }
+    maxdelta <- maxdelta/1.05
+    delta <- ifelse(abs(delta) > maxdelta, sign(delta) * maxdelta, delta)
+    theta <- theta + delta
+    theta <- ifelse(abs(theta) > maxval, sign(theta) * maxval, theta)
+    conv <- max(abs(theta - theta0))
+    iter <- iter + 1
+  }
+  se <- sqrt(abs(-1/fn[[2]]))
+  se <- ifelse(abs(theta) == maxval, NA, se)
+  theta <- ifelse(theta == maxval, Inf, ifelse(theta == -maxval, -Inf, theta))
+  res <- structure(data.frame(est = theta, se = se), model = mode, type = typ)
+  return(res)
+}

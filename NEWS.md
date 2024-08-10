@@ -1,5 +1,10 @@
 ## Changelog
 
+### 0.1.50.3
+
+- minor bug fixes
+- `RIscoreSE()` relies on `iarm::person_estimates()`, which has a minor bug when setting the value of the highest MLE score, where the range is restricted to theta [-6,6]. I have temporarily added the two necessary functions from `iarm` to the `RISEkbmRasch` package to correct this.
+
 ### 0.1.50.0
 
 Breaking change:

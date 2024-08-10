@@ -2,7 +2,7 @@
 % Please edit documentation in R/RISEkbmRasch.R
 \name{kbl_rise}
 \alias{kbl_rise}
-\title{A kableExtra function to simplify table code}
+\title{A kableExtra function to simplify table creation}
 \usage{
 kbl_rise(
   data,
@@ -25,5 +25,5 @@ kbl_rise(
 \item{...}{Passes options to kbl()}
 }
 \description{
-A kableExtra function to simplify table code
+A kableExtra function to simplify table creation
 }
