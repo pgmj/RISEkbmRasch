@@ -3748,8 +3748,8 @@ RI_iarm_person_estimates <- function(object, properties = F, allperson = F){
       mode <- object$model
     }
   }
-  mm <- cbind(0:m, RI_iarm_(respm, coeff, model=mode, type = "MLE" )[, 1],
-              RI_iarm_(respm, coeff, model=mode, type="WLE")[,1])
+  mm <- cbind(0:m, RI_iarm_persons_mle(respm, coeff, model=mode, type = "MLE" )[, 1],
+              RI_iarm_persons_mle(respm, coeff, model=mode, type="WLE")[,1])
   rownames(mm) <- rep(" ", m + 1)
   colnames(mm) <- c("Raw Score", "MLE", "WLE")
   if (allperson){
