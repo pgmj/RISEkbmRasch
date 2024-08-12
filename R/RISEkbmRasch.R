@@ -2976,7 +2976,7 @@ RIscoreSE <- function(data, output = "table", point_size = 3,
 #' @param theta_range Range of theta (person location) values
 #' @export
 RIestThetasOLD <- function(dfin, itemParams, model = "PCM", method = "WL",
-                        theta_range = c(-4,4)) {
+                        theta_range = c(-7,7)) {
 
   # define function to call from purrr::map_dbl later.
   estTheta <- function(personResponse, itemParameters = itemParams, rmod = model,
@@ -3080,18 +3080,18 @@ RIestThetas <- function(data, model = "PCM", method = "WLE") {
 #'
 #' Uses thetaEst function from catR package to estimate person locations
 #' (thetas) for a dataframe with item data as columns and persons as rows.
-#' Defaults to use WL estimation (lower bias than ML) and PCM.
+#' Defaults to use WL estimation (lower bias than ML, see Warm, 1989) and PCM.
 #' See ?thetaEst for options available.
 #'
 #' @param dfin Dataframe with response data only (no demographics etc), items as columns
 #' @param itemParams Optional item (threshold) location matrix
-#' @param model Rasch model to use (use NULL for dichotomous data)
-#' @param method Estimation method (defaults to "WL")
+#' @param model Rasch model to use (use `NULL` for dichotomous data)
+#' @param method Estimation method (defaults to `"WL"`)
 #' @param cpu Number of CPUs/cores to utilize (default is 4)
 #' @param theta_range Range of theta (person location) values
 #' @export
 RIestThetasOLD2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu = 4,
-                         theta_range = c(-4,4)) {
+                         theta_range = c(-7,7)) {
   library(furrr)
   plan(multisession, workers = cpu)
   # define function to call from purrr::map_dbl later.
