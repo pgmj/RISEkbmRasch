@@ -3041,10 +3041,10 @@ RIestThetas <- function(data, model = "PCM", method = "WLE") {
     erm_out <- RM(data)
   }
 
-  thetas <- iarm::person_estimates(erm_out, allperson = TRUE) %>%
+  thetas <- RI_iarm_person_estimates(erm_out, allperson = TRUE) %>%
     as.data.frame()
 
-  semList <- iarm::person_estimates(erm_out, properties = TRUE)
+  semList <- RI_iarm_person_estimates(erm_out, properties = TRUE)
 
   if (method == "WLE") {
     theta_df <- data.frame(WLE = thetas$WLE)

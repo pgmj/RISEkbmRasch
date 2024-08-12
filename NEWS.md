@@ -1,10 +1,11 @@
 ## Changelog
 
-### 0.1.50.6
+### 0.1.50.7
 
 - added check whether data is dichotomous for several functions to produce a more helpful error message.
 - harmonized functions to make all functions use `model = "RM"` where applicable (replacing `dich = TRUE`).
 - bug fix `RIloadLoc()`.
+- bug fix `RIestThetas()`.
 
 ### 0.1.50.3
 
