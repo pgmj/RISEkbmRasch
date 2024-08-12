@@ -17,9 +17,9 @@ RIitemHierarchy(dfin, numbers = TRUE, sem_multiplier = 1.405)
 Items are sorted by item average location. Confidence intervals are 84\% by
 default to enable visual interpretation of statistically significant
 differences (Payton et al., 2003). The CI can be changed using the
-\code{sem_multiplier} option.
+\code{sem_multiplier} option (ie. use 1.96 for 95\% CI).
 }
 \details{
-Only works for PCM models currently. For dichotomous data, use
-\code{df.erm<-RM(data)} followed by \code{plotPImap(df.erm, sorted = T)}
+Only works with partial credit models currently. For dichotomous data, use
+\code{df.erm <- RM(data)} followed by \code{plotPImap(df.erm, sorted = T)}
 }

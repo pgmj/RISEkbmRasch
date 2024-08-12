@@ -4,7 +4,7 @@
 \alias{RItif}
 \title{Reliability of test}
 \usage{
-RItif(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich = FALSE)
+RItif(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, model = "PCM")
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
@@ -17,7 +17,7 @@ RItif(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich = FALSE)
 
 \item{cutoff}{Caption text will generate information relative to this TIF value}
 
-\item{dich}{Set to TRUE if you have dichotomous data}
+\item{model}{Defaults to "PCM", use "RM" for dichotomous data}
 }
 \description{
 Test information shows the reliability curve of the test (not the sample).

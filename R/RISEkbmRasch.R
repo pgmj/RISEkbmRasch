@@ -1403,136 +1403,139 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_wi
 #' `list$p1 / list$p2 / list$p3 + plot_layout(heights = c(1, 1, 1.4))`
 #'
 #' @param dfin Dataframe with item data only
-#' @param dich Set to TRUE if your data is dichotomous
+#' @param model Defaults to "PCM", use "RM" for dichotomous data
 #' @param xlim Optionally, set lower/upper limits for x axis
 #' @param output Default "figure", or "list" to output 3 figures to a list object
 #' @param bins Optionally, set number of bins for histograms
 #' @export
-RItargeting <- function(dfin, dich = FALSE, xlim = c(-6,6), output = "figure", bins = 30) {
-  if(dich == FALSE) {
-  erm_out <- PCM(dfin) # run PCM model
-  item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
-  #item_difficulty <- item.locations
+RItargeting <- function(dfin, model = "PCM", xlim = c(-4,4), output = "figure", bins = 30) {
+  if(model == "PCM") {
+    if(max(as.matrix(dfin)) == 1) {
+      stop("Use `model = 'RM'` for dichotomous data.")
+    } else {
+      erm_out <- PCM(dfin) # run PCM model
+      item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
+      #item_difficulty <- item.locations
 
-  names(item.locations) <- paste0("t", c(1:ncol(item.locations))) # re-label variables
-  itemloc.long <- item.locations %>%
-    rownames_to_column() %>%
-    dplyr::rename(names = "rowname") %>%
-    mutate(names = factor(names, levels = rev(names(dfin)))) %>%
-    pivot_longer(
-      cols = starts_with("t"),
-      names_to = "thresholds",
-      values_to = "par_values"
-    )
-  ### create df for ggplot histograms
-  # person locations
-  pthetas <- iarm::person_estimates(erm_out, allperson = TRUE) %>%
-    as.data.frame() %>%
-    pull(WLE)
+      names(item.locations) <- paste0("t", c(1:ncol(item.locations))) # re-label variables
+      itemloc.long <- item.locations %>%
+        rownames_to_column() %>%
+        dplyr::rename(names = "rowname") %>%
+        mutate(names = factor(names, levels = rev(names(dfin)))) %>%
+        pivot_longer(
+          cols = starts_with("t"),
+          names_to = "thresholds",
+          values_to = "par_values"
+        )
+      ### create df for ggplot histograms
+      # person locations
+      pthetas <- iarm::person_estimates(erm_out, allperson = TRUE) %>%
+        as.data.frame() %>%
+        pull(WLE)
 
-  # check if xlim upper is below the highest person locations/thetas
-  # and adjust if needed
-  if (max(pthetas, na.rm = TRUE) > xlim[2]) {
-    xlim[2] <- ceiling(max(pthetas, na.rm = TRUE))
-  }
-  # check if xlim lower is above the lowest person locations/thetas
-  # and adjust if needed
-  if (min(pthetas, na.rm = TRUE) < xlim[1]) {
-    xlim[1] <- floor(min(pthetas, na.rm = TRUE))
-  }
-  # and then check if any item threshold is outside xlim
-  if (max(itemloc.long$par_values, na.rm = TRUE) > xlim[2]) {
-    xlim[2] <- ceiling(max(itemloc.long$par_values, na.rm = TRUE))
-  }
+      # check if xlim upper is below the highest person locations/thetas
+      # and adjust if needed
+      if (max(pthetas, na.rm = TRUE) > xlim[2]) {
+        xlim[2] <- ceiling(max(pthetas, na.rm = TRUE))
+      }
+      # check if xlim lower is above the lowest person locations/thetas
+      # and adjust if needed
+      if (min(pthetas, na.rm = TRUE) < xlim[1]) {
+        xlim[1] <- floor(min(pthetas, na.rm = TRUE))
+      }
+      # and then check if any item threshold is outside xlim
+      if (max(itemloc.long$par_values, na.rm = TRUE) > xlim[2]) {
+        xlim[2] <- ceiling(max(itemloc.long$par_values, na.rm = TRUE))
+      }
 
-    if (min(itemloc.long$par_values, na.rm = TRUE) < xlim[1]) {
-    xlim[1] <- floor(min(itemloc.long$par_values, na.rm = TRUE))
-  }
+      if (min(itemloc.long$par_values, na.rm = TRUE) < xlim[1]) {
+        xlim[1] <- floor(min(itemloc.long$par_values, na.rm = TRUE))
+      }
 
-  # item locations
-  thresholds <- c()
-  for (i in 1:ncol(item.locations)) {
-    thresholds <- c(thresholds, item.locations[, i])
-  }
-  ### items and persons in the same variable
-  #create data frame with 0 rows and 3 columns
-  df.locations <- data.frame(matrix(ncol = 2, nrow = 0))
-  # provide column names
-  colnames(df.locations) <- c("type", "locations")
-  # change type of data
-  df.locations$type <- as.character(df.locations$type)
-  df.locations$locations <- as.numeric(df.locations$locations)
-  # insert labels in accurate amounts (N+items)
-  nper <- nrow(dfin)
-  nperp <- nper + 1
-  nthr <- length(thresholds) + nper
-  df.locations[1:nper, 1] <- paste0("Persons")
-  df.locations[nperp:nthr, 1] <- paste0("Item thresholds")
-  # insert data from vectors with thetas and thresholds
-  df.locations$locations <- c(pthetas, thresholds)
-  # change type to class factor
-  df.locations$type <- as.factor(df.locations$type)
+      # item locations
+      thresholds <- c()
+      for (i in 1:ncol(item.locations)) {
+        thresholds <- c(thresholds, item.locations[, i])
+      }
+      ### items and persons in the same variable
+      #create data frame with 0 rows and 3 columns
+      df.locations <- data.frame(matrix(ncol = 2, nrow = 0))
+      # provide column names
+      colnames(df.locations) <- c("type", "locations")
+      # change type of data
+      df.locations$type <- as.character(df.locations$type)
+      df.locations$locations <- as.numeric(df.locations$locations)
+      # insert labels in accurate amounts (N+items)
+      nper <- nrow(dfin)
+      nperp <- nper + 1
+      nthr <- length(thresholds) + nper
+      df.locations[1:nper, 1] <- paste0("Persons")
+      df.locations[nperp:nthr, 1] <- paste0("Item thresholds")
+      # insert data from vectors with thetas and thresholds
+      df.locations$locations <- c(pthetas, thresholds)
+      # change type to class factor
+      df.locations$type <- as.factor(df.locations$type)
 
-  # get mean/SD for item/person locations
-  item.mean <- round(mean(as.matrix(item.locations), na.rm = TRUE), 2)
-  item.sd <- round(sd(as.matrix(item.locations), na.rm = TRUE), 2)
-  item.thresh.sd <- round(sd(as.matrix(item.locations), na.rm = TRUE), 2)
-  person.mean <- round(mean(pthetas, na.rm = TRUE), 2)
-  person.sd <- round(sd(pthetas, na.rm = TRUE), 2)
+      # get mean/SD for item/person locations
+      item.mean <- round(mean(as.matrix(item.locations), na.rm = TRUE), 2)
+      item.sd <- round(sd(as.matrix(item.locations), na.rm = TRUE), 2)
+      item.thresh.sd <- round(sd(as.matrix(item.locations), na.rm = TRUE), 2)
+      person.mean <- round(mean(pthetas, na.rm = TRUE), 2)
+      person.sd <- round(sd(pthetas, na.rm = TRUE), 2)
 
-  targeting_plots <- list()
+      targeting_plots <- list()
 
-  # Person location histogram
-  targeting_plots$p1 <- ggplot() +
-    geom_histogram(
-      data = subset(df.locations, type == "Persons"),
-      aes(locations, fill = "Persons"),
-      bins = bins
-    ) +
-    xlab("") +
-    ylab("Persons") +
-    scale_x_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
-    geom_vline(xintercept = person.mean, color = "#0e4e65", linetype = 2) +
-    annotate("rect", ymin = 0, ymax = Inf, xmin = (person.mean - person.sd), xmax = (person.mean + person.sd), alpha = .2) +
-    theme_bw() +
-    theme(legend.position = "none")
+      # Person location histogram
+      targeting_plots$p1 <- ggplot() +
+        geom_histogram(
+          data = subset(df.locations, type == "Persons"),
+          aes(locations, fill = "Persons"),
+          bins = bins
+        ) +
+        xlab("") +
+        ylab("Persons") +
+        scale_x_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
+        geom_vline(xintercept = person.mean, color = "#0e4e65", linetype = 2) +
+        annotate("rect", ymin = 0, ymax = Inf, xmin = (person.mean - person.sd), xmax = (person.mean + person.sd), alpha = .2) +
+        theme_bw() +
+        theme(legend.position = "none")
 
-  # Item Threshold location histogram
-  targeting_plots$p2 <- ggplot() +
-    geom_histogram(
-      data = subset(df.locations, type == "Item thresholds"),
-      aes(locations, y = after_stat(count))
-    ) +
-    xlab("") +
-    ylab("Thresholds") +
-    scale_x_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
-    scale_y_reverse() +
-    geom_vline(xintercept = item.mean, color = "#e83c63", linetype = 2) +
-    annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean - item.thresh.sd), xmax = (item.mean + item.thresh.sd), alpha = .2) +
-    theme_bw() +
-    theme(legend.position = "none")
+      # Item Threshold location histogram
+      targeting_plots$p2 <- ggplot() +
+        geom_histogram(
+          data = subset(df.locations, type == "Item thresholds"),
+          aes(locations, y = after_stat(count))
+        ) +
+        xlab("") +
+        ylab("Thresholds") +
+        scale_x_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
+        scale_y_reverse() +
+        geom_vline(xintercept = item.mean, color = "#e83c63", linetype = 2) +
+        annotate("rect", ymin = 0, ymax = Inf, xmin = (item.mean - item.thresh.sd), xmax = (item.mean + item.thresh.sd), alpha = .2) +
+        theme_bw() +
+        theme(legend.position = "none")
 
-  # make plot with each items thresholds shown as dots
-  targeting_plots$p3 <- ggplot(itemloc.long, aes(x = names, y = par_values, label = thresholds, color = thresholds)) +
-    geom_point() +
-    geom_text(hjust = 1.2, vjust = 1) +
-    scale_color_viridis_d(option = "H", end = 0.97) +
-    scale_y_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
-    coord_flip() +
-    labs(y = "Location (logit scale)",
-         x = "Items",
-         caption = paste0(
-      "Person location average: ", person.mean, " (SD ", person.sd, "), Item threshold location average: ",
-      item.mean, " (SD ", item.thresh.sd, "). Sample size: ",nrow(dfin),"."
-    )) +
-    theme_bw() +
-    theme(plot.caption = element_text(hjust = 0, face = "italic"),
-          legend.position = "none")
+      # make plot with each items thresholds shown as dots
+      targeting_plots$p3 <- ggplot(itemloc.long, aes(x = names, y = par_values, label = thresholds, color = thresholds)) +
+        geom_point() +
+        geom_text(hjust = 1.2, vjust = 1) +
+        scale_color_viridis_d(option = "H", end = 0.97) +
+        scale_y_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
+        coord_flip() +
+        labs(y = "Location (logit scale)",
+             x = "Items",
+             caption = paste0(
+               "Person location average: ", person.mean, " (SD ", person.sd, "), Item threshold location average: ",
+               item.mean, " (SD ", item.thresh.sd, "). Sample size: ",nrow(dfin),"."
+             )) +
+        theme_bw() +
+        theme(plot.caption = element_text(hjust = 0, face = "italic"),
+              legend.position = "none")
 
-  } else {
+    }
+  } else if (model == "RM") {
 
     erm_out <- RM(dfin) # run RM model
-    # get estimates, code borrowed from https://bookdown.org/chua/new_rasch_demo2/PC-model.html
     item.estimates <- coef(erm_out, "beta")*-1 # item coefficients
 
     item.locations <- as.data.frame(item.estimates)
@@ -1665,29 +1668,33 @@ RItargeting <- function(dfin, dich = FALSE, xlim = c(-6,6), output = "figure", b
 #' @param hi Upper limit of x axis (default = 5)
 #' @param samplePSI Adds information about sample characteristics
 #' @param cutoff Caption text will generate information relative to this TIF value
-#' @param dich Set to TRUE if you have dichotomous data
+#' @param model Defaults to "PCM", use "RM" for dichotomous data
 #' @export
-RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, dich = FALSE) {
+RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, model = "PCM") {
   # convert TIF to PSI, if cutoff is set manually
   psi_tif <- round(1-(1/sqrt(cutoff))^2,2)
 
-  if (dich == FALSE) {
-    erm_out <- PCM(dfin)
-    # item locations
-    item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
+  if (model == "PCM") {
+    if(max(as.matrix(dfin)) == 1) {
+      stop("Use `model = 'RM'` for dichotomous data.")
+    } else {
+      erm_out <- PCM(dfin)
+      # item locations
+      item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
 
-    # person locations
-    pthetas <- iarm::person_estimates(erm_out, allperson = TRUE) %>%
-      as.data.frame() %>%
-      pull(WLE)
-    # item locations
-    thresholds<-c()
-    for (i in 1:ncol(item.locations)) {
-      thresholds<-c(thresholds,item.locations[,i])
+      # person locations
+      pthetas <- iarm::person_estimates(erm_out, allperson = TRUE) %>%
+        as.data.frame() %>%
+        pull(WLE)
+      # item locations
+      thresholds<-c()
+      for (i in 1:ncol(item.locations)) {
+        thresholds<-c(thresholds,item.locations[,i])
+      }
     }
   }
 
-  if (dich == TRUE) {
+  if (model == "RM") {
     erm_out <- RM(dfin)
 
     # item locations
@@ -2370,11 +2377,16 @@ RIoutfitLoc <- function(dfin, samplesize, nsamples) {
 RIloadLoc <- function(dfin, output = "figure", pcx = c("PC1","PC2","PC3"), model = "PCM") {
 
   if(model == "PCM") {
+    if(max(as.matrix(dfin)) == 1) {
+      stop("Use `model = 'RM'` for dichotomous data.")
+    } else {
     erm_out <- PCM(dfin)
     item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
     item_difficulty <- item.locations %>%
       mutate(Location = rowMeans(., na.rm = TRUE), .before = `Threshold 1`) %>%
       mutate(across(where(is.numeric), ~ round(.x, 3)))
+    }
+
   } else if (model == "RM") {
     erm_out <- RM(dfin)
     item_difficulty <- as.data.frame(coef(erm_out, "beta")*-1)
@@ -2750,10 +2762,10 @@ RIdifFigureRM <- function(dfin, dif.var) {
 #' Items are sorted by item average location. Confidence intervals are 84% by
 #' default to enable visual interpretation of statistically significant
 #' differences (Payton et al., 2003). The CI can be changed using the
-#' `sem_multiplier` option.
+#' `sem_multiplier` option (ie. use 1.96 for 95% CI).
 #'
-#' Only works for PCM models currently. For dichotomous data, use
-#' `df.erm<-RM(data)` followed by `plotPImap(df.erm, sorted = T)`
+#' Only works with partial credit models currently. For dichotomous data, use
+#' `df.erm <- RM(data)` followed by `plotPImap(df.erm, sorted = T)`
 #'
 #' @param dfin Dataframe with item data only
 #' @param numbers Display text in figure with item threshold locations
@@ -2761,130 +2773,135 @@ RIdifFigureRM <- function(dfin, dif.var) {
 #' @export
 RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
 
-  erm_out <- PCM(dfin)
-  item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
-  item_difficulty <- item.locations %>%
-    mutate(Location = rowMeans(.), .before = `Threshold 1`) %>%
-    mutate(across(where(is.numeric), ~ round(.x, 3)))
+  if(max(as.matrix(dfin)) == 1) {
+    stop("Dichotomous data currently not supported. See `?RIitemHierarchy` for workaround.")
+  } else {
 
-  names(item.locations) <- paste0("T", c(1:ncol(item.locations)))
-  itemloc.long <- item.locations %>%
-    rownames_to_column() %>%
-    dplyr::rename(names = "rowname") %>%
-    pivot_longer(
-      cols = starts_with("T"),
-      names_to = "thresholds",
-      values_to = "par_values"
-    ) %>%
-    dplyr::rename(itemnr = names,
-                  Threshold = thresholds,
-                  Locations = par_values
-    )
-  # get SEM estimates for each threshold
-  item.estimates <- eRm::thresholds(erm_out)
-  itemSE <- as.data.frame(item.estimates[["se.thresh"]]) %>%
-    rownames_to_column(var = 'itemThresh') %>%
-    dplyr::rename(ThreshSEM = 'item.estimates[["se.thresh"]]')
-  # long format dataframe with separate variables for item and threshold
+    erm_out <- PCM(dfin)
+    item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
+    item_difficulty <- item.locations %>%
+      mutate(Location = rowMeans(.), .before = `Threshold 1`) %>%
+      mutate(across(where(is.numeric), ~ round(.x, 3)))
 
-  # vector of threshold names as "T1" etc
-  Tthresh <- paste0("T",c(1:100))
-  # vector with threshold names as "c1" etc (since eRm outputs these)
-  names(Tthresh) <- paste0("c",c(1:100))
-  # create df and recode c1 to T1, etc
-  itemSE <- itemSE %>%
-    tidyr::separate(itemThresh, c(NA,"itemThresh"), sep = "beta ") %>%
-    tidyr::separate(itemThresh, c("itemnr","threshnr"), sep = "\\.") %>%
-    mutate(Threshold = dplyr::recode(threshnr, !!!Tthresh)) %>%
-    dplyr::select(!threshnr)
+    names(item.locations) <- paste0("T", c(1:ncol(item.locations)))
+    itemloc.long <- item.locations %>%
+      rownames_to_column() %>%
+      dplyr::rename(names = "rowname") %>%
+      pivot_longer(
+        cols = starts_with("T"),
+        names_to = "thresholds",
+        values_to = "par_values"
+      ) %>%
+      dplyr::rename(itemnr = names,
+                    Threshold = thresholds,
+                    Locations = par_values
+      )
+    # get SEM estimates for each threshold
+    item.estimates <- eRm::thresholds(erm_out)
+    itemSE <- as.data.frame(item.estimates[["se.thresh"]]) %>%
+      rownames_to_column(var = 'itemThresh') %>%
+      dplyr::rename(ThreshSEM = 'item.estimates[["se.thresh"]]')
+    # long format dataframe with separate variables for item and threshold
 
-  # join all dataframes together
-  itemLocs <- item_difficulty %>%
-    rownames_to_column(var = "itemnr") %>%
-    dplyr::select(!any_of(starts_with("Thresh"))) %>%
-    left_join(itemloc.long, ., by = "itemnr") %>%
-    left_join(., itemlabels, by = "itemnr") %>%
-    dplyr::rename(itemDescr = item) %>%
-    left_join(., itemSE, by = c("itemnr","Threshold"))
+    # vector of threshold names as "T1" etc
+    Tthresh <- paste0("T",c(1:100))
+    # vector with threshold names as "c1" etc (since eRm outputs these)
+    names(Tthresh) <- paste0("c",c(1:100))
+    # create df and recode c1 to T1, etc
+    itemSE <- itemSE %>%
+      tidyr::separate(itemThresh, c(NA,"itemThresh"), sep = "beta ") %>%
+      tidyr::separate(itemThresh, c("itemnr","threshnr"), sep = "\\.") %>%
+      mutate(Threshold = dplyr::recode(threshnr, !!!Tthresh)) %>%
+      dplyr::select(!threshnr)
 
-  # get order of items
-  itemOrder <- itemLocs %>%
-    arrange(Location) %>%
-    distinct(itemnr) %>%
-    pull()
+    # join all dataframes together
+    itemLocs <- item_difficulty %>%
+      rownames_to_column(var = "itemnr") %>%
+      dplyr::select(!any_of(starts_with("Thresh"))) %>%
+      left_join(itemloc.long, ., by = "itemnr") %>%
+      left_join(., itemlabels, by = "itemnr") %>%
+      dplyr::rename(itemDescr = item) %>%
+      left_join(., itemSE, by = c("itemnr","Threshold"))
 
-  # and itemlabels in the same order
-  itemLabels <- itemLocs %>%
-    arrange(Location) %>%
-    distinct(itemDescr) %>%
-    pull()
+    # get order of items
+    itemOrder <- itemLocs %>%
+      arrange(Location) %>%
+      distinct(itemnr) %>%
+      pull()
 
-  # use the ordering and create plot
+    # and itemlabels in the same order
+    itemLabels <- itemLocs %>%
+      arrange(Location) %>%
+      distinct(itemDescr) %>%
+      pull()
 
-  if(numbers == FALSE){
-    itemLocs %>%
-      mutate(Item = factor(itemnr, levels = itemOrder)) %>%
-      ggplot(aes(x = Item, color = Threshold)) +
-      geom_point(aes(y = Location),
-                 size = 4,
-                 shape = 18,
-                 color = "black"
-      ) +
-      geom_point(aes(y = Locations),
-                 position = position_nudge()) +
-      geom_errorbar(aes(ymin = Locations - sem_multiplier*ThreshSEM, ymax = Locations + sem_multiplier*ThreshSEM),
-                    width = 0.11
-      ) +
-      geom_text(aes(y = Locations, label = Threshold), hjust = 0.5, vjust = 1.4,
-                show.legend = FALSE) +
-      geom_rug(aes(y = Locations), color = "darkgrey", sides = "l", length = unit(0.02, "npc")) +
-      scale_x_discrete(labels = str_wrap(paste0(itemOrder, " - ", itemLabels), width = 36)) +
-      coord_flip() +
-      #scale_color_brewer(palette = "Dark2", guide = "none") +
-      scale_color_viridis_d(guide = "none", option = "H") + # enables any number of thresholds to be colorized with good contrast between adjacent categories
-      labs(caption = glue("Note. Item locations are indicated by black diamond shapes.
+    # use the ordering and create plot
+
+    if(numbers == FALSE){
+      itemLocs %>%
+        mutate(Item = factor(itemnr, levels = itemOrder)) %>%
+        ggplot(aes(x = Item, color = Threshold)) +
+        geom_point(aes(y = Location),
+                   size = 4,
+                   shape = 18,
+                   color = "black"
+        ) +
+        geom_point(aes(y = Locations),
+                   position = position_nudge()) +
+        geom_errorbar(aes(ymin = Locations - sem_multiplier*ThreshSEM, ymax = Locations + sem_multiplier*ThreshSEM),
+                      width = 0.11
+        ) +
+        geom_text(aes(y = Locations, label = Threshold), hjust = 0.5, vjust = 1.4,
+                  show.legend = FALSE) +
+        geom_rug(aes(y = Locations), color = "darkgrey", sides = "l", length = unit(0.02, "npc")) +
+        scale_x_discrete(labels = str_wrap(paste0(itemOrder, " - ", itemLabels), width = 36)) +
+        coord_flip() +
+        #scale_color_brewer(palette = "Dark2", guide = "none") +
+        scale_color_viridis_d(guide = "none", option = "H") + # enables any number of thresholds to be colorized with good contrast between adjacent categories
+        labs(caption = glue("Note. Item locations are indicated by black diamond shapes.
             Item threshold locations are indicated by colored dots and colored text.
             Horizontal error bars indicate 84% confidence intervals around threshold locations.")) +
-      theme(plot.caption = element_text(hjust = 0, face = "italic"),
-            legend.position = "none") +
-      theme_bw()
+        theme(plot.caption = element_text(hjust = 0, face = "italic"),
+              legend.position = "none") +
+        theme_bw()
 
-  }
-  else {
-    itemLocs %>%
-      mutate(Item = factor(itemnr, levels = itemOrder)) %>%
-      ggplot(aes(x = Item, color = Threshold)) +
-      geom_point(aes(y = Location),
-                 size = 4,
-                 shape = 18,
-                 color = "black"
-      ) +
-      geom_point(aes(y = Locations),
-                 position = position_nudge()) +
-      geom_text(aes(y = Location, label = round(Location,2)),
-                hjust = 0.5, vjust = -1.3, color = "black", size = 3,
-                show.legend = FALSE) +
-      geom_errorbar(aes(ymin = Locations - sem_multiplier*ThreshSEM, ymax = Locations + sem_multiplier*ThreshSEM),
-                    width = 0.11
-      ) +
-      geom_text(aes(y = Locations, label = Threshold), hjust = 0.5, vjust = 1.4,
-                show.legend = FALSE) +
-      geom_text(aes(y = Locations, label = round(Locations,2)), hjust = 0.5, vjust = -1.1, size = 3,
-                show.legend = FALSE) +
-      geom_hline(aes(yintercept = mean(Location)),
-                 linetype = "dashed",
-                 color = "darkgrey") +
-      geom_rug(aes(y = Locations), color = "darkgrey", sides = "l", length = unit(0.02, "npc")) +
-      scale_x_discrete(labels = str_wrap(paste0(itemOrder, " - ", itemLabels), width = 36)) +
-      coord_flip() +
-      #scale_color_brewer(palette = "Dark2", guide = "none") +
-      scale_color_viridis_d(guide = "none", option = "H") + # enables any number of thresholds to be colorized with good contrast between adjacent categories
-      labs(caption = glue("Note. Item locations are indicated by black diamond shapes and black text.
+    }
+    else {
+      itemLocs %>%
+        mutate(Item = factor(itemnr, levels = itemOrder)) %>%
+        ggplot(aes(x = Item, color = Threshold)) +
+        geom_point(aes(y = Location),
+                   size = 4,
+                   shape = 18,
+                   color = "black"
+        ) +
+        geom_point(aes(y = Locations),
+                   position = position_nudge()) +
+        geom_text(aes(y = Location, label = round(Location,2)),
+                  hjust = 0.5, vjust = -1.3, color = "black", size = 3,
+                  show.legend = FALSE) +
+        geom_errorbar(aes(ymin = Locations - sem_multiplier*ThreshSEM, ymax = Locations + sem_multiplier*ThreshSEM),
+                      width = 0.11
+        ) +
+        geom_text(aes(y = Locations, label = Threshold), hjust = 0.5, vjust = 1.4,
+                  show.legend = FALSE) +
+        geom_text(aes(y = Locations, label = round(Locations,2)), hjust = 0.5, vjust = -1.1, size = 3,
+                  show.legend = FALSE) +
+        geom_hline(aes(yintercept = mean(Location)),
+                   linetype = "dashed",
+                   color = "darkgrey") +
+        geom_rug(aes(y = Locations), color = "darkgrey", sides = "l", length = unit(0.02, "npc")) +
+        scale_x_discrete(labels = str_wrap(paste0(itemOrder, " - ", itemLabels), width = 36)) +
+        coord_flip() +
+        #scale_color_brewer(palette = "Dark2", guide = "none") +
+        scale_color_viridis_d(guide = "none", option = "H") + # enables any number of thresholds to be colorized with good contrast between adjacent categories
+        labs(caption = glue("Note. Item locations are indicated by black diamond shapes and black text.
             Item threshold locations are indicated by colored dots and colored text.
             Horizontal error bars indicate 84% confidence intervals around threshold locations.")) +
-      theme(plot.caption = element_text(hjust = 0, face = "italic"),
-            legend.position = "none") +
-      theme_bw()
+        theme(plot.caption = element_text(hjust = 0, face = "italic"),
+              legend.position = "none") +
+        theme_bw()
+    }
   }
 }
 

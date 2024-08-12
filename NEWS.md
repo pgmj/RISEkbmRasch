@@ -1,12 +1,14 @@
 ## Changelog
 
-### 0.1.50.5
+### 0.1.50.6
 
-- bug fix `RIloadLoc()`
+- added check whether data is dichotomous for several functions to produce a more helpful error message.
+- harmonized functions to make all functions use `model = "RM"` where applicable (replacing `dich = TRUE`).
+- bug fix `RIloadLoc()`.
 
 ### 0.1.50.3
 
-- minor bug fixes
+- minor bug fixes.
 - `RIscoreSE()` relies on `iarm::person_estimates()`, which has a minor bug when setting the value of the highest MLE score, where the range is restricted to theta [-6,6]. I have temporarily added the two necessary functions from `iarm` to the `RISEkbmRasch` package to correct this.
 
 ### 0.1.50.0
