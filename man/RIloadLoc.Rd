@@ -5,7 +5,7 @@
 \title{Generates a plot showing the first residual contrast loadings based on a PCA
 of Rasch model residuals vs item locations.}
 \usage{
-RIloadLoc(dfin, output = "figure", pcx = c("PC1", "PC2", "PC3"))
+RIloadLoc(dfin, output = "figure", pcx = c("PC1", "PC2", "PC3"), model = "PCM")
 }
 \arguments{
 \item{dfin}{Dataframe with item data only}
@@ -13,11 +13,16 @@ RIloadLoc(dfin, output = "figure", pcx = c("PC1", "PC2", "PC3"))
 \item{output}{Either "figure" (default) or "dataframe"}
 
 \item{pcx}{Number of principal components to output for "dataframe"}
+
+\item{model}{Defaults to "PCM", use "RM" for dichotomous data}
 }
 \value{
 A plot with item locations (y) and loadings (x)
 }
 \description{
+Defaults to PCM, use \code{model = "RM"} for dichotomous data.
+}
+\details{
 Note. This function does not work with missing responses in the dataset.
 You can temporarily remove respondents with missing data when running the
 function, ie. \code{RIloadLoc(na.omit(df))}

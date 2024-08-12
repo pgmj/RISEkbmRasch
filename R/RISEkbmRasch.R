@@ -2355,21 +2355,31 @@ RIoutfitLoc <- function(dfin, samplesize, nsamples) {
 #' Generates a plot showing the first residual contrast loadings based on a PCA
 #' of Rasch model residuals vs item locations.
 #'
+#' Defaults to PCM, use `model = "RM"` for dichotomous data.
+#'
 #' Note. This function does not work with missing responses in the dataset.
 #' You can temporarily remove respondents with missing data when running the
 #' function, ie. `RIloadLoc(na.omit(df))`
 #'
 #' @param dfin Dataframe with item data only
 #' @param output Either "figure" (default) or "dataframe"
+#' @param model Defaults to "PCM", use "RM" for dichotomous data
 #' @param pcx Number of principal components to output for "dataframe"
 #' @export
 #' @return A plot with item locations (y) and loadings (x)
-RIloadLoc <- function(dfin, output = "figure", pcx = c("PC1","PC2","PC3")) {
-  erm_out <- PCM(dfin)
-  item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
-  item_difficulty <- item.locations %>%
-    mutate(Location = rowMeans(., na.rm = TRUE), .before = `Threshold 1`) %>%
-    mutate(across(where(is.numeric), ~ round(.x, 3)))
+RIloadLoc <- function(dfin, output = "figure", pcx = c("PC1","PC2","PC3"), model = "PCM") {
+
+  if(model == "PCM") {
+    erm_out <- PCM(dfin)
+    item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
+    item_difficulty <- item.locations %>%
+      mutate(Location = rowMeans(., na.rm = TRUE), .before = `Threshold 1`) %>%
+      mutate(across(where(is.numeric), ~ round(.x, 3)))
+  } else if (model == "RM") {
+    erm_out <- RM(dfin)
+    item_difficulty <- as.data.frame(coef(erm_out, "beta")*-1)
+    names(item_difficulty) <- "Location"
+  }
 
   ple <- person.parameter(erm_out)
   item.fit <- eRm::itemfit(ple)
@@ -2390,26 +2400,26 @@ RIloadLoc <- function(dfin, output = "figure", pcx = c("PC1","PC2","PC3")) {
 
   if(output == "figure") {
 
-  pcaloadings %>%
-    rownames_to_column() %>%
-    ggplot(aes(x=PC1, y=Location, label = rowname)) +
-    geom_point(size = 3, color = "black") +
-    xlab("Loadings on first residual contrast") +
-    ylab("Item location (logit scale)") +
-    geom_vline(xintercept = 0, color = "#e83c63", linetype = 2) +
-    geom_hline(yintercept = 0, color = "#e83c63", linetype = 2) +
-    scale_x_continuous(limits = c(-1,1), breaks = seq(-1,1, by = 0.25)) +
-    scale_y_continuous(limits = ylims, breaks = ybreaks) +
-    geom_text_repel() +
-    theme(
-      panel.background = element_rect(fill = "#ebf5f0",
-                                      colour = "#ebf5f0",
-                                      linewidth = 0.5, linetype = "solid"),
-      panel.grid.major = element_line(linewidth = 0.5, linetype = 'solid',
-                                      colour = "white"),
-      panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
-                                      colour = "white")
-    )
+    pcaloadings %>%
+      rownames_to_column() %>%
+      ggplot(aes(x=PC1, y=Location, label = rowname)) +
+      geom_point(size = 3, color = "black") +
+      xlab("Loadings on first residual contrast") +
+      ylab("Item location (logit scale)") +
+      geom_vline(xintercept = 0, color = "#e83c63", linetype = 2) +
+      geom_hline(yintercept = 0, color = "#e83c63", linetype = 2) +
+      scale_x_continuous(limits = c(-1,1), breaks = seq(-1,1, by = 0.25)) +
+      scale_y_continuous(limits = ylims, breaks = ybreaks) +
+      geom_text_repel() +
+      theme(
+        panel.background = element_rect(fill = "#ebf5f0",
+                                        colour = "#ebf5f0",
+                                        linewidth = 0.5, linetype = "solid"),
+        panel.grid.major = element_line(linewidth = 0.5, linetype = 'solid',
+                                        colour = "white"),
+        panel.grid.minor = element_line(linewidth = 0.25, linetype = 'solid',
+                                        colour = "white")
+      )
   } else {
     pcaloadings <- pcaloadings %>%
       rownames_to_column(var = "itemnr") %>%
