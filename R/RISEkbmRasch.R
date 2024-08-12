@@ -494,7 +494,7 @@ RIbardiv <- function(dfin) {
     group_by(Item) %>%
     mutate(Percent = (100 * n / sum(n)) %>% round(digits = 1)) %>%
     pivot_wider(id_cols = Item, names_from = Response, values_from = Percent) %>%
-    relocate("0", .after = Item) %>%
+    dplyr::relocate("0", .after = Item) %>%
     likert(
       horizontal = TRUE, aspect = 1.5,
       main = "Distribution of responses",
@@ -2059,7 +2059,7 @@ RIitemparams <- function(dfin, fontsize = 15, output = "table",
   item_params <- item_params %>%
     left_join(highest_loc, by = "itemnr") %>%
     mutate(relative_highest_tloc = highest_tloc - all_item_avg) %>%
-    relocate(all_item_avg, .after = relative_highest_tloc) %>%
+    dplyr::relocate(all_item_avg, .after = relative_highest_tloc) %>%
     dplyr::select(-highest_tloc) %>%
     as.data.frame()
 
@@ -2082,7 +2082,7 @@ RIitemparams <- function(dfin, fontsize = 15, output = "table",
   else if (output == "table" & detail == "thresholds") {
     item_difficulty %>%
       mutate(across(where(is.numeric), ~ round(.x, 2))) %>%
-      relocate(Location, .after = last_col()) %>%
+      dplyr::relocate(Location, .after = last_col()) %>%
       mutate(Location = cell_spec(Location, bold = T, align = "right")) %>%
       dplyr::rename('Item location' = Location) %>%
       kbl(booktabs = T, escape = F,
@@ -2368,7 +2368,7 @@ RIloadLoc <- function(dfin, output = "figure", pcx = c("PC1","PC2","PC3")) {
   erm_out <- PCM(dfin)
   item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
   item_difficulty <- item.locations %>%
-    mutate(Location = rowMeans(.), .before = `Threshold 1`) %>%
+    mutate(Location = rowMeans(., na.rm = TRUE), .before = `Threshold 1`) %>%
     mutate(across(where(is.numeric), ~ round(.x, 3)))
 
   ple <- person.parameter(erm_out)
@@ -2456,7 +2456,7 @@ RIdifTable <- function(dfin, dif.var, cutoff = 0.5, table = TRUE) {
       mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
       rownames_to_column(var = "Item") %>%
       mutate(Item = names(dfin)) %>%
-      relocate(MaxDiff, .after = last_col())
+      dplyr::relocate(MaxDiff, .after = last_col())
     if(table == TRUE) {
 
       formattable(difTable, list(
@@ -2511,7 +2511,7 @@ RIdifTable2 <- function(dfin, dif.var1, dif.var2, cutoff = 0.5) {
       mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
       rownames_to_column(var = "Item") %>%
       mutate(Item = names(dfin)) %>%
-      relocate(MaxDiff, .after = last_col()) %>%
+      dplyr::relocate(MaxDiff, .after = last_col()) %>%
       formattable(list(
         'MaxDiff' =
           formatter("span", style = ~ style(color = ifelse(MaxDiff < -cutoff, "red",
@@ -2690,7 +2690,7 @@ RIdifTableRM <- function(dfin, dif.var, cutoff = 0.5) {
       mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
       rownames_to_column(var = "Item") %>%
       mutate(Item = names(dfin)) %>%
-      relocate(MaxDiff, .after = last_col()) %>%
+      dplyr::relocate(MaxDiff, .after = last_col()) %>%
       formattable(list(
         'MaxDiff' =
           formatter("span", style = ~ style(color = ifelse(MaxDiff < -cutoff, "red",

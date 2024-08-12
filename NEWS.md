@@ -1,5 +1,9 @@
 ## Changelog
 
+### 0.1.50.4
+
+- bug fix `RIloadLoc()`
+
 ### 0.1.50.3
 
 - minor bug fixes
