@@ -1418,7 +1418,7 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_wi
       kable_classic(html_font = fontfamily) %>%
       # latex_options are for PDF output
       kable_styling(latex_options = c("striped","scale_down")) %>%
-      footnote(general = paste0("Relative cut-off value (highlighted in red) is ", round(dyn.cutoff,3), ", which is ", cutoff, " above the average correlation."))
+      footnote(general = paste0("Relative cut-off value (highlighted in red) is ", round(dyn.cutoff,3), ", which is ", round(cutoff,3), " above the average correlation."))
   } else {
     resid %>%
       mutate(across(everything(), ~ cell_spec(.x, color = case_when(.x > -dyn.cutoff ~ "red", TRUE ~ "black")))) %>%
@@ -1437,7 +1437,7 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_wi
       footnote(general = paste0("Relative cut-off value (highlighted in red) is ",
                                 round(dyn.cutoff,3),
                                 ", which is ",
-                                cutoff,
+                                round(cutoff,3),
                                 " above the average correlation."))
   }
 
@@ -3923,7 +3923,7 @@ RIgetfit <- function(data, iterations = 100, cpu = 4, method = "PCM") {
   if (method == "PCM") {
     item_locations <- RIitemparams(data, output = "dataframe") %>%
       dplyr::select(!Location) %>%
-      clean_names() %>%
+      janitor::clean_names() %>%
       as.matrix()
 
     # item threshold locations in list format for simulation function
@@ -3952,7 +3952,7 @@ RIgetfit <- function(data, iterations = 100, cpu = 4, method = "PCM") {
           as.data.frame()
 
         RIitemfitPCM(testData, output = "dataframe") %>%
-          clean_names()
+          janitor::clean_names()
       }
 
   }

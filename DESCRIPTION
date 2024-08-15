@@ -27,7 +27,8 @@ Depends:
     glue,
     catR,
     hexbin,
-    iarm
+    iarm,
+    janitor
 Suggests:
     ggdist,
     HH,
