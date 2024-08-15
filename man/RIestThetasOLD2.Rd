@@ -10,7 +10,7 @@ RIestThetasOLD2(
   model = "PCM",
   method = "WL",
   cpu = 4,
-  theta_range = c(-4, 4)
+  theta_range = c(-7, 7)
 )
 }
 \arguments{
@@ -18,9 +18,9 @@ RIestThetasOLD2(
 
 \item{itemParams}{Optional item (threshold) location matrix}
 
-\item{model}{Rasch model to use (use NULL for dichotomous data)}
+\item{model}{Rasch model to use (use \code{NULL} for dichotomous data)}
 
-\item{method}{Estimation method (defaults to "WL")}
+\item{method}{Estimation method (defaults to \code{"WL"})}
 
 \item{cpu}{Number of CPUs/cores to utilize (default is 4)}
 
@@ -37,6 +37,6 @@ Outputs a vector of person locations, one for each row in the dataframe.
 
 Uses thetaEst function from catR package to estimate person locations
 (thetas) for a dataframe with item data as columns and persons as rows.
-Defaults to use WL estimation (lower bias than ML) and PCM.
+Defaults to use WL estimation (lower bias than ML, see Warm, 1989) and PCM.
 See ?thetaEst for options available.
 }

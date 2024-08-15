@@ -1,5 +1,30 @@
 ## Changelog
 
+### 0.2.0
+
+Implemented two simulation functions to get cutoff values for item fit and 
+residual correlations (Yen's Q3). For now, these only work with polytomous (PCM)
+data.
+
+As always, documentation is available by using `?function` (without the parentheses otherwise usually included).
+
+New functions, and brief descriptions:
+
+- `RIgetfit()` - Get simulation based cutoff values for MSQ and ZSTD.
+  - `RIgetfitTable()` - Summarises simulation based cutoff values for each item.
+  - `RIgetfitPlot()` - Plot (one at a time)
+- `RIgetResidCor()` - Get simulation based cutoff values for Yen's Q3 residual correlations
+  - Based on Christensen et al. (2017, DOI: 10.1177/0146621616677520).
+  - Uses your dataset to get appropriate cutoff values for use with `RIresidcorr()`
+  
+Changes:
+
+- `RIitemfitPCM()` now has two new options:
+  - `simcut` Set to TRUE if you want to use simulation based cutoff values
+  - `gf` The output object from `RIgetfit()` is needed when `simcut = TRUE`
+  - example command: `RIitemfitPCMtest(df, simcut = TRUE, gf = getfit)`
+
+
 ### 0.1.50.7
 
 - added check whether data is dichotomous for several functions to produce a more helpful error message.

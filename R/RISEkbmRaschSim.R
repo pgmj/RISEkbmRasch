@@ -1,6 +1,6 @@
 ### RISE KBM Rasch analysis package, https://github.com/pgmj/RISEkbmRasch
 ### Created by magnus.p.johansson@ri.se ORCID: 0000-0003-1669-592X
-### The code in this file was mostly written by nicklas.korsell@ri.se
+### The code in this file was written by nicklas.korsell@ri.se
 ### The contents of this file is licensed according to
 ### Creative Commons Attribution 4.0 International Public License
 ### https://creativecommons.org/licenses/by/4.0/
@@ -9,7 +9,8 @@
 
 #' Simulate polytomous Rasch model data for a single item
 #'
-#' Documentation will be expanded on at a later point in time.
+#' Documentation will be expanded on (and/or translated to English)
+#' at a later point in time.
 #'
 #' @param x Vector with item threshold locations
 #' @param thetas Vector of person thetas/scores

@@ -12,5 +12,6 @@ SimPolyItem(x, thetas)
 \item{thetas}{Vector of person thetas/scores}
 }
 \description{
-Documentation will be expanded on at a later point in time.
+Documentation will be expanded on (and/or translated to English)
+at a later point in time.
 }

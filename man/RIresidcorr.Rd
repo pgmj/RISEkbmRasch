@@ -18,6 +18,7 @@ RIresidcorr(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_width = 70)
 \item{tbl_width}{Set table width in percent}
 }
 \description{
-Mandatory option to set relative cutoff-value over
-the average of all item residual correlations (usually 0.2-0.3).
+Mandatory option to set relative cutoff-value over the average of all
+item residual correlations. It is strongly recommended to use the function
+\code{RIgetResidCor()} to retrieve an appropriate cutoff value.
 }

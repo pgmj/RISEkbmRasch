@@ -16,7 +16,9 @@ RIitemfitPCM(
   fontfamily = "Lato",
   output = "table",
   tbl_width = 65,
-  method = "conditional"
+  method = "conditional",
+  simcut = FALSE,
+  gf
 )
 }
 \arguments{
@@ -43,6 +45,10 @@ RIitemfitPCM(
 \item{tbl_width}{Set table width in percent}
 
 \item{method}{Defaults to "conditional". Optional "unconditional"}
+
+\item{simcut}{Set to TRUE if you want to use simulation based cutoff values}
+
+\item{gf}{The output object from \code{RIgetfit()} is needed when \code{simcut = TRUE}}
 }
 \description{
 Defaults to using conditional estimates for MSQ values (Müller, 2020)
@@ -50,6 +56,10 @@ estimated using the \code{iarm} package. Use \code{method = "unconditional"} for
 "old" unconditional MSQ values (using \code{eRm}).
 }
 \details{
+Since version 0.2.0 (2024-08-15), it is highly recommended to replace
+rule-of-thumb cutoff values with simulation based cutoffs, see details in
+\code{?RIgetfit()} for an easy way to get appropriate cutoff values.
+
 ZSTD is inflated with large samples (N > 500). There is an optional function
 to use a reduced sample size and run analysis using multiple random samples
 to get the average ZSTD for each item over all runs.

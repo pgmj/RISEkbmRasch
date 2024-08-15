@@ -9,7 +9,7 @@ RIestThetasOLD(
   itemParams,
   model = "PCM",
   method = "WL",
-  theta_range = c(-4, 4)
+  theta_range = c(-7, 7)
 )
 }
 \arguments{
