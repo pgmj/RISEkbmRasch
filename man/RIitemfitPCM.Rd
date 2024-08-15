@@ -57,7 +57,7 @@ estimated using the \code{iarm} package. Use \code{method = "unconditional"} for
 }
 \details{
 Since version 0.2.0 (2024-08-15), it is highly recommended to replace
-rule-of-thumb cutoff values with simulation based cutoffs, see details in
+rule-of-thumb cutoff values with simulation based cutoffs. See details in
 \code{?RIgetfit()} for an easy way to get appropriate cutoff values.
 
 ZSTD is inflated with large samples (N > 500). There is an optional function
