@@ -804,7 +804,7 @@ RIrawdist <- function(dfin) {
 #' "old" unconditional MSQ values (using `eRm`).
 #'
 #' Since version 0.2.0 (2024-08-15), it is highly recommended to replace
-#' rule-of-thumb cutoff values with simulation based cutoffs, see details in
+#' rule-of-thumb cutoff values with simulation based cutoffs. See details in
 #' `?RIgetfit()` for an easy way to get appropriate cutoff values.
 #'
 #' ZSTD is inflated with large samples (N > 500). There is an optional function
@@ -3812,8 +3812,8 @@ RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, method = "PC
     if (method == "PCM") {
       # get item threshold locations for response data
       item_locations <- RIitemparams(data, output = "dataframe") %>%
-        select(!Location) %>%
-        clean_names() %>%
+        dplyr::select(!Location) %>%
+        janitor::clean_names() %>%
         as.matrix()
 
       # item threshold locations in list format for simulation function
@@ -3922,7 +3922,7 @@ RIgetfit <- function(data, iterations = 100, cpu = 4, method = "PCM") {
 
   if (method == "PCM") {
     item_locations <- RIitemparams(data, output = "dataframe") %>%
-      select(!Location) %>%
+      dplyr::select(!Location) %>%
       clean_names() %>%
       as.matrix()
 
@@ -3978,7 +3978,7 @@ RIgetfitTable <- function(gf, output = "table", tbl_width = 75) {
 
   fit_table <-
     bind_rows(gf[1:(length(gf)-3)]) %>%
-    rename(Item = item) %>%
+    dplyr::rename(Item = item) %>%
     group_by(Item) %>%
     summarise(`Infit MSQ` = paste0("[",min(infit_msq),", ",max(infit_msq),"]"),
               `Outfit MSQ` = paste0("[",min(outfit_msq),", ",max(outfit_msq),"]"),
@@ -4015,7 +4015,7 @@ RIgetfitPlot <- function(gf, statistic) {
 
   if (missing(statistic)) {
     bind_rows(gf[1:(length(gf)-3)]) %>%
-      rename(`Infit MSQ` = infit_msq,
+      dplyr::rename(`Infit MSQ` = infit_msq,
              `Outfit MSQ` = outfit_msq,
              `Infit ZSTD` = infit_zstd,
              `Outfit ZSTD` = outfit_zstd) %>%
