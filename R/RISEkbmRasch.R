@@ -3799,9 +3799,9 @@ RIdifThreshFigLR <- function(dfin, dif.var) {
 #' @param iterations Number of simulation iterations
 #' @param sample Optional sample properties (not functional yet)
 #' @param cpu Number of CPU cores to use
-#' @param method PCM or RM, currently only PCM works
+#' @param model PCM or RM
 #' @export
-RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, method = "PCM") {
+RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, model = "PCM") {
 
   require(doParallel)
   registerDoParallel(cores = cpu)
@@ -3809,7 +3809,10 @@ RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, method = "PC
   if (missing(sample)) {
     sample_n <- nrow(data)
 
-    if (method == "PCM") {
+    if (model == "PCM") {
+      if(max(as.matrix(data)) == 1) {
+        stop("Use `model = 'RM'` for dichotomous data.")
+      }
       # get item threshold locations for response data
       item_locations <- RIitemparams(data, output = "dataframe") %>%
         dplyr::select(!Location) %>%
@@ -3858,8 +3861,46 @@ RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, method = "PC
 
         }
 
-    } else if (method == "RM") {
-      stop("RM not yet implemented")
+    } else if (model == "RM") {
+      #stop("RM not yet implemented")
+      # estimate item threshold locations from data
+      erm_out <- eRm::RM(data)
+      item_locations <- erm_out$betapar * -1
+      names(item_locations) <- names(data)
+
+      # estimate theta values from data using WLE
+      thetas <- RIestThetas(data, model = "RM")
+
+      # get sample theta properties for simulation input
+      sample_mean <- mean(thetas$WLE, na.rm = TRUE)
+      sample_sd <- sd(thetas$WLE, na.rm = TRUE)
+
+      # create object to store results from multicore loop
+      residcor <- list()
+      residcor <- foreach(icount(iterations)) %dopar%
+        {
+          # create vector of theta values based on data properties
+          inputThetas <- rnorm(n = sample_n,
+                               mean = sample_mean,
+                               sd = sample_sd)
+
+          # simulate response data based on thetas and items above
+          testData <-
+            psychotools::rrm(inputThetas, item_locations, return_setting = FALSE) %>%
+            as.data.frame()
+
+          # create Yen's Q3 residual correlation matrix
+          sink(nullfile())
+          mirt.rasch <- mirt(testData, model = 1, itemtype = "Rasch")
+          resid = residuals(mirt.rasch, type = "Q3", digits = 2)
+          sink()
+          diag(resid) <- NA
+
+          data.frame(mean = mean(resid, na.rm = TRUE),
+                     max = max(resid, na.rm = TRUE)
+          )
+
+        }
     }
 
     # get all results to a dataframe
@@ -3898,8 +3939,9 @@ RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, method = "PC
 #' The output is a list object, which can in turn be used with three different
 #' functions. Most importantly, you can use it with `RIitemfitPCM()` to set
 #' cutoff values for both MSQ and ZSTD based on your sample size and item
-#' parameters. This uses the lowest and highest value from *all* items as cutoff
-#' for all items.
+#' parameters. This currently uses the lowest and highest value from *all* items as cutoff
+#' for all items. Individual item/metric cutoffs are forthcoming.
+#' Dichotomous items option, but no integration with `RIitemfitRM()` yet.
 #'
 #' If you want to see a table with the individual item fit upper/lower cutoffs,
 #' the function `RIgetfitTable()` should be used with the output from this
@@ -3911,16 +3953,20 @@ RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, method = "PC
 #' @param data Dataframe with response data
 #' @param iterations Number of simulation iterations
 #' @param cpu Number of CPU cores to use
-#' @param method PCM or RM, currently only PCM works
+#' @param model PCM or RM
 #' @export
-RIgetfit <- function(data, iterations = 100, cpu = 4, method = "PCM") {
+RIgetfit <- function(data, iterations = 100, cpu = 4, model = "PCM") {
 
   sample_n <- nrow(data)
 
   require(doParallel)
   registerDoParallel(cores = cpu)
 
-  if (method == "PCM") {
+  if (model == "PCM") {
+    if(max(as.matrix(data)) == 1) {
+      stop("Use `model = 'RM'` for dichotomous data.")
+    }
+    # estimate item threshold locations from data
     item_locations <- RIitemparams(data, output = "dataframe") %>%
       dplyr::select(!Location) %>%
       janitor::clean_names() %>%
@@ -3932,8 +3978,10 @@ RIgetfit <- function(data, iterations = 100, cpu = 4, method = "PCM") {
       itemlist[[i]] <- list(na.omit(item_locations[i,]))
     }
 
+    # estimate theta values from data using WLE
     thetas <- RIestThetas(data)
 
+    # get sample theta properties for simulation input
     sample_mean <- mean(thetas$WLE, na.rm = TRUE)
     sample_sd <- sd(thetas$WLE, na.rm = TRUE)
 
@@ -3955,6 +4003,35 @@ RIgetfit <- function(data, iterations = 100, cpu = 4, method = "PCM") {
           janitor::clean_names()
       }
 
+  } else if (model == "RM") {
+
+    # estimate item threshold locations from data
+    erm_out <- eRm::RM(data)
+    item_locations <- erm_out$betapar * -1
+    names(item_locations) <- names(data)
+
+    # estimate theta values from data using WLE
+    thetas <- RIestThetas(data, model = "RM")
+
+    # get sample theta properties for simulation input
+    sample_mean <- mean(thetas$WLE, na.rm = TRUE)
+    sample_sd <- sd(thetas$WLE, na.rm = TRUE)
+
+    fitstats <- list()
+    fitstats <- foreach(icount(iterations)) %dopar%
+      {
+        inputThetas <- rnorm(n = sample_n,
+                             mean = sample_mean,
+                             sd = sample_sd)
+
+        # simulate response data based on thetas and items above
+        testData <-
+          psychotools::rrm(inputThetas, item_locations, return_setting = FALSE) %>%
+          as.data.frame()
+
+        RIitemfitRM(testData, output = "dataframe") %>%
+          janitor::clean_names()
+      }
   }
 
   fitstats$sample_n <- sample_n

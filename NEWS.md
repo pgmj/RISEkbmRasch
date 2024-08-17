@@ -1,5 +1,11 @@
 ## Changelog
 
+### 0.2.1
+
+- Dichotomous data now working with `RIgetfit()` and `RIgetResidCor()`
+  - no integration with `RIitemfitRM()` yet.
+- Renamed option `method` to `model` for `RIgetfit()` and `RIgetResidCor()` for consistency across functions.
+
 ### 0.2.0
 
 Implemented two simulation functions to get cutoff values for item fit and 

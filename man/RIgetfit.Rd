@@ -4,7 +4,7 @@
 \alias{RIgetfit}
 \title{Get simulation based cutoff values for item fit values}
 \usage{
-RIgetfit(data, iterations = 100, cpu = 4, method = "PCM")
+RIgetfit(data, iterations = 100, cpu = 4, model = "PCM")
 }
 \arguments{
 \item{data}{Dataframe with response data}
@@ -13,7 +13,7 @@ RIgetfit(data, iterations = 100, cpu = 4, method = "PCM")
 
 \item{cpu}{Number of CPU cores to use}
 
-\item{method}{PCM or RM, currently only PCM works}
+\item{model}{PCM or RM}
 }
 \description{
 This function uses your response data to simulate datasets that fit the
@@ -25,8 +25,9 @@ takes some time to run this function when using many iterations/simulations.
 The output is a list object, which can in turn be used with three different
 functions. Most importantly, you can use it with \code{RIitemfitPCM()} to set
 cutoff values for both MSQ and ZSTD based on your sample size and item
-parameters. This uses the lowest and highest value from \emph{all} items as cutoff
-for all items.
+parameters. This currently uses the lowest and highest value from \emph{all} items as cutoff
+for all items. Individual item/metric cutoffs are forthcoming.
+Dichotomous items option, but no integration with \code{RIitemfitRM()} yet.
 
 If you want to see a table with the individual item fit upper/lower cutoffs,
 the function \code{RIgetfitTable()} should be used with the output from this

@@ -4,7 +4,7 @@
 \alias{RIgetResidCor}
 \title{Get simulation based cutoff values for Yen's Q3 residual correlations}
 \usage{
-RIgetResidCor(data, iterations = 500, sample, cpu = 4, method = "PCM")
+RIgetResidCor(data, iterations = 500, sample, cpu = 4, model = "PCM")
 }
 \arguments{
 \item{data}{Dataframe with response data}
@@ -15,7 +15,7 @@ RIgetResidCor(data, iterations = 500, sample, cpu = 4, method = "PCM")
 
 \item{cpu}{Number of CPU cores to use}
 
-\item{method}{PCM or RM, currently only PCM works}
+\item{model}{PCM or RM}
 }
 \description{
 Based on Christensen et al. (2017, DOI: 10.1177/0146621616677520).
