@@ -1418,7 +1418,9 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_wi
       kable_classic(html_font = fontfamily) %>%
       # latex_options are for PDF output
       kable_styling(latex_options = c("striped","scale_down")) %>%
-      footnote(general = paste0("Relative cut-off value (highlighted in red) is ", round(dyn.cutoff,3), ", which is ", round(cutoff,3), " above the average correlation."))
+      footnote(general = paste0("Relative cut-off value (highlighted in red) is ",
+                                round(dyn.cutoff,3), ", which is ", round(cutoff,3),
+                                " above the average correlation (",round(mean.resid,3),")."))
   } else {
     resid %>%
       mutate(across(everything(), ~ cell_spec(.x, color = case_when(.x > -dyn.cutoff ~ "red", TRUE ~ "black")))) %>%
@@ -1435,14 +1437,11 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_wi
       # latex_options are for PDF output
       kable_styling(latex_options = c("striped","scale_down")) %>%
       footnote(general = paste0("Relative cut-off value (highlighted in red) is ",
-                                round(dyn.cutoff,3),
-                                ", which is ",
-                                round(cutoff,3),
-                                " above the average correlation."))
+                                round(dyn.cutoff,3), ", which is ", round(cutoff,3),
+                                " above the average correlation (",round(mean.resid,3),")."))
   }
 
 }
-
 
 #' Targeting, Wright map derivative.
 #'
