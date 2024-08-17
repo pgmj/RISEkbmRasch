@@ -4,12 +4,14 @@
 \alias{RIgetfitTable}
 \title{Creates a table with simulation based highest/lowest item fit values}
 \usage{
-RIgetfitTable(gf, output = "table", tbl_width = 75)
+RIgetfitTable(gf, output = "table", limit = "99", tbl_width = 75)
 }
 \arguments{
 \item{gf}{Output object from \code{RIgetfit()}}
 
 \item{output}{Optional "dataframe" and "quarto"}
+
+\item{limit}{Optional "max", default is 1st and 99th percentile}
 
 \item{tbl_width}{Adjust table width (0-100)}
 }

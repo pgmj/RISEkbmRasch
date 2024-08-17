@@ -3915,8 +3915,8 @@ RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, model = "PCM
     out$sample_sd <- sample_sd
     out$max_diff <- max(results$diff)
     out$sd_diff <- sd(results$diff)
-    out$q95 <- quantile(results$diff, .95)
-    out$q99 <- quantile(results$diff, .99)
+    out$p95 <- quantile(results$diff, .95)
+    out$p99 <- quantile(results$diff, .99)
 
     return(out)
   } else {
@@ -4046,40 +4046,72 @@ RIgetfit <- function(data, iterations = 100, cpu = 4, model = "PCM") {
 #'
 #' @param gf Output object from `RIgetfit()`
 #' @param output Optional "dataframe" and "quarto"
+#' @param limit Optional "max", default is 1st and 99th percentile
 #' @param tbl_width Adjust table width (0-100)
 #' @export
-RIgetfitTable <- function(gf, output = "table", tbl_width = 75) {
+RIgetfitTable <- function(gf, output = "table", limit = "99", tbl_width = 75) {
 
   iterations <- length(gf) - 3
 
-  fit_table <-
-    bind_rows(gf[1:(length(gf)-3)]) %>%
-    dplyr::rename(Item = item) %>%
-    group_by(Item) %>%
-    summarise(`Infit MSQ` = paste0("[",min(infit_msq),", ",max(infit_msq),"]"),
-              `Outfit MSQ` = paste0("[",min(outfit_msq),", ",max(outfit_msq),"]"),
-              `Infit ZSTD` = paste0("[",min(infit_zstd),", ",max(infit_zstd),"]"),
-              `Outfit ZSTD` = paste0("[",min(outfit_zstd),", ",max(outfit_zstd),"]"),
-    )
+  if (limit == "max") {
+
+    fit_table <-
+      bind_rows(gf[1:(length(gf)-3)]) %>%
+      dplyr::rename(Item = item) %>%
+      group_by(Item) %>%
+      summarise(`Infit MSQ` = paste0("[",round(min(infit_msq),3),", ",round(max(infit_msq),3),"]"),
+                `Outfit MSQ` = paste0("[",round(min(outfit_msq),3),", ",round(max(outfit_msq),3),"]"),
+                `Infit ZSTD` = paste0("[",round(min(infit_zstd),3),", ",round(max(infit_zstd),3),"]"),
+                `Outfit ZSTD` = paste0("[",round(min(outfit_zstd),3),", ",round(max(outfit_zstd),3),"]")
+      ) %>%
+      mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+  } else if (limit == "99") {
+
+    fit_table <-
+      bind_rows(gf[1:(length(gf)-3)]) %>%
+      dplyr::rename(Item = item) %>%
+      group_by(Item) %>%
+      summarise(`Infit MSQ` = paste0("[",round(quantile(infit_msq, .01),3),", ",round(quantile(infit_msq, .99),3),"]"),
+                `Outfit MSQ` = paste0("[",round(quantile(outfit_msq, .01),3),", ",round(quantile(outfit_msq, .99),3),"]"),
+                `Infit ZSTD` = paste0("[",round(quantile(infit_zstd, .01),3),", ",round(quantile(infit_zstd, .99),3),"]"),
+                `Outfit ZSTD` = paste0("[",round(quantile(outfit_zstd, .01),3),", ",round(quantile(outfit_zstd, .99),3),"]")
+      )
+  }
+
   if (output == "table"){
     kbl_rise(fit_table, tbl_width = tbl_width) %>%
       footnote(general = paste0("Results from ",iterations," simulated datasets with ",
-                                gf$sample_n," respondents (mean theta = ", round(gf$sample_mean,2),", SD = ",round(gf$sample_sd,2),")."))
+                                gf$sample_n," respondents (theta mean = ", round(gf$sample_mean,2),", SD = ",round(gf$sample_sd,2),")."))
   } else if (output == "quarto") {
     knitr::kable(fit_table) %>%
       add_footnote(paste0("Results from ",iterations," simulated datasets with ",
-                          gf$sample_n," respondents (mean theta = ", round(gf$sample_mean,2),", SD = ",round(gf$sample_sd,2),")."),
+                          gf$sample_n," respondents (theta mean = ", round(gf$sample_mean,2),", SD = ",round(gf$sample_sd,2),")."),
                    notation = "none")
   } else if (output == "dataframe") {
-    janitor::clean_names(fit_table)
+
+    bind_rows(gf[1:(length(gf)-3)]) %>%
+      dplyr::rename(Item = item) %>%
+      group_by(Item) %>%
+      summarise(infit_msq_lo = round(quantile(infit_msq, .01),3),
+                infit_msq_hi = round(quantile(infit_msq, .99),3),
+                outfit_msq_lo = round(quantile(outfit_msq, .01),3),
+                outfit_msq_hi = round(quantile(outfit_msq, .99),3),
+                infit_zstd_lo = round(quantile(infit_zstd, .01),3),
+                infit_zstd_hi = round(quantile(infit_zstd, .99),3),
+                outfit_zstd_lo = round(quantile(outfit_zstd, .01),3),
+                outfit_zstd_hi = round(quantile(outfit_zstd, .99),3)
+      )
   }
 }
+
 
 #' Creates a plot with distribution of simulation based item fit values
 #'
 #' Uses the output from `RIgetfit()` as input. Defaults to output all 4 plots.
 #'
-#' Set a nicer x axis label by adding `+ xlab("Infit MSQ")`.
+#' Set a nicer x axis label by adding `+ xlab("Infit MSQ")`. Uses `median_qi`
+#' and `.width = c(.66,.99)` with `ggdist::stat_dotsinterval()`.
 #'
 #' @param gf Output object from `RIgetfit()`
 #' @param statistic Optionally one of infit_msq, outfit_msq, infit_zstd, outfit_msq
@@ -4100,7 +4132,9 @@ RIgetfitPlot <- function(gf, statistic) {
                    values_to = "Value") %>%
 
       ggplot(aes(x = Value, y = item, slab_fill = after_stat(level))) +
-      stat_dotsinterval(quantiles = iterations, point_interval = mode_hdci, layout = "weave", slab_color = NA) +
+      stat_dotsinterval(quantiles = iterations, point_interval = median_qi,
+                        layout = "weave", slab_color = NA,
+                        .width = c(0.66, 0.99)) +
       labs(title = "",
            y = "Item") +
       scale_color_manual(values = scales::brewer_pal()(3)[-1], aesthetics = "slab_fill", guide = "none") +
@@ -4114,7 +4148,9 @@ RIgetfitPlot <- function(gf, statistic) {
 
     bind_rows(gf[1:(length(gf)-3)]) %>%
       ggplot(aes(x = {{statistic}}, y = item, slab_fill = after_stat(level))) +
-      stat_dotsinterval(quantiles = iterations, point_interval = mode_hdci, layout = "weave", slab_color = NA) +
+      stat_dotsinterval(quantiles = iterations, point_interval = median_qi,
+                        layout = "weave", slab_color = NA,
+                        .width = c(0.66, 0.99)) +
       labs(title = "",
            y = "Item") +
       scale_color_manual(values = scales::brewer_pal()(3)[-1], aesthetics = "slab_fill") +

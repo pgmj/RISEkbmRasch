@@ -15,5 +15,6 @@ RIgetfitPlot(gf, statistic)
 Uses the output from \code{RIgetfit()} as input. Defaults to output all 4 plots.
 }
 \details{
-Set a nicer x axis label by adding \code{+ xlab("Infit MSQ")}.
+Set a nicer x axis label by adding \code{+ xlab("Infit MSQ")}. Uses \code{median_qi}
+and \code{.width = c(.66,.99)} with \code{ggdist::stat_dotsinterval()}.
 }

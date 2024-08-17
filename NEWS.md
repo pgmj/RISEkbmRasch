@@ -1,5 +1,16 @@
 ## Changelog
 
+### 0.2.1.1
+
+- Added 1st and 99th percentiles (upper/lower limits) for simulation based item fit metrics from `RIgetfitTable()`
+- `RIgetfitPlot()` now uses these options (see `?ggdist::stat_dotsinterval` for details) for rendering the distribution of simulated+estimated item fit metrics
+
+```
+stat_dotsinterval(quantiles = iterations, point_interval = median_qi,
+                        layout = "weave", slab_color = NA,
+                        .width = c(0.66, 0.99)
+```
+
 ### 0.2.1
 
 - Dichotomous data now working with `RIgetfit()` and `RIgetResidCor()`
