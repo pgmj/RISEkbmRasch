@@ -16,5 +16,6 @@ RIgetfitTable(gf, output = "table", limit = "99", tbl_width = 75)
 \item{tbl_width}{Adjust table width (0-100)}
 }
 \description{
-Uses the output from \code{RIgetfit()} as input.
+Uses the output from \code{RIgetfit()} as input. Defaults to show 1st and 99th
+percentile values for each item and metric from the simulation results.
 }

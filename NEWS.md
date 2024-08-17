@@ -3,6 +3,7 @@
 ### 0.2.1.1
 
 - Added 1st and 99th percentiles (upper/lower limits) for simulation based item fit metrics from `RIgetfitTable()`
+- `RIitemfitPCM()` and `RIgetfitLoHi()` now use 1st/99th percentile values from simulation as cutoffs.
 - `RIgetfitPlot()` now uses these options (see `?ggdist::stat_dotsinterval` for details) for rendering the distribution of simulated+estimated item fit metrics
 
 ```

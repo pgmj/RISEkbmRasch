@@ -805,7 +805,7 @@ RIrawdist <- function(dfin) {
 #'
 #' Since version 0.2.0 (2024-08-15), it is highly recommended to replace
 #' rule-of-thumb cutoff values with simulation based cutoffs. See details in
-#' `?RIgetfit()` for an easy way to get appropriate cutoff values.
+#' `?RIgetfit()` for an easy way to get and set appropriate cutoff values.
 #'
 #' ZSTD is inflated with large samples (N > 500). There is an optional function
 #' to use a reduced sample size and run analysis using multiple random samples
@@ -878,14 +878,14 @@ RIitemfitPCM <- function(dfin, samplesize, nsamples, zstd_min = -1.96, zstd_max 
       iterations <- length(gf) - 3
 
       lo_hi <- bind_rows(gf[1:(length(gf)-3)]) %>%
-        summarise(max_infit_msq = max(infit_msq),
-                  min_infit_msq = min(infit_msq),
-                  max_outfit_msq = max(outfit_msq),
-                  min_outfit_msq = min(outfit_msq),
-                  max_infit_zstd = max(infit_zstd),
-                  min_infit_zstd = min(infit_zstd),
-                  max_outfit_zstd = max(outfit_zstd),
-                  min_outfit_zstd = min(outfit_zstd),
+        summarise(max_infit_msq = quantile(infit_msq, .99),
+                  min_infit_msq = quantile(infit_msq, .01),
+                  max_outfit_msq = quantile(outfit_msq, .99),
+                  min_outfit_msq = quantile(outfit_msq, .01),
+                  max_infit_zstd = quantile(infit_zstd, .99),
+                  min_infit_zstd = quantile(infit_zstd, .01),
+                  max_outfit_zstd = quantile(outfit_zstd, .99),
+                  min_outfit_zstd = quantile(outfit_zstd, .01),
         )
 
       item.fit.table %>%
@@ -3861,7 +3861,6 @@ RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, model = "PCM
         }
 
     } else if (model == "RM") {
-      #stop("RM not yet implemented")
       # estimate item threshold locations from data
       erm_out <- eRm::RM(data)
       item_locations <- erm_out$betapar * -1
@@ -4042,7 +4041,8 @@ RIgetfit <- function(data, iterations = 100, cpu = 4, model = "PCM") {
 
 #' Creates a table with simulation based highest/lowest item fit values
 #'
-#' Uses the output from `RIgetfit()` as input.
+#' Uses the output from `RIgetfit()` as input. Defaults to show 1st and 99th
+#' percentile values for each item and metric from the simulation results.
 #'
 #' @param gf Output object from `RIgetfit()`
 #' @param output Optional "dataframe" and "quarto"
@@ -4171,14 +4171,14 @@ RIgetfitLoHi <- function(gf) {
   iterations <- length(gf) - 3
 
   bind_rows(gf[1:(length(gf)-3)]) %>%
-    summarise(max_infit_msq = max(infit_msq),
-              min_infit_msq = min(infit_msq),
-              max_outfit_msq = max(outfit_msq),
-              min_outfit_msq = min(outfit_msq),
-              max_infit_zstd = max(infit_zstd),
-              min_infit_zstd = min(infit_zstd),
-              max_outfit_zstd = max(outfit_zstd),
-              min_outfit_zstd = min(outfit_zstd),
+    summarise(infit_msq_lo = round(quantile(infit_msq, .01),3),
+              infit_msq_hi = round(quantile(infit_msq, .99),3),
+              outfit_msq_lo = round(quantile(outfit_msq, .01),3),
+              outfit_msq_hi = round(quantile(outfit_msq, .99),3),
+              infit_zstd_lo = round(quantile(infit_zstd, .01),3),
+              infit_zstd_hi = round(quantile(infit_zstd, .99),3),
+              outfit_zstd_lo = round(quantile(outfit_zstd, .01),3),
+              outfit_zstd_hi = round(quantile(outfit_zstd, .99),3)
     )
 }
 
