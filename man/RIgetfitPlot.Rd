@@ -4,17 +4,12 @@
 \alias{RIgetfitPlot}
 \title{Creates a plot with distribution of simulation based item fit values}
 \usage{
-RIgetfitPlot(gf, statistic)
+RIgetfitPlot(simcut)
 }
 \arguments{
-\item{gf}{Output object from \code{RIgetfit()}}
-
-\item{statistic}{Optionally one of infit_msq, outfit_msq, infit_zstd, outfit_msq}
+\item{simcut}{Output object from \code{RIgetfit()}}
 }
 \description{
-Uses the output from \code{RIgetfit()} as input. Defaults to output all 4 plots.
-}
-\details{
-Set a nicer x axis label by adding \code{+ xlab("Infit MSQ")}. Uses \code{median_qi}
+Uses the output from \code{RIgetfit()} as input. Uses \code{median_qi}
 and \code{.width = c(.66,.99)} with \code{ggdist::stat_dotsinterval()}.
 }

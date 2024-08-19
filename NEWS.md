@@ -1,5 +1,16 @@
 ## Changelog
 
+### 0.2.2
+
+- New `RIitemfit()` function, which replaces both `RIitemfitPCM()` and `RIitemfitRM()`
+  - Only outputs conditional MSQ (ZSTD irrelevant for conditional item fit)
+  - Automatically uses RM or PCM depending on data structure.
+  - Optional conditional highlighting of simulation based cutoff values, and includes the cutoff intervals when using `output = "table"` (default).
+- Modified `RIgetfit()` to only use conditional MSQ when running simulations.
+  - Automatically uses RM or PCM depending on data structure.
+- Modified `RIgetfitPlot()` accordingly.
+- Removed `RIgetfitTable()` and `RIgetfitLoHi()` since this information now is included in the output from the new function `RIitemfit()`
+
 ### 0.2.1.1
 
 - Added 1st and 99th percentiles (upper/lower limits) for simulation based item fit metrics from `RIgetfitTable()`

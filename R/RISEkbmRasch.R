@@ -1467,7 +1467,7 @@ RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_wi
 #' @export
 RItargeting <- function(dfin, model = "PCM", xlim = c(-4,4), output = "figure", bins = 30) {
   if(model == "PCM") {
-    if(max(as.matrix(dfin)) == 1) {
+    if(max(as.matrix(dfin), na.rm = TRUE) == 1) {
       stop("Use `model = 'RM'` for dichotomous data.")
     } else {
       erm_out <- PCM(dfin) # run PCM model
@@ -3927,6 +3927,96 @@ RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, model = "PCM
   }
 }
 
+#' Calculate conditional outfit & infit MSQ statistics
+#'
+#' Automatically uses RM or PCM depending on data structure.
+#'
+#' Uses `iarm::out_infit()` to calculate conditional mean square fit statistics
+#' for all items. See Müller (2020, DOI: 10.1186/s40488-020-00108-7) for details.
+#'
+#' @param data Dataframe with response data
+#' @param simcut Object output from `RIgetfit()`
+#' @param output Optional sample properties (not functional yet)
+#' @param ... Options sent to `kbl_rise()` for table creation
+#' @export
+RIitemfit <- function(data, simcut, output = "table", ...) {
+
+  if(min(as.matrix(data), na.rm = T) > 0) {
+    stop("The lowest response category needs to coded as 0. Please recode your data.")
+  } else if(max(as.matrix(data), na.rm = T) == 1 && min(as.matrix(data), na.rm = T) == 0) {
+    erm_out <- RM(data)
+  } else if(max(as.matrix(data), na.rm = T) > 1 && min(as.matrix(data), na.rm = T) == 0) {
+    erm_out <- PCM(data)
+  }
+
+
+  # get conditional MSQ
+  cfit <- iarm::out_infit(erm_out)
+
+  # create dataframe
+  item.fit.table <- data.frame(InfitMSQ = cfit$Infit,
+                               OutfitMSQ = cfit$Outfit
+  ) %>%
+    round(3) %>%
+    rownames_to_column("Item")
+
+  if (!missing(simcut)) {
+
+    # get number of iterations used to get simulation based cutoff values
+    iterations <- length(simcut) - 3
+
+    # summarise simulations and set cutoff values
+    lo_hi <- bind_rows(simcut[1:(length(simcut)-3)]) %>%
+      summarise(max_infit_msq = quantile(InfitMSQ, .99),
+                min_infit_msq = quantile(InfitMSQ, .01),
+                max_outfit_msq = quantile(OutfitMSQ, .99),
+                min_outfit_msq = quantile(OutfitMSQ, .01)
+      )
+
+    # get upper/lower values into a table
+    fit_table <-
+      bind_rows(simcut[1:(length(simcut)-3)]) %>%
+      group_by(Item) %>%
+      summarise(inf_thresh = paste0("[",round(quantile(InfitMSQ, .01),3),", ",round(quantile(InfitMSQ, .99),3),"]"),
+                outf_thresh = paste0("[",round(quantile(OutfitMSQ, .01),3),", ",round(quantile(OutfitMSQ, .99),3),"]")
+      )
+
+    # set conditional highlighting based on cutoffs and output table
+    table <- item.fit.table %>%
+      add_column(`Infit thresholds` = fit_table$inf_thresh, .after = "InfitMSQ") %>%
+      add_column(`Outfit thresholds` = fit_table$outf_thresh, .after = "OutfitMSQ")
+
+    if (output == "table") {
+      table %>%
+        mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < lo_hi$min_infit_msq, "red",
+                                                             ifelse(InfitMSQ > lo_hi$max_infit_msq, "red", "black")
+        ))) %>%
+        mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < lo_hi$min_outfit_msq, "red",
+                                                               ifelse(OutfitMSQ > lo_hi$max_outfit_msq, "red", "black")
+        ))) %>%
+        kbl_rise(...) %>%
+        footnote(general = paste0("MSQ values based on ", method," estimation (n = ", nrow(data),").
+                                Conditional highlighting uses simulation based thresholds from ", iterations," simulated datasets."))
+
+    } else if(output == "dataframe") {
+      return(janitor::clean_names(table))
+
+    } else if (output == "quarto") {
+      knitr::kable(table)
+    }
+  } else if (missing(simcut)) {
+    if (output == "table") {
+      kbl_rise(item.fit.table) %>%
+        footnote(general = paste0("MSQ values based on ", method," estimation (n = ", nrow(data),")."))
+
+    } else if (output == "dataframe") {
+      return(janitor::clean_names(item.fit.table))
+    } else if (output == "quarto") {
+      knitr::kable(item.fit.table)
+    }
+  }
+}
+
 #' Get simulation based cutoff values for item fit values
 #'
 #' This function uses your response data to simulate datasets that fit the
@@ -3934,36 +4024,71 @@ RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, model = "PCM
 #' outputs an object that is strongly recommended to save to a file, since it
 #' takes some time to run this function when using many iterations/simulations.
 #'
-#' The output is a list object, which can in turn be used with three different
-#' functions. Most importantly, you can use it with `RIitemfitPCM()` to set
-#' cutoff values for both MSQ and ZSTD based on your sample size and item
-#' parameters. This currently uses the lowest and highest value from *all* items as cutoff
-#' for all items. Individual item/metric cutoffs are forthcoming.
-#' Dichotomous items option, but no integration with `RIitemfitRM()` yet.
-#'
-#' If you want to see a table with the individual item fit upper/lower cutoffs,
-#' the function `RIgetfitTable()` should be used with the output from this
-#' function as input.
+#' The output is a list object, which can in turn be used with two different
+#' functions. Most importantly, you can use it with `RIitemfit()` to get
+#' conditional highlighting of cutoff values based on your sample size and
+#' item parameters. Each item gets its own cutoff thresholds.
 #'
 #' The function `RIgetfitPlot()` uses the package `ggdist` to plot the
 #' distribution of fit values from the simulation results.
 #'
 #' @param data Dataframe with response data
-#' @param iterations Number of simulation iterations
+#' @param iterations Number of simulation iterations (use at least 1000)
 #' @param cpu Number of CPU cores to use
-#' @param model PCM or RM
 #' @export
-RIgetfit <- function(data, iterations = 100, cpu = 4, model = "PCM") {
+RIgetfit <- function(data, iterations, cpu = 4) {
 
   sample_n <- nrow(data)
 
   require(doParallel)
   registerDoParallel(cores = cpu)
 
-  if (model == "PCM") {
-    if(max(as.matrix(data)) == 1) {
-      stop("Use `model = 'RM'` for dichotomous data.")
-    }
+  if (missing(iterations)) {
+    stop("Please set a number of iterations (at least 1000 is recommended).")
+  }
+
+  if(min(as.matrix(data), na.rm = T) > 0) {
+    stop("The lowest response category needs to coded as 0. Please recode your data.")
+
+  } else if(max(as.matrix(data), na.rm = T) == 1 && min(as.matrix(data), na.rm = T) == 0) {
+
+    # estimate item threshold locations from data
+    erm_out <- eRm::RM(data)
+    item_locations <- erm_out$betapar * -1
+    names(item_locations) <- names(data)
+
+    # estimate theta values from data using WLE
+    thetas <- RIestThetas(data, model = "RM")
+
+    # get sample theta properties for simulation input
+    sample_mean <- mean(thetas$WLE, na.rm = TRUE)
+    sample_sd <- sd(thetas$WLE, na.rm = TRUE)
+
+    fitstats <- list()
+    fitstats <- foreach(icount(iterations)) %dopar%
+      {
+        inputThetas <- rnorm(n = sample_n,
+                             mean = sample_mean,
+                             sd = sample_sd)
+
+        # simulate response data based on thetas and items above
+        testData <-
+          psychotools::rrm(inputThetas, item_locations, return_setting = FALSE) %>%
+          as.data.frame()
+
+        # get conditional MSQ
+        erm_out <- RM(testData)
+        cfit <- iarm::out_infit(erm_out)
+
+        # create dataframe
+        item.fit.table <- data.frame(InfitMSQ = cfit$Infit,
+                                     OutfitMSQ = cfit$Outfit) %>%
+          round(3) %>%
+          rownames_to_column("Item")
+      }
+
+  } else if(max(as.matrix(data), na.rm = T) > 1 && min(as.matrix(data), na.rm = T) == 0) {
+
     # estimate item threshold locations from data
     item_locations <- RIitemparams(data, output = "dataframe") %>%
       dplyr::select(!Location) %>%
@@ -3997,38 +4122,15 @@ RIgetfit <- function(data, iterations = 100, cpu = 4, model = "PCM") {
         ) %>%
           as.data.frame()
 
-        RIitemfitPCM(testData, output = "dataframe") %>%
-          janitor::clean_names()
-      }
+        # get conditional MSQ
+        erm_out <- PCM(testData)
+        cfit <- iarm::out_infit(erm_out)
 
-  } else if (model == "RM") {
-
-    # estimate item threshold locations from data
-    erm_out <- eRm::RM(data)
-    item_locations <- erm_out$betapar * -1
-    names(item_locations) <- names(data)
-
-    # estimate theta values from data using WLE
-    thetas <- RIestThetas(data, model = "RM")
-
-    # get sample theta properties for simulation input
-    sample_mean <- mean(thetas$WLE, na.rm = TRUE)
-    sample_sd <- sd(thetas$WLE, na.rm = TRUE)
-
-    fitstats <- list()
-    fitstats <- foreach(icount(iterations)) %dopar%
-      {
-        inputThetas <- rnorm(n = sample_n,
-                             mean = sample_mean,
-                             sd = sample_sd)
-
-        # simulate response data based on thetas and items above
-        testData <-
-          psychotools::rrm(inputThetas, item_locations, return_setting = FALSE) %>%
-          as.data.frame()
-
-        RIitemfitRM(testData, output = "dataframe") %>%
-          janitor::clean_names()
+        # create dataframe
+        item.fit.table <- data.frame(InfitMSQ = cfit$Infit,
+                                     OutfitMSQ = cfit$Outfit) %>%
+          round(3) %>%
+          rownames_to_column("Item")
       }
   }
 
@@ -4039,149 +4141,38 @@ RIgetfit <- function(data, iterations = 100, cpu = 4, model = "PCM") {
   return(fitstats)
 }
 
-#' Creates a table with simulation based highest/lowest item fit values
-#'
-#' Uses the output from `RIgetfit()` as input. Defaults to show 1st and 99th
-#' percentile values for each item and metric from the simulation results.
-#'
-#' @param gf Output object from `RIgetfit()`
-#' @param output Optional "dataframe" and "quarto"
-#' @param limit Optional "max", default is 1st and 99th percentile
-#' @param tbl_width Adjust table width (0-100)
-#' @export
-RIgetfitTable <- function(gf, output = "table", limit = "99", tbl_width = 75) {
-
-  iterations <- length(gf) - 3
-
-  if (limit == "max") {
-
-    fit_table <-
-      bind_rows(gf[1:(length(gf)-3)]) %>%
-      dplyr::rename(Item = item) %>%
-      group_by(Item) %>%
-      summarise(`Infit MSQ` = paste0("[",round(min(infit_msq),3),", ",round(max(infit_msq),3),"]"),
-                `Outfit MSQ` = paste0("[",round(min(outfit_msq),3),", ",round(max(outfit_msq),3),"]"),
-                `Infit ZSTD` = paste0("[",round(min(infit_zstd),3),", ",round(max(infit_zstd),3),"]"),
-                `Outfit ZSTD` = paste0("[",round(min(outfit_zstd),3),", ",round(max(outfit_zstd),3),"]")
-      ) %>%
-      mutate(across(where(is.numeric), ~ round(.x, 3)))
-
-  } else if (limit == "99") {
-
-    fit_table <-
-      bind_rows(gf[1:(length(gf)-3)]) %>%
-      dplyr::rename(Item = item) %>%
-      group_by(Item) %>%
-      summarise(`Infit MSQ` = paste0("[",round(quantile(infit_msq, .01),3),", ",round(quantile(infit_msq, .99),3),"]"),
-                `Outfit MSQ` = paste0("[",round(quantile(outfit_msq, .01),3),", ",round(quantile(outfit_msq, .99),3),"]"),
-                `Infit ZSTD` = paste0("[",round(quantile(infit_zstd, .01),3),", ",round(quantile(infit_zstd, .99),3),"]"),
-                `Outfit ZSTD` = paste0("[",round(quantile(outfit_zstd, .01),3),", ",round(quantile(outfit_zstd, .99),3),"]")
-      )
-  }
-
-  if (output == "table"){
-    kbl_rise(fit_table, tbl_width = tbl_width) %>%
-      footnote(general = paste0("Results from ",iterations," simulated datasets with ",
-                                gf$sample_n," respondents (theta mean = ", round(gf$sample_mean,2),", SD = ",round(gf$sample_sd,2),")."))
-  } else if (output == "quarto") {
-    knitr::kable(fit_table) %>%
-      add_footnote(paste0("Results from ",iterations," simulated datasets with ",
-                          gf$sample_n," respondents (theta mean = ", round(gf$sample_mean,2),", SD = ",round(gf$sample_sd,2),")."),
-                   notation = "none")
-  } else if (output == "dataframe") {
-
-    bind_rows(gf[1:(length(gf)-3)]) %>%
-      dplyr::rename(Item = item) %>%
-      group_by(Item) %>%
-      summarise(infit_msq_lo = round(quantile(infit_msq, .01),3),
-                infit_msq_hi = round(quantile(infit_msq, .99),3),
-                outfit_msq_lo = round(quantile(outfit_msq, .01),3),
-                outfit_msq_hi = round(quantile(outfit_msq, .99),3),
-                infit_zstd_lo = round(quantile(infit_zstd, .01),3),
-                infit_zstd_hi = round(quantile(infit_zstd, .99),3),
-                outfit_zstd_lo = round(quantile(outfit_zstd, .01),3),
-                outfit_zstd_hi = round(quantile(outfit_zstd, .99),3)
-      )
-  }
-}
-
-
 #' Creates a plot with distribution of simulation based item fit values
 #'
-#' Uses the output from `RIgetfit()` as input. Defaults to output all 4 plots.
-#'
-#' Set a nicer x axis label by adding `+ xlab("Infit MSQ")`. Uses `median_qi`
+#' Uses the output from `RIgetfit()` as input. Uses `median_qi`
 #' and `.width = c(.66,.99)` with `ggdist::stat_dotsinterval()`.
 #'
-#' @param gf Output object from `RIgetfit()`
-#' @param statistic Optionally one of infit_msq, outfit_msq, infit_zstd, outfit_msq
+#' @param simcut Output object from `RIgetfit()`
 #' @export
-RIgetfitPlot <- function(gf, statistic) {
+RIgetfitPlot <- function(simcut) {
   require(ggdist)
 
-  iterations <- length(gf) - 3
+  iterations <- length(simcut) - 3
 
-  if (missing(statistic)) {
-    bind_rows(gf[1:(length(gf)-3)]) %>%
-      dplyr::rename(`Infit MSQ` = infit_msq,
-             `Outfit MSQ` = outfit_msq,
-             `Infit ZSTD` = infit_zstd,
-             `Outfit ZSTD` = outfit_zstd) %>%
-      pivot_longer(contains(" "),
-                   names_to = "statistic",
-                   values_to = "Value") %>%
+  bind_rows(simcut[1:(length(simcut)-3)]) %>%
+    pivot_longer(contains("MSQ"),
+                 names_to = "statistic",
+                 values_to = "Value") %>%
 
-      ggplot(aes(x = Value, y = item, slab_fill = after_stat(level))) +
-      stat_dotsinterval(quantiles = iterations, point_interval = median_qi,
-                        layout = "weave", slab_color = NA,
-                        .width = c(0.66, 0.99)) +
-      labs(title = "",
-           y = "Item") +
-      scale_color_manual(values = scales::brewer_pal()(3)[-1], aesthetics = "slab_fill", guide = "none") +
-      labs(caption = str_wrap(paste0("Note: Results from ",iterations," simulated datasets with ",
-                                     gf$sample_n," respondents (mean theta = ", round(gf$sample_mean,2),", SD = ",round(gf$sample_sd,2),")."))
-      ) +
-      facet_wrap(~statistic, ncol = 2,scales = "free") +
-      theme_minimal()
+    ggplot(aes(x = Value, y = Item, slab_fill = after_stat(level))) +
+    stat_dotsinterval(quantiles = iterations, point_interval = median_qi,
+                      layout = "weave", slab_color = NA,
+                      .width = c(0.66, 0.99)) +
+    labs(x = "Conditional MSQ",
+         y = "Item") +
+    scale_color_manual(values = scales::brewer_pal()(3)[-1], aesthetics = "slab_fill", guide = "none") +
+    labs(caption = str_wrap(paste0("Note: Results from ",iterations," simulated datasets with ",
+                                   simcut$sample_n," respondents (mean theta = ", round(simcut$sample_mean,2),", SD = ",round(simcut$sample_sd,2),")."))
+    ) +
+    facet_wrap(~statistic, ncol = 2) +
+    scale_x_continuous(breaks = seq(0.5,1.5,0.1), minor_breaks = NULL) +
+    theme_minimal()
 
-  } else {
-
-    bind_rows(gf[1:(length(gf)-3)]) %>%
-      ggplot(aes(x = {{statistic}}, y = item, slab_fill = after_stat(level))) +
-      stat_dotsinterval(quantiles = iterations, point_interval = median_qi,
-                        layout = "weave", slab_color = NA,
-                        .width = c(0.66, 0.99)) +
-      labs(title = "",
-           y = "Item") +
-      scale_color_manual(values = scales::brewer_pal()(3)[-1], aesthetics = "slab_fill") +
-      labs(caption = str_wrap(paste0("Note: Results from ",iterations," simulated datasets with ",
-                                     gf$sample_n," respondents (mean theta = ", round(gf$sample_mean,2),", SD = ",round(gf$sample_sd,2),").")
-      )) +
-      theme_minimal()
-  }
 }
-
-#' Convenience function to get item fit cutoff values used in table
-#'
-#' Uses the output from `RIgetfit()` as input.
-#'
-#' @param gf Output object from `RIgetfit()`
-#' @export
-RIgetfitLoHi <- function(gf) {
-  iterations <- length(gf) - 3
-
-  bind_rows(gf[1:(length(gf)-3)]) %>%
-    summarise(infit_msq_lo = round(quantile(infit_msq, .01),3),
-              infit_msq_hi = round(quantile(infit_msq, .99),3),
-              outfit_msq_lo = round(quantile(outfit_msq, .01),3),
-              outfit_msq_hi = round(quantile(outfit_msq, .99),3),
-              infit_zstd_lo = round(quantile(infit_zstd, .01),3),
-              infit_zstd_hi = round(quantile(infit_zstd, .99),3),
-              outfit_zstd_lo = round(quantile(outfit_zstd, .01),3),
-              outfit_zstd_hi = round(quantile(outfit_zstd, .99),3)
-    )
-}
-
 
 #' Temporary fix for upstream bug in `iarm::person_estimates()`
 #'
