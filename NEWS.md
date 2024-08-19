@@ -1,5 +1,9 @@
 ## Changelog
 
+### 0.2.2.1
+
+- Changed simulation based cutoff thresholds used by `RIitemfit()` to be `quantile(fitmetric, .995)` and .005 instead of .99 and .01 in previous version, to be consistent with `RIgetResidCor()` which uses the one-sided `quantile(fitmetric, .99)`.
+
 ### 0.2.2
 
 - New `RIitemfit()` function, which replaces both `RIitemfitPCM()` and `RIitemfitRM()`
