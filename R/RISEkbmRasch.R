@@ -3995,8 +3995,8 @@ RIitemfit <- function(data, simcut, output = "table", ...) {
                                                                ifelse(OutfitMSQ > lo_hi$max_outfit_msq, "red", "black")
         ))) %>%
         kbl_rise(...) %>%
-        footnote(general = paste0("MSQ values based on ", method," estimation (n = ", nrow(data),").
-                                Conditional highlighting uses simulation based thresholds from ", iterations," simulated datasets."))
+        footnote(general = paste0("MSQ values based on conditional calculations (n = ", nrow(data),").
+                                Simulation based thresholds based on ", iterations," simulated datasets."))
 
     } else if(output == "dataframe") {
       return(janitor::clean_names(table))
@@ -4007,7 +4007,7 @@ RIitemfit <- function(data, simcut, output = "table", ...) {
   } else if (missing(simcut)) {
     if (output == "table") {
       kbl_rise(item.fit.table) %>%
-        footnote(general = paste0("MSQ values based on ", method," estimation (n = ", nrow(data),")."))
+        footnote(general = paste0("MSQ values based on conditional estimation (n = ", nrow(data),")."))
 
     } else if (output == "dataframe") {
       return(janitor::clean_names(item.fit.table))
