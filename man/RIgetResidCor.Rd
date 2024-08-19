@@ -23,7 +23,7 @@ Based on Christensen et al. (2017, DOI: 10.1177/0146621616677520).
 \details{
 Uses a dataframe with response data to simulate residual correlation values.
 Results include mean, max and difference between the mean and max for each
-iteration. Also, 95th and 99th quantiles are reported, and the latter is
+iteration. Also, 95th and 99th percentile values are reported, and the latter is
 recommended for use with \code{RIresidcorr()} as cutoff value, since the max value
-is spurious and reliant on number of iterations.
+seems spurious and reliant on number of iterations.
 }

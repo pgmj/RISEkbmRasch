@@ -16,9 +16,14 @@ RIitemfit(data, simcut, output = "table", ...)
 \item{...}{Options sent to \code{kbl_rise()} for table creation}
 }
 \description{
-Automatically uses RM or PCM depending on data structure.
+Automatically uses RM (dichotomous data) or PCM (polytomous data) depending
+on data structure.
 }
 \details{
 Uses \code{iarm::out_infit()} to calculate conditional mean square fit statistics
 for all items. See Müller (2020, DOI: 10.1186/s40488-020-00108-7) for details.
+
+Cutoff threshold values from simulation data (using option \code{simcut}) are
+used with the \code{quantile()} function with .005 and .995 values to filter out
+extremes. Actual cutoff values are shown in the output.
 }

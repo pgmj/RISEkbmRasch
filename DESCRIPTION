@@ -1,6 +1,6 @@
 Package: RISEkbmRasch
 Title: Psychometric Analysis in R with Rasch Measurement Theory
-Version: 0.2.2
+Version: 0.2.2.1
 Date: 2024-08-19
 URL: https://github.com/pgmj/RISEkbmRasch
 Authors@R:

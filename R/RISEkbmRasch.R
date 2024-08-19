@@ -3790,9 +3790,9 @@ RIdifThreshFigLR <- function(dfin, dif.var) {
 #'
 #' Uses a dataframe with response data to simulate residual correlation values.
 #' Results include mean, max and difference between the mean and max for each
-#' iteration. Also, 95th and 99th quantiles are reported, and the latter is
+#' iteration. Also, 95th and 99th percentile values are reported, and the latter is
 #' recommended for use with `RIresidcorr()` as cutoff value, since the max value
-#' is spurious and reliant on number of iterations.
+#' seems spurious and reliant on number of iterations.
 #'
 #' @param data Dataframe with response data
 #' @param iterations Number of simulation iterations
@@ -3929,10 +3929,15 @@ RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, model = "PCM
 
 #' Calculate conditional outfit & infit MSQ statistics
 #'
-#' Automatically uses RM or PCM depending on data structure.
+#' Automatically uses RM (dichotomous data) or PCM (polytomous data) depending
+#' on data structure.
 #'
 #' Uses `iarm::out_infit()` to calculate conditional mean square fit statistics
 #' for all items. See Müller (2020, DOI: 10.1186/s40488-020-00108-7) for details.
+#'
+#' Cutoff threshold values from simulation data (using option `simcut`) are
+#' used with the `quantile()` function with .005 and .995 values to filter out
+#' extremes. Actual cutoff values are shown in the output.
 #'
 #' @param data Dataframe with response data
 #' @param simcut Object output from `RIgetfit()`
@@ -3967,18 +3972,18 @@ RIitemfit <- function(data, simcut, output = "table", ...) {
 
     # summarise simulations and set cutoff values
     lo_hi <- bind_rows(simcut[1:(length(simcut)-3)]) %>%
-      summarise(max_infit_msq = quantile(InfitMSQ, .99),
-                min_infit_msq = quantile(InfitMSQ, .01),
-                max_outfit_msq = quantile(OutfitMSQ, .99),
-                min_outfit_msq = quantile(OutfitMSQ, .01)
+      summarise(max_infit_msq = quantile(InfitMSQ, .995),
+                min_infit_msq = quantile(InfitMSQ, .005),
+                max_outfit_msq = quantile(OutfitMSQ, .995),
+                min_outfit_msq = quantile(OutfitMSQ, .005)
       )
 
     # get upper/lower values into a table
     fit_table <-
       bind_rows(simcut[1:(length(simcut)-3)]) %>%
       group_by(Item) %>%
-      summarise(inf_thresh = paste0("[",round(quantile(InfitMSQ, .01),3),", ",round(quantile(InfitMSQ, .99),3),"]"),
-                outf_thresh = paste0("[",round(quantile(OutfitMSQ, .01),3),", ",round(quantile(OutfitMSQ, .99),3),"]")
+      summarise(inf_thresh = paste0("[",round(quantile(InfitMSQ, .005),3),", ",round(quantile(InfitMSQ, .995),3),"]"),
+                outf_thresh = paste0("[",round(quantile(OutfitMSQ, .005),3),", ",round(quantile(OutfitMSQ, .995),3),"]")
       )
 
     # set conditional highlighting based on cutoffs and output table
