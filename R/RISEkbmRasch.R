@@ -1732,7 +1732,7 @@ RItif <- function(dfin, lo = -5, hi = 5, samplePSI = FALSE, cutoff = 3.33, model
   psi_tif <- round(1-(1/sqrt(cutoff))^2,2)
 
   if (model == "PCM") {
-    if(max(as.matrix(dfin)) == 1) {
+    if(max(as.matrix(dfin), na.rm = TRUE) == 1) {
       stop("Use `model = 'RM'` for dichotomous data.")
     } else {
       erm_out <- PCM(dfin)
@@ -2434,7 +2434,7 @@ RIoutfitLoc <- function(dfin, samplesize, nsamples) {
 RIloadLoc <- function(dfin, output = "figure", pcx = c("PC1","PC2","PC3"), model = "PCM") {
 
   if(model == "PCM") {
-    if(max(as.matrix(dfin)) == 1) {
+    if(max(as.matrix(dfin), na.rm = TRUE) == 1) {
       stop("Use `model = 'RM'` for dichotomous data.")
     } else {
     erm_out <- PCM(dfin)
@@ -2830,7 +2830,7 @@ RIdifFigureRM <- function(dfin, dif.var) {
 #' @export
 RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
 
-  if(max(as.matrix(dfin)) == 1) {
+  if(max(as.matrix(dfin), na.rm = TRUE) == 1) {
     stop("Dichotomous data currently not supported. See `?RIitemHierarchy` for workaround.")
   } else {
 
@@ -3809,7 +3809,7 @@ RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, model = "PCM
     sample_n <- nrow(data)
 
     if (model == "PCM") {
-      if(max(as.matrix(data)) == 1) {
+      if(max(as.matrix(data), na.rm = TRUE) == 1) {
         stop("Use `model = 'RM'` for dichotomous data.")
       }
       # get item threshold locations for response data
