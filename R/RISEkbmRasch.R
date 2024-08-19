@@ -4170,7 +4170,8 @@ RIgetfitPlot <- function(simcut) {
     ) +
     facet_wrap(~statistic, ncol = 2) +
     scale_x_continuous(breaks = seq(0.5,1.5,0.1), minor_breaks = NULL) +
-    theme_minimal()
+    theme_minimal() +
+    theme(panel.spacing = unit(0.7, "cm", data = NULL))
 
 }
 
