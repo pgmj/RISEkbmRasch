@@ -4,10 +4,12 @@
 \alias{RIgetfitPlot}
 \title{Creates a plot with distribution of simulation based item fit values}
 \usage{
-RIgetfitPlot(simcut)
+RIgetfitPlot(simcut, data)
 }
 \arguments{
 \item{simcut}{Output object from \code{RIgetfit()}}
+
+\item{data}{Optional response dataframe for plotting observed item fit}
 }
 \description{
 Uses the output from \code{RIgetfit()} as input. Uses \code{median_qi}

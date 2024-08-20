@@ -3934,17 +3934,22 @@ RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, model = "PCM
 #'
 #' Uses `iarm::out_infit()` to calculate conditional mean square fit statistics
 #' for all items. See Müller (2020, DOI: 10.1186/s40488-020-00108-7) for details.
+#' Only uses complete cases.
 #'
 #' Cutoff threshold values from simulation data (using option `simcut`) are
 #' used with the `quantile()` function with .005 and .995 values to filter out
 #' extremes. Actual cutoff values are shown in the output.
 #'
+#' Optional sorting (only) for table output with conditional highlighting, by
+#' either `sort = "infit"` or `sort = "outfit`.
+#'
 #' @param data Dataframe with response data
 #' @param simcut Object output from `RIgetfit()`
-#' @param output Optional sample properties (not functional yet)
-#' @param ... Options sent to `kbl_rise()` for table creation
+#' @param output Optional "dataframe" or "quarto"
+#' @param sort Optional "infit" or "outfit"
+#' @param ... Options passed on to `kbl_rise()` for table creation
 #' @export
-RIitemfit <- function(data, simcut, output = "table", ...) {
+RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
 
   if(min(as.matrix(data), na.rm = T) > 0) {
     stop("The lowest response category needs to coded as 0. Please recode your data.")
@@ -3954,14 +3959,12 @@ RIitemfit <- function(data, simcut, output = "table", ...) {
     erm_out <- PCM(data)
   }
 
-
   # get conditional MSQ
   cfit <- iarm::out_infit(erm_out)
 
   # create dataframe
   item.fit.table <- data.frame(InfitMSQ = cfit$Infit,
-                               OutfitMSQ = cfit$Outfit
-  ) %>%
+                               OutfitMSQ = cfit$Outfit) %>%
     round(3) %>%
     rownames_to_column("Item")
 
@@ -3972,13 +3975,16 @@ RIitemfit <- function(data, simcut, output = "table", ...) {
 
     # summarise simulations and set cutoff values
     lo_hi <- bind_rows(simcut[1:(length(simcut)-3)]) %>%
-      summarise(max_infit_msq = quantile(InfitMSQ, .995),
-                min_infit_msq = quantile(InfitMSQ, .005),
-                max_outfit_msq = quantile(OutfitMSQ, .995),
-                min_outfit_msq = quantile(OutfitMSQ, .005)
+      group_by(Item) %>%
+      summarise(min_infit_msq = quantile(InfitMSQ, .005),
+                max_infit_msq = quantile(InfitMSQ, .995),
+                min_outfit_msq = quantile(OutfitMSQ, .005),
+                max_outfit_msq = quantile(OutfitMSQ, .995)
       )
 
-    # get upper/lower values into a table
+    #lo_hi$Item <- names(data)
+
+    # get upper/lower values into a dataframe
     fit_table <-
       bind_rows(simcut[1:(length(simcut)-3)]) %>%
       group_by(Item) %>%
@@ -3986,33 +3992,79 @@ RIitemfit <- function(data, simcut, output = "table", ...) {
                 outf_thresh = paste0("[",round(quantile(OutfitMSQ, .005),3),", ",round(quantile(OutfitMSQ, .995),3),"]")
       )
 
-    # set conditional highlighting based on cutoffs and output table
-    table <- item.fit.table %>%
+    # add thresholds to dataframe and calculate differences between thresholds and observed values
+    item.fit.table <- item.fit.table %>%
       add_column(`Infit thresholds` = fit_table$inf_thresh, .after = "InfitMSQ") %>%
-      add_column(`Outfit thresholds` = fit_table$outf_thresh, .after = "OutfitMSQ")
+      add_column(`Outfit thresholds` = fit_table$outf_thresh, .after = "OutfitMSQ") %>%
+      mutate(infit_lo = abs(InfitMSQ - lo_hi$min_infit_msq),
+             infit_hi = abs(InfitMSQ - lo_hi$max_infit_msq),
+             `Infit diff` = round(pmin(infit_lo,infit_hi),3),
+             outfit_lo = abs(OutfitMSQ - lo_hi$min_outfit_msq),
+             outfit_hi = abs(OutfitMSQ - lo_hi$max_outfit_msq),
+             `Outfit diff` = round(pmin(outfit_lo,outfit_hi),3)
+      ) %>%
+      dplyr::select(!contains(c("lo","hi")))
 
-    if (output == "table") {
-      table %>%
-        mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < lo_hi$min_infit_msq, "red",
-                                                             ifelse(InfitMSQ > lo_hi$max_infit_msq, "red", "black")
-        ))) %>%
-        mutate(OutfitMSQ = cell_spec(OutfitMSQ, color = ifelse(OutfitMSQ < lo_hi$min_outfit_msq, "red",
-                                                               ifelse(OutfitMSQ > lo_hi$max_outfit_msq, "red", "black")
-        ))) %>%
+    if (output == "table" & sort == "items") {
+      # set conditional highlighting based on cutoffs
+      for (i in 1:nrow(lo_hi)) {
+        item.fit.table[i,"OutfitMSQ"] <- cell_spec(item.fit.table[i,"OutfitMSQ"],
+                                                   color = ifelse(item.fit.table[i,"OutfitMSQ"] < lo_hi[i,"min_outfit_msq"], "red",
+                                                                  ifelse(item.fit.table[i,"OutfitMSQ"] > lo_hi[i,"max_outfit_msq"], "red", "black")))
+        item.fit.table[i,"InfitMSQ"] <- cell_spec(item.fit.table[i,"InfitMSQ"],
+                                                  color = ifelse(item.fit.table[i,"InfitMSQ"] < lo_hi[i,"min_infit_msq"], "red",
+                                                                 ifelse(item.fit.table[i,"InfitMSQ"] > lo_hi[i,"max_infit_msq"], "red", "black")))
+      }
+
+      # output table
+      item.fit.table %>%
         kbl_rise(...) %>%
         footnote(general = paste0("MSQ values based on conditional calculations (n = ", nrow(data),").
                                 Simulation based thresholds based on ", iterations," simulated datasets."))
 
-    } else if(output == "dataframe") {
-      return(janitor::clean_names(table))
+    } else if (output == "table" & sort == "infit") {
+      for (i in 1:nrow(lo_hi)) {
+        item.fit.table[i,"OutfitMSQ"] <- cell_spec(item.fit.table[i,"OutfitMSQ"],
+                                                   color = ifelse(item.fit.table[i,"OutfitMSQ"] < lo_hi[i,"min_outfit_msq"], "red",
+                                                                  ifelse(item.fit.table[i,"OutfitMSQ"] > lo_hi[i,"max_outfit_msq"], "red", "black")))
+        item.fit.table[i,"InfitMSQ"] <- cell_spec(item.fit.table[i,"InfitMSQ"],
+                                                  color = ifelse(item.fit.table[i,"InfitMSQ"] < lo_hi[i,"min_infit_msq"], "red",
+                                                                 ifelse(item.fit.table[i,"InfitMSQ"] > lo_hi[i,"max_infit_msq"], "red", "black")))
+      }
+
+      item.fit.table %>%
+        arrange(desc(`Infit diff`)) %>%
+        kbl_rise(...) %>%
+        footnote(general = paste0("MSQ values based on conditional calculations (n = ", nrow(data),").
+                                Simulation based thresholds based on ", iterations," simulated datasets."))
+
+    } else if (output == "table" & sort == "outfit") {
+      for (i in 1:nrow(lo_hi)) {
+        item.fit.table[i,"OutfitMSQ"] <- cell_spec(item.fit.table[i,"OutfitMSQ"],
+                                                   color = ifelse(item.fit.table[i,"OutfitMSQ"] < lo_hi[i,"min_outfit_msq"], "red",
+                                                                  ifelse(item.fit.table[i,"OutfitMSQ"] > lo_hi[i,"max_outfit_msq"], "red", "black")))
+        item.fit.table[i,"InfitMSQ"] <- cell_spec(item.fit.table[i,"InfitMSQ"],
+                                                  color = ifelse(item.fit.table[i,"InfitMSQ"] < lo_hi[i,"min_infit_msq"], "red",
+                                                                 ifelse(item.fit.table[i,"InfitMSQ"] > lo_hi[i,"max_infit_msq"], "red", "black")))
+      }
+      item.fit.table %>%
+        arrange(desc(`Outfit diff`)) %>%
+        kbl_rise(...) %>%
+        footnote(general = paste0("MSQ values based on conditional calculations and complete cases (n = ", nrow(na.omit(data)),").
+                                Simulation based thresholds based on ", iterations," simulated datasets."))
+
+    }
+
+    else if(output == "dataframe") {
+      return(janitor::clean_names(item.fit.table))
 
     } else if (output == "quarto") {
-      knitr::kable(table)
+      knitr::kable(item.fit.table)
     }
   } else if (missing(simcut)) {
     if (output == "table") {
       kbl_rise(item.fit.table) %>%
-        footnote(general = paste0("MSQ values based on conditional estimation (n = ", nrow(data),")."))
+        footnote(general = paste0("MSQ values based on conditional estimation and complete cases (n = ", nrow(na.omit(data)),")."))
 
     } else if (output == "dataframe") {
       return(janitor::clean_names(item.fit.table))
@@ -4127,6 +4179,8 @@ RIgetfit <- function(data, iterations, cpu = 4) {
         ) %>%
           as.data.frame()
 
+        names(testData) <- names(data)
+
         # get conditional MSQ
         erm_out <- PCM(testData)
         cfit <- iarm::out_infit(erm_out)
@@ -4152,32 +4206,124 @@ RIgetfit <- function(data, iterations, cpu = 4) {
 #' and `.width = c(.66,.99)` with `ggdist::stat_dotsinterval()`.
 #'
 #' @param simcut Output object from `RIgetfit()`
+#' @param data Optional response dataframe for plotting observed item fit
 #' @export
-RIgetfitPlot <- function(simcut) {
+RIgetfitPlot <- function(simcut, data) {
   require(ggdist)
 
   iterations <- length(simcut) - 3
 
-  bind_rows(simcut[1:(length(simcut)-3)]) %>%
-    pivot_longer(contains("MSQ"),
-                 names_to = "statistic",
-                 values_to = "Value") %>%
+  if (missing(data)) {
+    bind_rows(simcut[1:(length(simcut)-3)]) %>%
+      pivot_longer(contains("MSQ"),
+                   names_to = "statistic",
+                   values_to = "Value") %>%
 
-    ggplot(aes(x = Value, y = Item, slab_fill = after_stat(level))) +
-    stat_dotsinterval(quantiles = iterations, point_interval = median_qi,
-                      layout = "weave", slab_color = NA,
-                      .width = c(0.66, 0.99)) +
-    labs(x = "Conditional MSQ",
-         y = "Item") +
-    scale_color_manual(values = scales::brewer_pal()(3)[-1], aesthetics = "slab_fill", guide = "none") +
-    labs(caption = str_wrap(paste0("Note: Results from ",iterations," simulated datasets with ",
-                                   simcut$sample_n," respondents (mean theta = ", round(simcut$sample_mean,2),", SD = ",round(simcut$sample_sd,2),")."))
-    ) +
-    facet_wrap(~statistic, ncol = 2) +
-    scale_x_continuous(breaks = seq(0.5,1.5,0.1), minor_breaks = NULL) +
-    theme_minimal() +
-    theme(panel.spacing = unit(0.7, "cm", data = NULL))
+      ggplot(aes(x = Value, y = factor(Item, levels = rev(simcut[[1]][["Item"]])), slab_fill = after_stat(level))) +
+      stat_dotsinterval(quantiles = iterations, point_interval = median_qi,
+                        layout = "weave", slab_color = NA,
+                        .width = c(0.66, 0.99)) +
+      labs(x = "Conditional MSQ",
+           y = "Item") +
+      scale_color_manual(values = scales::brewer_pal()(3)[-1], aesthetics = "slab_fill", guide = "none") +
+      labs(caption = str_wrap(paste0("Note: Results from ",iterations," simulated datasets with ",
+                                     simcut$sample_n," respondents\n(mean theta = ", round(simcut$sample_mean,2),", SD = ",round(simcut$sample_sd,2),")."))
+      ) +
+      facet_wrap(~statistic, ncol = 2) +
+      scale_x_continuous(breaks = seq(0.5,1.5,0.1), minor_breaks = NULL) +
+      theme_minimal() +
+      theme(panel.spacing = unit(0.7, "cm", data = NULL))
+  }
+  else if (!missing(data)) {
+    if(min(as.matrix(data), na.rm = T) > 0) {
+      stop("The lowest response category needs to coded as 0. Please recode your data.")
+    } else if(max(as.matrix(data), na.rm = T) == 1 && min(as.matrix(data), na.rm = T) == 0) {
+      erm_out <- RM(data)
+    } else if(max(as.matrix(data), na.rm = T) > 1 && min(as.matrix(data), na.rm = T) == 0) {
+      erm_out <- PCM(data)
+    }
 
+    # get conditional MSQ
+    cfit <- iarm::out_infit(erm_out)
+    #bfit <- iarm::boot_fit(erm_out, B = 100)
+
+    # create dataframe with observed MSQ
+    item.fit.table <- data.frame(InfitMSQ = cfit$Infit,
+                                 OutfitMSQ = cfit$Outfit,
+                                 InfitSE = cfit$Infit.se,
+                                 OutfitSE = cfit$Outfit.se) %>%
+      rownames_to_column("Item") %>%
+      mutate(infit_ci_hi = InfitMSQ + (InfitSE * 1.96),
+             infit_ci_lo = InfitMSQ - (InfitSE * 1.96),
+             outfit_ci_hi = OutfitMSQ + (OutfitSE * 1.96),
+             outfit_ci_lo = OutfitMSQ - (OutfitSE * 1.96)) %>%
+      dplyr::select(!contains("SE"))
+
+    observed <- item.fit.table %>%
+      pivot_longer(contains("MSQ"),
+                   names_to = "statistic",
+                   values_to = "observed")
+
+    # join simulated and observed MSQ
+    infit <- bind_rows(simcut[1:(length(simcut)-3)]) %>%
+      pivot_longer(contains("MSQ"),
+                   names_to = "statistic",
+                   values_to = "Value") %>%
+      left_join(observed, by = c("Item","statistic")) %>%
+      filter(statistic == "InfitMSQ") %>%
+      # and plot
+      ggplot(aes(x = Value, y = factor(Item, levels = rev(simcut[[1]][["Item"]])))) +
+      stat_dotsinterval(aes(slab_fill = after_stat(level)),
+                        quantiles = iterations, point_interval = median_qi,
+                        layout = "weave", slab_color = NA,
+                        .width = c(0.66, 0.99)) +
+      geom_point(aes(x = observed),
+                 color = "sienna2", shape = 18,
+                 position = position_nudge(y = -0.1), size = 4) +
+      # geom_segment(aes(x = infit_ci_lo, xend = infit_ci_hi),
+      #              color = "sienna2",
+      #              position = position_nudge(y = -0.1), linewidth = 0.2) +
+      labs(x = "Conditional Infit MSQ",
+           y = "Item") +
+      scale_color_manual(values = scales::brewer_pal()(3)[-1], aesthetics = "slab_fill", guide = "none") +
+      # labs(caption = str_wrap(paste0("Note: Results from ",iterations," simulated datasets with ",
+      #                                simcut$sample_n," respondents\n(mean theta = ", round(simcut$sample_mean,2),", SD = ",round(simcut$sample_sd,2),")."))
+      # ) +
+      scale_x_continuous(breaks = seq(0.5,1.5,0.1), minor_breaks = NULL) +
+      theme_minimal() +
+      theme(panel.spacing = unit(0.7, "cm", data = NULL))
+
+    outfit <-
+      bind_rows(simcut[1:(length(simcut)-3)]) %>%
+      pivot_longer(contains("MSQ"),
+                   names_to = "statistic",
+                   values_to = "Value") %>%
+      left_join(observed, by = c("Item","statistic")) %>%
+      filter(statistic == "OutfitMSQ") %>%
+      # and plot
+      ggplot(aes(x = Value, y = factor(Item, levels = rev(simcut[[1]][["Item"]])))) +
+      stat_dotsinterval(aes(slab_fill = after_stat(level)),
+                        quantiles = iterations, point_interval = median_qi,
+                        layout = "weave", slab_color = NA,
+                        .width = c(0.66, 0.99)) +
+      geom_point(aes(x = observed),
+                 color = "sienna2", shape = 18,
+                 position = position_nudge(y = -0.1), size = 4) +
+      # geom_segment(aes(x = outfit_ci_lo, xend = outfit_ci_hi),
+      #              color = "sienna2",
+      #              position = position_nudge(y = -0.1), linewidth = 0.2) +
+      labs(x = "Conditional Outfit MSQ",
+           y = "Item") +
+      scale_color_manual(values = scales::brewer_pal()(3)[-1], aesthetics = "slab_fill", guide = "none") +
+      labs(caption = str_wrap(paste0("Note: Results from ",iterations," simulated datasets with ",
+                                     simcut$sample_n," respondents\n(mean theta = ", round(simcut$sample_mean,2),", SD = ",round(simcut$sample_sd,2),").")) # Orange dots and lines are observed MSQ and 95% CI.
+      ) +
+      scale_x_continuous(breaks = seq(0.5,1.5,0.1), minor_breaks = NULL) +
+      theme_minimal() +
+      theme(panel.spacing = unit(0.7, "cm", data = NULL))
+
+    infit + outfit
+  }
 }
 
 #' Temporary fix for upstream bug in `iarm::person_estimates()`

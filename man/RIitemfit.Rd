@@ -4,16 +4,18 @@
 \alias{RIitemfit}
 \title{Calculate conditional outfit & infit MSQ statistics}
 \usage{
-RIitemfit(data, simcut, output = "table", ...)
+RIitemfit(data, simcut, output = "table", sort = "items", ...)
 }
 \arguments{
 \item{data}{Dataframe with response data}
 
 \item{simcut}{Object output from \code{RIgetfit()}}
 
-\item{output}{Optional sample properties (not functional yet)}
+\item{output}{Optional "dataframe" or "quarto"}
 
-\item{...}{Options sent to \code{kbl_rise()} for table creation}
+\item{sort}{Optional "infit" or "outfit"}
+
+\item{...}{Options passed on to \code{kbl_rise()} for table creation}
 }
 \description{
 Automatically uses RM (dichotomous data) or PCM (polytomous data) depending
@@ -22,8 +24,12 @@ on data structure.
 \details{
 Uses \code{iarm::out_infit()} to calculate conditional mean square fit statistics
 for all items. See Müller (2020, DOI: 10.1186/s40488-020-00108-7) for details.
+Only uses complete cases.
 
 Cutoff threshold values from simulation data (using option \code{simcut}) are
 used with the \code{quantile()} function with .005 and .995 values to filter out
 extremes. Actual cutoff values are shown in the output.
+
+Optional sorting (only) for table output with conditional highlighting, by
+either \code{sort = "infit"} or \verb{sort = "outfit}.
 }

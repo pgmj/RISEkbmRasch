@@ -1,5 +1,13 @@
 ## Changelog
 
+### 0.2.3
+
+- `RIgetfit()` now retains the variable/item names from the data.
+- `RIitemfit()` now uses conditional highlighting with individual cutoff values for each item.
+- `RIitemfit()` outputs two new variables indicating the differences between observed infit/outfit and cutoff threshold values.
+- `RIitemfit()` optionally sorts the table output based on misfit per item, using either "infit" or "outfit".
+- `RIgetfitPlot()`optionally shows observed item fit in the plot. Ideally, 95% CI would be shown, but the SE output from iarm::out_infit is not reliable according to the author (Müller, 2020), and iarm::boot_fit() does not output SE, only p-values.
+
 ### 0.2.2.1
 
 - Changed simulation based cutoff thresholds used by `RIitemfit()` to be `quantile(fitmetric, .995)` and .005 instead of .99 and .01 in previous version, to be consistent with `RIgetResidCor()` which uses the one-sided `quantile(fitmetric, .99)`.
