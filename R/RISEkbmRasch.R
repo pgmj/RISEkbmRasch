@@ -4316,7 +4316,8 @@ RIgetfitPlot <- function(simcut, data) {
            y = "Item") +
       scale_color_manual(values = scales::brewer_pal()(3)[-1], aesthetics = "slab_fill", guide = "none") +
       labs(caption = str_wrap(paste0("Note: Results from ",iterations," simulated datasets with ",
-                                     simcut$sample_n," respondents\n(mean theta = ", round(simcut$sample_mean,2),", SD = ",round(simcut$sample_sd,2),").")) # Orange dots and lines are observed MSQ and 95% CI.
+                                     simcut$sample_n," respondents\n(mean theta = ", round(simcut$sample_mean,2),", SD = ",round(simcut$sample_sd,2),").
+                                     Orange diamond shaped dots indicate observed conditional item fit.")) # Orange dots and lines are observed MSQ and 95% CI.
       ) +
       scale_x_continuous(breaks = seq(0.5,1.5,0.1), minor_breaks = NULL) +
       theme_minimal() +
