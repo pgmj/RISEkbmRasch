@@ -7,6 +7,7 @@
 RIdifTableLR(
   dfin,
   dif.var,
+  model = "PCM",
   sort = FALSE,
   fontfamily = "sans-serif",
   cutoff = 0.5
@@ -16,6 +17,8 @@ RIdifTableLR(
 \item{dfin}{Dataframe with item data only}
 
 \item{dif.var}{DIF variable}
+
+\item{model}{Defaults to "PCM", optional "RM" under development}
 
 \item{sort}{Set to TRUE to sort the table based on DIF size}
 

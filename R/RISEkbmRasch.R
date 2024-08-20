@@ -3201,153 +3201,161 @@ RIestThetasOLD2 <- function(dfin, itemParams, model = "PCM", method = "WL", cpu 
 #'
 #' @param dfin Dataframe with item data only
 #' @param dif.var DIF variable
+#' @param model Defaults to "PCM", optional "RM" under development
 #' @param sort Set to TRUE to sort the table based on DIF size
 #' @param cutoff Cutoff in item location logit difference for table highlighting
 #' @param fontfamily Set table font
 #' @export
-RIdifTableLR <- function(dfin, dif.var, sort = FALSE,
+RIdifTableLR <- function(dfin, dif.var, model = "PCM", sort = FALSE,
                          fontfamily = "sans-serif", cutoff = 0.5) {
-  erm.out <- PCM(dfin)
-  lrt.out <- LRtest(erm.out, splitcr = droplevels(dif.var))
-  groups <- levels(droplevels(dif.var)) # remove unused factor levels
-  nr.groups <- length(groups) # get number of subgroups
+  if (model == "PCM") {
+    erm.out <- PCM(dfin)
+    lrt.out <- LRtest(erm.out, splitcr = droplevels(dif.var))
+    groups <- levels(droplevels(dif.var)) # remove unused factor levels
+    nr.groups <- length(groups) # get number of subgroups
 
-  # get item location for each subgroupx
-  itemthresh <- thresholds(lrt.out[["fitobj"]][["1"]]) %>%
-    .[["threshpar"]] %>%
-    as.data.frame() %>%
-    rownames()
-
-  lrt.locs <- data.frame(matrix(ncol = 1, nrow = length(lrt.out[["betalist"]][[1]])))
-  for (i in 1:nr.groups){
-    lrt.locs[[i]] <- thresholds(lrt.out[["fitobj"]][[i]]) %>%
+    # get item location for each subgroupx
+    itemthresh <- thresholds(lrt.out[["fitobj"]][["1"]]) %>%
       .[["threshpar"]] %>%
-      as.data.frame(nm = groups[i]) %>%
-      pull(groups[i])
-  }
-  lrt.locs <- setNames(lrt.locs, groups)
-  lrt.locs$Item <- itemthresh
+      as.data.frame() %>%
+      rownames()
 
-  # get thresholds from non-DIF-split model
-  erm.par <- eRm::thresholds(erm.out)
-  lrt.locs$All <- erm.par[["threshpar"]] %>%
-    as.data.frame(nm = "Location") %>%
-    pull(Location)
+    lrt.locs <- data.frame(matrix(ncol = 1, nrow = length(lrt.out[["betalist"]][[1]])))
+    for (i in 1:nr.groups){
+      lrt.locs[[i]] <- thresholds(lrt.out[["fitobj"]][[i]]) %>%
+        .[["threshpar"]] %>%
+        as.data.frame(nm = groups[i]) %>%
+        pull(groups[i])
+    }
+    lrt.locs <- setNames(lrt.locs, groups)
+    lrt.locs$Item <- itemthresh
 
-  # bind in one df
-  lrt.diff <- lrt.locs %>%
-    mutate_if(is.numeric, ~ round(.x, 3)) %>%
-    tidyr::separate(Item, c(NA,"Item"), sep = "beta ") %>%
-    tidyr::separate(Item, c("Item","Threshold"), sep = "\\.") %>%
-    mutate(Item = factor(Item, levels = names(dfin)))
-
-  # add standard errors for all subgroups + whole group
-  lrt.se <- data.frame(matrix(ncol = 1, nrow = length(lrt.out$selist[[1]])))
-  for (i in 1:nr.groups){
-    lrt.se[[i]] <- thresholds(lrt.out[["fitobj"]][[i]]) %>%
-      .[["se.thresh"]] %>%
+    # get thresholds from non-DIF-split model
+    erm.par <- eRm::thresholds(erm.out)
+    lrt.locs$All <- erm.par[["threshpar"]] %>%
       as.data.frame(nm = "Location") %>%
       pull(Location)
-  }
-  lrt.se$All <- erm.par$se.thresh %>%
-    as.data.frame(nm = "sem") %>%
-    pull(sem)
-  lrt.se <- setNames(lrt.se, c(groups,"All"))
-  lrt.se$Item <- lrt.diff$Item
-  lrt.se$Threshold <- lrt.diff$Threshold
 
-  # make version with average item location
-  lrt.avg <- lrt.diff %>%
-    pivot_wider(names_from = "Item",
-                values_from = all_of(c(groups,"All")),
-                names_sep = ".") %>%
-    t() %>%
-    as.data.frame()
-  lrt.avg <- lrt.avg[-1,]
+    # bind in one df
+    lrt.diff <- lrt.locs %>%
+      mutate_if(is.numeric, ~ round(.x, 3)) %>%
+      tidyr::separate(Item, c(NA,"Item"), sep = "beta ") %>%
+      tidyr::separate(Item, c("Item","Threshold"), sep = "\\.") %>%
+      mutate(Item = factor(Item, levels = names(dfin)))
 
-  lrt.avg <- lrt.avg %>%
-    mutate(across(everything(), ~ as.numeric(.x))) %>%
-    mutate(Location = rowMeans(., na.rm = T)) %>%
-    mutate_if(is.double, round, digits = 3) %>%
-    rownames_to_column("groupitem") %>%
-    tidyr::separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
+    # add standard errors for all subgroups + whole group
+    lrt.se <- data.frame(matrix(ncol = 1, nrow = length(lrt.out$selist[[1]])))
+    for (i in 1:nr.groups){
+      lrt.se[[i]] <- thresholds(lrt.out[["fitobj"]][[i]]) %>%
+        .[["se.thresh"]] %>%
+        as.data.frame(nm = "Location") %>%
+        pull(Location)
+    }
+    lrt.se$All <- erm.par$se.thresh %>%
+      as.data.frame(nm = "sem") %>%
+      pull(sem)
+    lrt.se <- setNames(lrt.se, c(groups,"All"))
+    lrt.se$Item <- lrt.diff$Item
+    lrt.se$Threshold <- lrt.diff$Threshold
 
-  ### add SE
-  # pivot_wider for easier calculation
-  lrt.avg.se <- lrt.se %>%
-    pivot_wider(names_from = "Item",
-                values_from = all_of(c(groups,"All")),
-                names_sep = ".") %>%
-    t() %>%
-    as.data.frame()
-  lrt.avg.se <- lrt.avg.se[-1,] # remove first row
+    # make version with average item location
+    lrt.avg <- lrt.diff %>%
+      pivot_wider(names_from = "Item",
+                  values_from = all_of(c(groups,"All")),
+                  names_sep = ".") %>%
+      t() %>%
+      as.data.frame()
+    lrt.avg <- lrt.avg[-1,]
 
-  lrt.avg.se <- lrt.avg.se %>%
-    mutate(across(everything(), ~ as.numeric(.x))) %>%
-    mutate(SE = rowMeans(., na.rm = T)) %>%
-    mutate_if(is.double, round, digits = 3) %>%
-    rownames_to_column("groupitem") %>%
-    tidyr::separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
+    lrt.avg <- lrt.avg %>%
+      mutate(across(everything(), ~ as.numeric(.x))) %>%
+      mutate(Location = rowMeans(., na.rm = T)) %>%
+      mutate_if(is.double, round, digits = 3) %>%
+      rownames_to_column("groupitem") %>%
+      tidyr::separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
-  lrt.avg$SE <- lrt.avg.se$SE
+    ### add SE
+    # pivot_wider for easier calculation
+    lrt.avg.se <- lrt.se %>%
+      pivot_wider(names_from = "Item",
+                  values_from = all_of(c(groups,"All")),
+                  names_sep = ".") %>%
+      t() %>%
+      as.data.frame()
+    lrt.avg.se <- lrt.avg.se[-1,] # remove first row
 
-  # prepare table output
-  lrt.table <- lrt.avg %>%
-    dplyr::select(!starts_with("V")) %>%
-    pivot_wider(
-      names_from = "DIFgroup",
-      values_from = c("Location", "SE")
-    ) %>%
-    dplyr::rename_with(.fn = ~ gsub("Location_","", .x),
-                       .cols = contains("Location")) %>%
-    rowwise() %>%
-    mutate(MaxDiff = max(c_across(c(2:(nr.groups+1)))) - min(c_across(c(2:(nr.groups+1)))),
-           .before = "All") %>%
-    ungroup() %>%
-    mutate_if(is.double, round, digits = 3) %>%
-    mutate(MaxDiff = cell_spec(MaxDiff,
-                               color = case_when(
-                                 MaxDiff > cutoff ~ "red",
-                                 MaxDiff < -cutoff ~ "red",
-                                 TRUE ~ "black"
-                               )
-    )) %>%
-    rowwise() %>%
-    mutate(across(all_of(groups), ~ cell_spec(.x,
-                                              background = case_when(
-                                                .x == max(c_across(c(2:(nr.groups+1)))) ~ "lightblue",
-                                                .x == min(c_across(c(2:(nr.groups+1)))) ~ "burlywood",
-                                                TRUE ~ ""
-                                              ))))
+    lrt.avg.se <- lrt.avg.se %>%
+      mutate(across(everything(), ~ as.numeric(.x))) %>%
+      mutate(SE = rowMeans(., na.rm = T)) %>%
+      mutate_if(is.double, round, digits = 3) %>%
+      rownames_to_column("groupitem") %>%
+      tidyr::separate(groupitem, c("DIFgroup","Item"), sep = "\\.")
 
-  if (sort == TRUE) {
-    lrt.table %>%
-      arrange(desc(MaxDiff)) %>%
-      kbl_rise() %>%
-      column_spec(length(groups)+2,
-                  bold = T) %>%
-      column_spec(c(length(groups)+3,ncol(lrt.table)),
-                  italic = T) %>%
-      add_header_above(c(" " = 1, "Item locations" = nr.groups+2, "Standard errors" = nr.groups+1),
-                       bold = T,
-                       line_sep = 5) %>%
-      footnote(general = paste0("Values highlighted in red are above the chosen cutoff ",
-                                cutoff,
-                                " logits. Background color brown and blue indicate the lowest and highest values among the DIF groups."))
-  } else {
+    lrt.avg$SE <- lrt.avg.se$SE
 
-    lrt.table %>%
-      kbl_rise() %>%
-      column_spec(length(groups)+2,
-                  bold = T) %>%
-      column_spec(c(length(groups)+3,ncol(lrt.table)),
-                  italic = T) %>%
-      add_header_above(c(" " = 1, "Item locations" = nr.groups+2, "Standard errors" = nr.groups+1),
-                       bold = T,
-                       line_sep = 5) %>%
-      footnote(general = paste0("Values highlighted in red are above the chosen cutoff ",
-                                cutoff,
-                                " logits. Background color brown and blue indicate the lowest and highest values among the DIF groups."))
+    # prepare table output
+    lrt.table <- lrt.avg %>%
+      dplyr::select(!starts_with("V")) %>%
+      pivot_wider(
+        names_from = "DIFgroup",
+        values_from = c("Location", "SE")
+      ) %>%
+      dplyr::rename_with(.fn = ~ gsub("Location_","", .x),
+                         .cols = contains("Location")) %>%
+      rowwise() %>%
+      mutate(MaxDiff = max(c_across(c(2:(nr.groups+1)))) - min(c_across(c(2:(nr.groups+1)))),
+             .before = "All") %>%
+      ungroup() %>%
+      mutate_if(is.double, round, digits = 3) %>%
+      mutate(MaxDiff = cell_spec(MaxDiff,
+                                 color = case_when(
+                                   MaxDiff > cutoff ~ "red",
+                                   MaxDiff < -cutoff ~ "red",
+                                   TRUE ~ "black"
+                                 )
+      )) %>%
+      rowwise() %>%
+      mutate(across(all_of(groups), ~ cell_spec(.x,
+                                                background = case_when(
+                                                  .x == max(c_across(c(2:(nr.groups+1)))) ~ "lightblue",
+                                                  .x == min(c_across(c(2:(nr.groups+1)))) ~ "burlywood",
+                                                  TRUE ~ ""
+                                                ))))
+
+    if (sort == TRUE) {
+      lrt.table %>%
+        arrange(desc(MaxDiff)) %>%
+        kbl_rise() %>%
+        column_spec(length(groups)+2,
+                    bold = T) %>%
+        column_spec(c(length(groups)+3,ncol(lrt.table)),
+                    italic = T) %>%
+        add_header_above(c(" " = 1, "Item locations" = nr.groups+2, "Standard errors" = nr.groups+1),
+                         bold = T,
+                         line_sep = 5) %>%
+        footnote(general = paste0("Values highlighted in red are above the chosen cutoff ",
+                                  cutoff,
+                                  " logits. Background color brown and blue indicate the lowest and highest values among the DIF groups."))
+    } else {
+
+      lrt.table %>%
+        kbl_rise() %>%
+        column_spec(length(groups)+2,
+                    bold = T) %>%
+        column_spec(c(length(groups)+3,ncol(lrt.table)),
+                    italic = T) %>%
+        add_header_above(c(" " = 1, "Item locations" = nr.groups+2, "Standard errors" = nr.groups+1),
+                         bold = T,
+                         line_sep = 5) %>%
+        footnote(general = paste0("Values highlighted in red are above the chosen cutoff ",
+                                  cutoff,
+                                  " logits. Background color brown and blue indicate the lowest and highest values among the DIF groups."))
+    }
+  } else if (model == "RM") {
+    erm.out <- RM(dfin)
+    lrt.out <- LRtest(erm.out, splitcr = droplevels(dif.var))
+    groups <- levels(droplevels(dif.var)) # remove unused factor levels
+    nr.groups <- length(groups) # get number of subgroups
   }
 
 }
@@ -3954,9 +3962,9 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
   if(min(as.matrix(data), na.rm = T) > 0) {
     stop("The lowest response category needs to coded as 0. Please recode your data.")
   } else if(max(as.matrix(data), na.rm = T) == 1 && min(as.matrix(data), na.rm = T) == 0) {
-    erm_out <- RM(data)
+    erm_out <- eRm::RM(data)
   } else if(max(as.matrix(data), na.rm = T) > 1 && min(as.matrix(data), na.rm = T) == 0) {
-    erm_out <- PCM(data)
+    erm_out <- eRm::PCM(data)
   }
 
   # get conditional MSQ
@@ -3982,7 +3990,7 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
                 max_outfit_msq = quantile(OutfitMSQ, .995)
       )
 
-    #lo_hi$Item <- names(data)
+    lo_hi$Item <- names(data)
 
     # get upper/lower values into a dataframe
     fit_table <-
@@ -3993,17 +4001,21 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
       )
 
     # add thresholds to dataframe and calculate differences between thresholds and observed values
-    item.fit.table <- item.fit.table %>%
+    item.fit.table <-
+      item.fit.table %>%
       add_column(`Infit thresholds` = fit_table$inf_thresh, .after = "InfitMSQ") %>%
       add_column(`Outfit thresholds` = fit_table$outf_thresh, .after = "OutfitMSQ") %>%
-      mutate(infit_lo = abs(InfitMSQ - lo_hi$min_infit_msq),
-             infit_hi = abs(InfitMSQ - lo_hi$max_infit_msq),
+      left_join(lo_hi, by = "Item") %>%
+      mutate(infit_lo = abs(InfitMSQ - min_infit_msq),
+             infit_hi = abs(InfitMSQ - max_infit_msq),
              `Infit diff` = round(pmin(infit_lo,infit_hi),3),
-             outfit_lo = abs(OutfitMSQ - lo_hi$min_outfit_msq),
-             outfit_hi = abs(OutfitMSQ - lo_hi$max_outfit_msq),
+             outfit_lo = abs(OutfitMSQ - min_outfit_msq),
+             outfit_hi = abs(OutfitMSQ - max_outfit_msq),
              `Outfit diff` = round(pmin(outfit_lo,outfit_hi),3)
       ) %>%
-      dplyr::select(!contains(c("lo","hi")))
+      mutate(`Infit diff` = ifelse(yes = "no misfit", no = `Infit diff`, InfitMSQ > min_infit_msq & InfitMSQ < max_infit_msq),
+             `Outfit diff` = ifelse(yes = "no misfit", no = `Outfit diff`, OutfitMSQ > min_outfit_msq & OutfitMSQ < max_outfit_msq)) %>%
+      dplyr::select(!contains(c("lo","hi","min","max")))
 
     if (output == "table" & sort == "items") {
       # set conditional highlighting based on cutoffs
@@ -4134,8 +4146,8 @@ RIgetfit <- function(data, iterations, cpu = 4) {
           as.data.frame()
 
         # get conditional MSQ
-        erm_out <- RM(testData)
-        cfit <- iarm::out_infit(erm_out)
+        rm_out <- psychotools::RaschModel.fit(testData)
+        cfit <- iarm::out_infit(rm_out)
 
         # create dataframe
         item.fit.table <- data.frame(InfitMSQ = cfit$Infit,
@@ -4182,8 +4194,8 @@ RIgetfit <- function(data, iterations, cpu = 4) {
         names(testData) <- names(data)
 
         # get conditional MSQ
-        erm_out <- PCM(testData)
-        cfit <- iarm::out_infit(erm_out)
+        pcm_out <- psychotools::PCModel.fit(testData)
+        cfit <- iarm::out_infit(pcm_out)
 
         # create dataframe
         item.fit.table <- data.frame(InfitMSQ = cfit$Infit,
