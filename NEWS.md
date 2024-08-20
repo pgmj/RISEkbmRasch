@@ -3,7 +3,7 @@
 ### 0.2.3.1
 
 - `RIitemfit()` should finally calculate misfit correctly so that the sorting works
-- Changed `RIgetfit()` model estimation function to use `psychotools::PCModel.fit()` and `psychotools::RaschModel.fit` to speed up simulations. Like `eRm` functions, these also use Conditional Maximum Likelihood, and produce identical results with `iarm::out_infit()`.
+- Changed `RIgetfit()` model estimation function to use `psychotools::PCModel.fit()` to speed up simulations slightly for polytomous models. Like the `eRm::PCM()` function, this also uses Conditional Maximum Likelihood, and produces identical results with `iarm::out_infit()`.
 
 ### 0.2.3
 

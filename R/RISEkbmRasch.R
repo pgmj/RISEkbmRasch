@@ -4146,7 +4146,7 @@ RIgetfit <- function(data, iterations, cpu = 4) {
           as.data.frame()
 
         # get conditional MSQ
-        rm_out <- psychotools::RaschModel.fit(testData)
+        rm_out <- eRm::RM(testData)
         cfit <- iarm::out_infit(rm_out)
 
         # create dataframe
