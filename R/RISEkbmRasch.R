@@ -3846,10 +3846,19 @@ RIgetResidCor <- function (data, iterations, cpu = 4) {
       janitor::clean_names() %>%
       as.matrix()
 
+    n_items <- nrow(item_locations)
+
     # item threshold locations in list format for simulation function
     itemlist <- list()
-    for (i in 1:nrow(item_locations)) {
-      itemlist[i] <- list(na.omit(item_locations[i,]))
+    for (i in 1:n_items) {
+      itemlist[[i]] <- list(na.omit(item_locations[i, ]))
+    }
+
+    # get number of response categories for each item for later use in checking complete responses
+    itemlength <- list()
+    for (i in 1:n_items) {
+      itemlength[i] <- length(na.omit(item_locations[i, ]))
+      names(itemlength)[i] <- names(data)[i]
     }
 
     # estimate theta values in response data
@@ -3874,24 +3883,17 @@ RIgetResidCor <- function (data, iterations, cpu = 4) {
         # check that simulated dataset has responses in all categories
         data_check <- testData %>%
           # make factor to not drop any consequtive response categories with 0 responses
-          mutate(across(everything(), ~ factor(.x, levels = c(0:itemlength[[as.character(expression(.x))]])
-          )
-          )
-          ) %>%
+          mutate(across(everything(), ~ factor(.x, levels = c(0:itemlength[[as.character(expression(.x))]])))) %>%
           pivot_longer(everything()) %>% # screws up factor levels, which makes the next step necessary
-          dplyr::count(name,value, .drop = FALSE) %>%
-          pivot_wider(names_from = "name",
-                      values_from = "n") %>%
+          dplyr::count(name, value, .drop = FALSE) %>%
+          pivot_wider(
+            names_from = "name",
+            values_from = "n"
+          ) %>%
           dplyr::select(!value) %>%
           # mark missing cells with NA for later logical examination
-          mutate(across(everything(), ~ car::recode(.x,"0=NA", as.factor = FALSE))) %>%
+          mutate(across(everything(), ~ car::recode(.x, "0=NA", as.factor = FALSE))) %>%
           as.data.frame()
-
-        # match response data generated with itemlength
-        item_ccount <- list()
-        for (i in 1:n_items) {
-          item_ccount[i] <- list(data_check[c(1:itemlength[[i]]),i])
-        }
 
         # match response data generated with itemlength
         item_ccount <- list()
