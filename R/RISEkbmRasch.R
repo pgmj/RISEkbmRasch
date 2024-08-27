@@ -2120,7 +2120,7 @@ RIitemparams <- function(dfin, fontsize = 15, output = "table",
                  names_to = "threshold",
                  values_to = "t_location") %>%
     group_by(itemnr) %>%
-    filter(t_location == max(t_location, na.rm = TRUE)) %>%
+    dplyr::filter(t_location == max(t_location, na.rm = TRUE)) %>%
     ungroup() %>%
     dplyr::select(itemnr, t_location) %>%
     dplyr::rename(highest_tloc = t_location)
@@ -4189,7 +4189,6 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
 #' @param cpu Number of CPU cores to use
 #' @export
 RIgetfit <- function(data, iterations, cpu = 4) {
-
   sample_n <- nrow(data)
 
   require(doParallel)
@@ -4199,11 +4198,9 @@ RIgetfit <- function(data, iterations, cpu = 4) {
     stop("Please set a number of iterations (at least 1000 is recommended).")
   }
 
-  if(min(as.matrix(data), na.rm = T) > 0) {
+  if (min(as.matrix(data), na.rm = T) > 0) {
     stop("The lowest response category needs to coded as 0. Please recode your data.")
-
-  } else if(max(as.matrix(data), na.rm = T) == 1 && min(as.matrix(data), na.rm = T) == 0) {
-
+  } else if (max(as.matrix(data), na.rm = T) == 1 && min(as.matrix(data), na.rm = T) == 0) {
     # estimate item threshold locations from data
     erm_out <- eRm::RM(data)
     item_locations <- erm_out$betapar * -1
@@ -4213,29 +4210,28 @@ RIgetfit <- function(data, iterations, cpu = 4) {
     thetas <- RIestThetas(data, model = "RM")
 
     fitstats <- list()
-    fitstats <- foreach(icount(iterations)) %dopar%
-      {
-        # resampled vector of theta values (based on sample properties)
-        inputThetas <- sample(thetas$WLE, size = sample_n, replace = TRUE)
+    fitstats <- foreach(icount(iterations)) %dopar% {
+      # resampled vector of theta values (based on sample properties)
+      inputThetas <- sample(thetas$WLE, size = sample_n, replace = TRUE)
 
-        # simulate response data based on thetas and items above
-        testData <-
-          psychotools::rrm(inputThetas, item_locations, return_setting = FALSE) %>%
-          as.data.frame()
+      # simulate response data based on thetas and items above
+      testData <-
+        psychotools::rrm(inputThetas, item_locations, return_setting = FALSE) %>%
+        as.data.frame()
 
-        # get conditional MSQ
-        rm_out <- eRm::RM(testData)
-        cfit <- iarm::out_infit(rm_out)
+      # get conditional MSQ
+      rm_out <- eRm::RM(testData)
+      cfit <- iarm::out_infit(rm_out)
 
-        # create dataframe
-        item.fit.table <- data.frame(InfitMSQ = cfit$Infit,
-                                     OutfitMSQ = cfit$Outfit) %>%
-          round(3) %>%
-          rownames_to_column("Item")
-      }
-
-  } else if(max(as.matrix(data), na.rm = T) > 1 && min(as.matrix(data), na.rm = T) == 0) {
-
+      # create dataframe
+      item.fit.table <- data.frame(
+        InfitMSQ = cfit$Infit,
+        OutfitMSQ = cfit$Outfit
+      ) %>%
+        round(3) %>%
+        rownames_to_column("Item")
+    }
+  } else if (max(as.matrix(data), na.rm = T) > 1 && min(as.matrix(data), na.rm = T) == 0) {
     # estimate item threshold locations from data
     item_locations <- RIitemparams(data, output = "dataframe") %>%
       dplyr::select(!Location) %>%
@@ -4247,13 +4243,13 @@ RIgetfit <- function(data, iterations, cpu = 4) {
     # item threshold locations in list format for simulation function
     itemlist <- list()
     for (i in 1:n_items) {
-      itemlist[[i]] <- list(na.omit(item_locations[i,]))
+      itemlist[[i]] <- list(na.omit(item_locations[i, ]))
     }
 
     # get number of response categories for each item for later use in checking complete responses
     itemlength <- list()
     for (i in 1:n_items) {
-      itemlength[i] <- length(na.omit(item_locations[i,]))
+      itemlength[i] <- length(na.omit(item_locations[i, ]))
       names(itemlength)[i] <- names(data)[i]
     }
 
@@ -4261,57 +4257,57 @@ RIgetfit <- function(data, iterations, cpu = 4) {
     thetas <- RIestThetas(data)
 
     fitstats <- list()
-    fitstats <- foreach(icount(iterations)) %dopar%
-      {
-        # resampled vector of theta values (based on sample properties)
-        inputThetas <- sample(thetas$WLE, size = sample_n, replace = TRUE)
+    fitstats <- foreach(icount(iterations)) %dopar% {
+      # resampled vector of theta values (based on sample properties)
+      inputThetas <- sample(thetas$WLE, size = sample_n, replace = TRUE)
 
-        # simulate response data based on thetas and items above
-        testData <- SimPartialScore(
-          deltaslist = itemlist,
-          thetavec = inputThetas
+      # simulate response data based on thetas and items above
+      testData <- SimPartialScore(
+        deltaslist = itemlist,
+        thetavec = inputThetas
+      ) %>%
+        as.data.frame()
+
+      names(testData) <- names(data)
+
+      # check that data has responses in all categories
+      data_check <- testData %>%
+        # make factor to not drop any consecutive response categories with 0 responses
+        mutate(across(everything(), ~ factor(.x, levels = c(0:itemlength[[as.character(expression(.x))]])))) %>%
+        pivot_longer(everything()) %>% # screws up factor levels, which makes the next step necessary
+        dplyr::count(name, value, .drop = FALSE) %>%
+        pivot_wider(
+          names_from = "name",
+          values_from = "n"
         ) %>%
-          as.data.frame()
+        dplyr::select(!value) %>%
+        # mark missing cells with NA for later logical examination with if(is.na)
+        mutate(across(everything(), ~ car::recode(.x, "0=NA", as.factor = FALSE))) %>%
+        as.data.frame()
 
-        names(testData) <- names(data)
-
-        # check that data has responses in all categories
-        data_check <- testData %>%
-          # make factor to not drop any consequtive response categories with 0 responses
-          mutate(across(everything(), ~ factor(.x, levels = c(0:itemlength[[as.character(expression(.x))]])
-          )
-          )
-          ) %>%
-          pivot_longer(everything()) %>% # screws up factor levels, which makes the next step necessary
-          count(name,value, .drop = FALSE) %>%
-          pivot_wider(names_from = "name",
-                      values_from = "n") %>%
-          select(!value) %>%
-          # mark missing cells with NA for later logical examination with if(is.na)
-          mutate(across(everything(), ~ car::recode(.x,"0=NA", as.factor = FALSE))) %>%
-          as.data.frame()
-
-        # match response data generated with itemlength
-        item_ccount <- list()
-        for (i in 1:n_items) {
-          item_ccount[i] <- list(data_check[c(1:itemlength[[i]]),i])
-        }
-
-        # check if any item has 0 responses in a response category that should have data
-        if (any(is.na(unlist(item_ccount)))) {
-          return("Missing cells in generated data.")
-        }
-
-        # get conditional MSQ
-        pcm_out <- psychotools::PCModel.fit(testData)
-        cfit <- iarm::out_infit(pcm_out)
-
-        # create dataframe
-        item.fit.table <- data.frame(InfitMSQ = cfit$Infit,
-                                     OutfitMSQ = cfit$Outfit) %>%
-          round(3) %>%
-          rownames_to_column("Item")
+      # match response data generated with itemlength
+      item_ccount <- list()
+      for (i in 1:n_items) {
+        item_ccount[i] <- list(data_check[c(1:itemlength[[i]]), i])
       }
+
+      # check if any item has 0 responses in a response category that should have data
+      if (any(is.na(unlist(item_ccount)))) {
+        return("Missing cells in generated data.")
+      }
+
+      # get conditional MSQ
+      pcm_out <- psychotools::PCModel.fit(testData)
+      cfit <- iarm::out_infit(pcm_out)
+
+      # create dataframe
+      item.fit.table <- data.frame(
+        InfitMSQ = cfit$Infit,
+        OutfitMSQ = cfit$Outfit
+      ) %>%
+        round(3) %>%
+        rownames_to_column("Item")
+    }
   }
 
   fitstats$sample_n <- sample_n
@@ -4319,6 +4315,7 @@ RIgetfit <- function(data, iterations, cpu = 4) {
 
   return(fitstats)
 }
+
 
 #' Creates a plot with distribution of simulation based item fit values
 #'
@@ -4407,7 +4404,7 @@ RIgetfitPlot <- function(simcut, data) {
                      names_to = "statistic",
                      values_to = "Value") %>%
         left_join(observed, by = c("Item","statistic")) %>%
-        filter(statistic == "InfitMSQ")
+        dplyr::filter(statistic == "InfitMSQ")
     } else {
       infit <-
         bind_rows(simcut[1:iterations][-iterations_nodata]) %>%
@@ -4415,7 +4412,7 @@ RIgetfitPlot <- function(simcut, data) {
                      names_to = "statistic",
                      values_to = "Value") %>%
         left_join(observed, by = c("Item","statistic")) %>%
-        filter(statistic == "InfitMSQ")
+        dplyr::filter(statistic == "InfitMSQ")
     }
 
     # and plot
@@ -4449,7 +4446,7 @@ RIgetfitPlot <- function(simcut, data) {
                      names_to = "statistic",
                      values_to = "Value") %>%
         left_join(observed, by = c("Item","statistic")) %>%
-        filter(statistic == "OutfitMSQ")
+        dplyr::filter(statistic == "OutfitMSQ")
     } else {
       outfit <-
         bind_rows(simcut[1:iterations][-iterations_nodata]) %>%
@@ -4457,7 +4454,7 @@ RIgetfitPlot <- function(simcut, data) {
                      names_to = "statistic",
                      values_to = "Value") %>%
         left_join(observed, by = c("Item","statistic")) %>%
-        filter(statistic == "OutfitMSQ")
+        dplyr::filter(statistic == "OutfitMSQ")
     }
     # and plot
     outfit_p <-
