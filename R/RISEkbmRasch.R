@@ -3879,10 +3879,10 @@ RIgetResidCor <- function (data, iterations, cpu = 4) {
           )
           ) %>%
           pivot_longer(everything()) %>% # screws up factor levels, which makes the next step necessary
-          count(name,value, .drop = FALSE) %>%
+          dplyr::count(name,value, .drop = FALSE) %>%
           pivot_wider(names_from = "name",
                       values_from = "n") %>%
-          select(!value) %>%
+          dplyr::select(!value) %>%
           # mark missing cells with NA for later logical examination
           mutate(across(everything(), ~ car::recode(.x,"0=NA", as.factor = FALSE))) %>%
           as.data.frame()
