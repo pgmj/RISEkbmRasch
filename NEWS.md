@@ -1,5 +1,13 @@
 ## Changelog
 
+### 0.2.4
+
+- `RIgetResidCor()` and `RIgetfit()` now replicate the sample theta distribution accurately using resampling with replacement (parametric bootstrapping based on estimated sample thetas/item thresholds).
+- `RIgetResidCor()` and `RIgetfit()` will now omit simulated datasets with empty cells (zero responses in response categories that should have responses).
+- `RIgetResidCor()` now automatically chooses PCM or RM depending on data (`model` option removed)
+- `RIscoreSE()` has support for dichotomomous data and automatically chooses PCM or RM depending on data 
+- `RItileplot()` has a new option for setting `text_color`.
+
 ### 0.2.3.1
 
 - `RIitemfit()` should finally calculate misfit correctly so that the sorting works

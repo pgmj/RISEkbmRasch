@@ -394,7 +394,7 @@ RIdemographics <- function(dif.var, diflabel, ...) {
 #' @param highlight Defaults to TRUE. Set to FALSE to disable text highlighting
 #' @param percent Set to TRUE to replace n with percentage of item responses
 #' @export
-RItileplot <- function(data, cutoff = 10, highlight = TRUE, percent = FALSE) {
+RItileplot <- function(data, cutoff = 10, highlight = TRUE, percent = FALSE, text_color = "orange") {
 
   tileplot <-
     data %>%
@@ -415,27 +415,27 @@ RItileplot <- function(data, cutoff = 10, highlight = TRUE, percent = FALSE) {
   if(highlight == TRUE & percent == FALSE) {
     tileplot +
       geom_text(aes(label = n,
-                    color = ifelse(n < cutoff,"red","orange"))) +
+                    color = ifelse(n < cutoff,"red",text_color))) +
       guides(color = "none") +
       scale_color_identity()
 
   } else if(highlight == FALSE & percent == FALSE) {
 
     tileplot +
-      geom_text(aes(label = n), color = "orange")
+      geom_text(aes(label = n), color = text_color)
 
   } else if(highlight == TRUE & percent == TRUE) {
 
     tileplot +
       geom_text(aes(label = paste0(percentage,"%"),
-                    color = ifelse(n < cutoff,"red","orange"))) +
+                    color = ifelse(n < cutoff,"red",text_color))) +
       guides(color = "none") +
       scale_color_identity()
 
   } else if(highlight == FALSE & percent == TRUE) {
 
     tileplot +
-      geom_text(aes(label = paste0(percentage,"%")), color = "orange")
+      geom_text(aes(label = paste0(percentage,"%")), color = text_color)
 
   }
 }
@@ -1370,7 +1370,13 @@ RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -1.96, zstd_max =
 #'
 #' Mandatory option to set relative cutoff-value over the average of all
 #' item residual correlations. It is strongly recommended to use the function
-#' `RIgetResidCor()` to retrieve an appropriate cutoff value.
+#' `RIgetResidCor()` to retrieve an appropriate cutoff value for your data.
+#'
+#' Christensen et al. (2017, p.181) write:
+#' "under the null hypothesis, the average correlation of residuals is negative"
+#'
+#' Note that negative values are currently not highlighted with red text, even
+#' if they are above the cutoff value.
 #'
 #' @param dfin Dataframe with item data only
 #' @param cutoff Relative value above the average of all item residual correlations
@@ -2967,6 +2973,8 @@ RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
 #' By default displays a table with raw sum scores and their corresponding logit score
 #' and logit standard error. Depends on functions from package `iarm`.
 #'
+#' Automatically chooses PCM or RM depending on data structure.
+#'
 #' Optional figure or dataframe output.
 #'
 #' NOTE: the figure uses `coord_flip()`, take this into account if you wish to add theming.
@@ -2980,7 +2988,15 @@ RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
 #' @export
 RIscoreSE <- function(data, output = "table", point_size = 3,
                       error_width = 0.5, error_multiplier = 1.96, ...) {
-  erm_out <- PCM(data)
+  if(min(as.matrix(data), na.rm = T) > 0) {
+    stop("The lowest response category needs to coded as 0. Please recode your data.")
+
+  } else if(max(as.matrix(data), na.rm = T) == 1 && min(as.matrix(data), na.rm = T) == 0) {
+    erm_out <- eRm::RM(data)
+  } else if(max(as.matrix(data), na.rm = T) > 1 && min(as.matrix(data), na.rm = T) == 0) {
+    erm_out <- eRm::PCM(data)
+  }
+
   scoreList <- RI_iarm_person_estimates(erm_out, properties = TRUE)
   scoreTable <- scoreList[[2]] %>%
     as.data.frame() %>%
@@ -3013,9 +3029,9 @@ RIscoreSE <- function(data, output = "table", point_size = 3,
 }
 
 
-#' Person location estimation
+#' Person location estimation (old version)
 #'
-#' NOTE: Does not yet work with dichotomous data
+#' NOTE: Does not work with dichotomous data
 #'
 #' Outputs a vector of person locations, one for each row in the dataframe.
 #'
@@ -3796,144 +3812,178 @@ RIdifThreshFigLR <- function(dfin, dif.var) {
 #'
 #' Based on Christensen et al. (2017, DOI: 10.1177/0146621616677520).
 #'
-#' Uses a dataframe with response data to simulate residual correlation values.
+#' Uses a dataframe with response data to simulate residual correlation values
+#' across n simulations based on estimated item & person locations.
+#'
 #' Results include mean, max and difference between the mean and max for each
 #' iteration. Also, 95th and 99th percentile values are reported, and the latter is
 #' recommended for use with `RIresidcorr()` as cutoff value, since the max value
 #' seems spurious and reliant on number of iterations.
 #'
+#' Uses multi-core processing. To find how many cores you have on your computer,
+#' use `parallel::detectCores()`. Remember to keep 1-2 cores free.
+#'
 #' @param data Dataframe with response data
-#' @param iterations Number of simulation iterations
-#' @param sample Optional sample properties (not functional yet)
+#' @param iterations Number of simulation iterations (needed)
 #' @param cpu Number of CPU cores to use
-#' @param model PCM or RM
 #' @export
-RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, model = "PCM") {
+RIgetResidCor <- function (data, iterations, cpu = 4) {
 
   require(doParallel)
   registerDoParallel(cores = cpu)
 
-  if (missing(sample)) {
-    sample_n <- nrow(data)
+  # get sample size
+  sample_n <- nrow(data)
 
-    if (model == "PCM") {
-      if(max(as.matrix(data), na.rm = TRUE) == 1) {
-        stop("Use `model = 'RM'` for dichotomous data.")
-      }
-      # get item threshold locations for response data
-      item_locations <- RIitemparams(data, output = "dataframe") %>%
-        dplyr::select(!Location) %>%
-        janitor::clean_names() %>%
-        as.matrix()
+  if(min(as.matrix(data), na.rm = T) > 0) {
+    stop("The lowest response category needs to coded as 0. Please recode your data.")
 
-      # item threshold locations in list format for simulation function
-      itemlist <- list()
-      for (i in 1:nrow(item_locations)) {
-        itemlist[i] <- list(na.omit(item_locations[i,]))
-      }
+  } else if(max(as.matrix(data), na.rm = T) > 1 && min(as.matrix(data), na.rm = T) == 0) {
 
-      # estimate theta values in response data
-      thetas <- RIestThetas(data)
+    # get item threshold locations for response data
+    item_locations <- RIitemparams(data, output = "dataframe") %>%
+      dplyr::select(!Location) %>%
+      janitor::clean_names() %>%
+      as.matrix()
 
-      # get theta mean and sd for simulation parameters
-      sample_mean <- mean(thetas$WLE, na.rm = TRUE)
-      sample_sd <- sd(thetas$WLE, na.rm = TRUE)
-
-      # create object to store results from multicore loop
-      residcor <- list()
-      residcor <- foreach(icount(iterations)) %dopar%
-        {
-          # create vector of theta values based on data properties
-          inputThetas <- rnorm(n = sample_n,
-                               mean = sample_mean,
-                               sd = sample_sd)
-
-          # simulate response data based on thetas and items above
-          testData <- SimPartialScore(
-            deltaslist = itemlist,
-            thetavec = inputThetas
-          ) %>%
-            as.data.frame()
-
-          # create Yen's Q3 residual correlation matrix
-          sink(nullfile())
-          mirt.rasch <- mirt(testData, model = 1, itemtype = "Rasch")
-          resid = residuals(mirt.rasch, type = "Q3", digits = 2)
-          sink()
-          diag(resid) <- NA
-
-          data.frame(mean = mean(resid, na.rm = TRUE),
-                     max = max(resid, na.rm = TRUE)
-          )
-
-        }
-
-    } else if (model == "RM") {
-      # estimate item threshold locations from data
-      erm_out <- eRm::RM(data)
-      item_locations <- erm_out$betapar * -1
-      names(item_locations) <- names(data)
-
-      # estimate theta values from data using WLE
-      thetas <- RIestThetas(data, model = "RM")
-
-      # get sample theta properties for simulation input
-      sample_mean <- mean(thetas$WLE, na.rm = TRUE)
-      sample_sd <- sd(thetas$WLE, na.rm = TRUE)
-
-      # create object to store results from multicore loop
-      residcor <- list()
-      residcor <- foreach(icount(iterations)) %dopar%
-        {
-          # create vector of theta values based on data properties
-          inputThetas <- rnorm(n = sample_n,
-                               mean = sample_mean,
-                               sd = sample_sd)
-
-          # simulate response data based on thetas and items above
-          testData <-
-            psychotools::rrm(inputThetas, item_locations, return_setting = FALSE) %>%
-            as.data.frame()
-
-          # create Yen's Q3 residual correlation matrix
-          sink(nullfile())
-          mirt.rasch <- mirt(testData, model = 1, itemtype = "Rasch")
-          resid = residuals(mirt.rasch, type = "Q3", digits = 2)
-          sink()
-          diag(resid) <- NA
-
-          data.frame(mean = mean(resid, na.rm = TRUE),
-                     max = max(resid, na.rm = TRUE)
-          )
-
-        }
+    # item threshold locations in list format for simulation function
+    itemlist <- list()
+    for (i in 1:nrow(item_locations)) {
+      itemlist[i] <- list(na.omit(item_locations[i,]))
     }
 
-    # get all results to a dataframe
+    # estimate theta values in response data
+    thetas <- RIestThetas(data)
+
+    # create object to store results from multicore loop
+    residcor <- list()
+    residcor <- foreach(icount(iterations)) %dopar%
+      {
+        # resampled vector of theta values (based on sample properties)
+        inputThetas <- sample(thetas$WLE, size = sample_n, replace = TRUE)
+
+        # simulate response data based on thetas and items above
+        testData <- SimPartialScore(
+          deltaslist = itemlist,
+          thetavec = inputThetas
+        ) %>%
+          as.data.frame()
+
+        names(testData) <- names(data)
+
+        # check that simulated dataset has responses in all categories
+        data_check <- testData %>%
+          # make factor to not drop any consequtive response categories with 0 responses
+          mutate(across(everything(), ~ factor(.x, levels = c(0:itemlength[[as.character(expression(.x))]])
+          )
+          )
+          ) %>%
+          pivot_longer(everything()) %>% # screws up factor levels, which makes the next step necessary
+          count(name,value, .drop = FALSE) %>%
+          pivot_wider(names_from = "name",
+                      values_from = "n") %>%
+          select(!value) %>%
+          # mark missing cells with NA for later logical examination
+          mutate(across(everything(), ~ car::recode(.x,"0=NA", as.factor = FALSE))) %>%
+          as.data.frame()
+
+        # match response data generated with itemlength
+        item_ccount <- list()
+        for (i in 1:n_items) {
+          item_ccount[i] <- list(data_check[c(1:itemlength[[i]]),i])
+        }
+
+        # match response data generated with itemlength
+        item_ccount <- list()
+        for (i in 1:n_items) {
+          item_ccount[i] <- list(data_check[c(1:itemlength[[i]]),i])
+        }
+
+        # check if any item has 0 responses in a response category that should have data
+        if (any(is.na(unlist(item_ccount)))) {
+          return("Missing cells in generated data.")
+        }
+
+        # create Yen's Q3 residual correlation matrix
+        sink(nullfile())
+        mirt.rasch <- mirt(testData, model = 1, itemtype = "Rasch")
+        resid = residuals(mirt.rasch, type = "Q3", digits = 2)
+        sink()
+        diag(resid) <- NA
+
+        data.frame(mean = mean(resid, na.rm = TRUE),
+                   max = max(resid, na.rm = TRUE)
+        )
+
+      }
+
+  } else if(max(as.matrix(data), na.rm = T) == 1 && min(as.matrix(data), na.rm = T) == 0) {
+    # estimate item threshold locations from data
+    erm_out <- eRm::RM(data)
+    item_locations <- erm_out$betapar * -1
+    names(item_locations) <- names(data)
+
+    # estimate theta values from data using WLE
+    thetas <- RIestThetas(data, model = "RM")
+
+    # create object to store results from multicore loop
+    residcor <- list()
+    residcor <- foreach(icount(iterations)) %dopar%
+      {
+        # resample vector of theta values (based on sample properties)
+        inputThetas <- sample(thetas$WLE, size = sample_n, replace = TRUE)
+
+        # simulate response data based on thetas and items above
+        testData <-
+          psychotools::rrm(inputThetas, item_locations, return_setting = FALSE) %>%
+          as.data.frame()
+
+        # create Yen's Q3 residual correlation matrix
+        sink(nullfile())
+        mirt.rasch <- mirt(testData, model = 1, itemtype = "Rasch")
+        resid = residuals(mirt.rasch, type = "Q3", digits = 2)
+        sink()
+        diag(resid) <- NA
+
+        data.frame(mean = mean(resid, na.rm = TRUE),
+                   max = max(resid, na.rm = TRUE)
+        )
+
+      }
+  }
+
+  # identify datasets with inappropriate missingness
+  nodata <- lapply(residcor, is.character) %>% unlist()
+  iterations_nodata <- which((nodata))
+
+  actual_iterations = iterations - length(iterations_nodata)
+
+  # get all results to a dataframe
+  if (actual_iterations == iterations) {
     results <-
       bind_rows(residcor) %>%
       mutate(diff = max - mean)
-
-    out <- list()
-    out$results <- results
-
-    out$sample_n <- sample_n
-    out$sample_mean <- sample_mean
-    out$sample_sd <- sample_sd
-    out$max_diff <- max(results$diff)
-    out$sd_diff <- sd(results$diff)
-    out$p95 <- quantile(results$diff, .95)
-    out$p99 <- quantile(results$diff, .99)
-
-    return(out)
   } else {
-    # use sample properties from user input instead of response data
-    # note - this is forthcoming functionality
-    sample_n <- sample[1]
-    sample_mean <- sample[2]
-    sample_sd <- sample[3]
+    results <-
+      bind_rows(residcor[-iterations_nodata]) %>%
+      mutate(diff = max - mean)
   }
+
+  out <- list()
+  out$results <- results
+  out$actual_iterations <- actual_iterations
+
+  out$sample_n <- sample_n
+  out$sample_summary <- summary(thetas$WLE)
+
+  out$max_diff <- max(results$diff)
+  out$sd_diff <- sd(results$diff)
+  out$p95 <- quantile(results$diff, .95)
+  out$p99 <- quantile(results$diff, .99)
+
+  return(out)
 }
+
 
 #' Calculate conditional outfit & infit MSQ statistics
 #'
@@ -3947,6 +3997,10 @@ RIgetResidCor <- function (data, iterations = 500, sample, cpu = 4, model = "PCM
 #' Cutoff threshold values from simulation data (using option `simcut`) are
 #' used with the `quantile()` function with .005 and .995 values to filter out
 #' extremes. Actual cutoff values are shown in the output.
+#'
+#' Simulated datasets that have zero responses in any response category that
+#' should have data will automatically be removed/skipped from analysis,
+#' which means that final set of iterations may be lower than specified by user.
 #'
 #' Optional sorting (only) for table output with conditional highlighting, by
 #' either `sort = "infit"` or `sort = "outfit`.
@@ -3979,27 +4033,52 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
   if (!missing(simcut)) {
 
     # get number of iterations used to get simulation based cutoff values
-    iterations <- length(simcut) - 3
+    iterations <- length(simcut) - 2
+
+    nodata <- lapply(simcut, is.character) %>% unlist()
+    iterations_nodata <- which((nodata))
+
+    actual_iterations <- iterations - length(iterations_nodata)
 
     # summarise simulations and set cutoff values
-    lo_hi <- bind_rows(simcut[1:(length(simcut)-3)]) %>%
-      group_by(Item) %>%
-      summarise(min_infit_msq = quantile(InfitMSQ, .005),
-                max_infit_msq = quantile(InfitMSQ, .995),
-                min_outfit_msq = quantile(OutfitMSQ, .005),
-                max_outfit_msq = quantile(OutfitMSQ, .995)
-      )
+    if (actual_iterations == iterations) {
+      lo_hi <-
+        bind_rows(simcut[1:iterations]) %>%
+        group_by(Item) %>%
+        summarise(min_infit_msq = quantile(InfitMSQ, .005),
+                  max_infit_msq = quantile(InfitMSQ, .995),
+                  min_outfit_msq = quantile(OutfitMSQ, .005),
+                  max_outfit_msq = quantile(OutfitMSQ, .995)
+        )
+    } else {
+      lo_hi <-
+        bind_rows(simcut[1:iterations][-iterations_nodata]) %>%
+        group_by(Item) %>%
+        summarise(min_infit_msq = quantile(InfitMSQ, .005),
+                  max_infit_msq = quantile(InfitMSQ, .995),
+                  min_outfit_msq = quantile(OutfitMSQ, .005),
+                  max_outfit_msq = quantile(OutfitMSQ, .995)
+        )
+    }
 
     lo_hi$Item <- names(data)
 
     # get upper/lower values into a dataframe
-    fit_table <-
-      bind_rows(simcut[1:(length(simcut)-3)]) %>%
-      group_by(Item) %>%
-      summarise(inf_thresh = paste0("[",round(quantile(InfitMSQ, .005),3),", ",round(quantile(InfitMSQ, .995),3),"]"),
-                outf_thresh = paste0("[",round(quantile(OutfitMSQ, .005),3),", ",round(quantile(OutfitMSQ, .995),3),"]")
-      )
-
+    if (actual_iterations == iterations) {
+      fit_table <-
+        bind_rows(simcut[1:iterations]) %>%
+        group_by(Item) %>%
+        summarise(inf_thresh = paste0("[",round(quantile(InfitMSQ, .005),3),", ",round(quantile(InfitMSQ, .995),3),"]"),
+                  outf_thresh = paste0("[",round(quantile(OutfitMSQ, .005),3),", ",round(quantile(OutfitMSQ, .995),3),"]")
+        )
+    } else {
+      fit_table <-
+        bind_rows(simcut[1:iterations][-iterations_nodata]) %>%
+        group_by(Item) %>%
+        summarise(inf_thresh = paste0("[",round(quantile(InfitMSQ, .005),3),", ",round(quantile(InfitMSQ, .995),3),"]"),
+                  outf_thresh = paste0("[",round(quantile(OutfitMSQ, .005),3),", ",round(quantile(OutfitMSQ, .995),3),"]")
+        )
+    }
     # add thresholds to dataframe and calculate differences between thresholds and observed values
     item.fit.table <-
       item.fit.table %>%
@@ -4032,7 +4111,7 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
       item.fit.table %>%
         kbl_rise(...) %>%
         footnote(general = paste0("MSQ values based on conditional calculations (n = ", nrow(data),").
-                                Simulation based thresholds based on ", iterations," simulated datasets."))
+                                Simulation based thresholds based on ", actual_iterations," simulated datasets."))
 
     } else if (output == "table" & sort == "infit") {
       for (i in 1:nrow(lo_hi)) {
@@ -4048,7 +4127,7 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
         arrange(desc(`Infit diff`)) %>%
         kbl_rise(...) %>%
         footnote(general = paste0("MSQ values based on conditional calculations (n = ", nrow(data),").
-                                Simulation based thresholds based on ", iterations," simulated datasets."))
+                                Simulation based thresholds based on ", actual_iterations," simulated datasets."))
 
     } else if (output == "table" & sort == "outfit") {
       for (i in 1:nrow(lo_hi)) {
@@ -4063,7 +4142,7 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
         arrange(desc(`Outfit diff`)) %>%
         kbl_rise(...) %>%
         footnote(general = paste0("MSQ values based on conditional calculations and complete cases (n = ", nrow(na.omit(data)),").
-                                Simulation based thresholds based on ", iterations," simulated datasets."))
+                                Simulation based thresholds based on ", actual_iterations," simulated datasets."))
 
     }
 
@@ -4086,11 +4165,12 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
   }
 }
 
+
 #' Get simulation based cutoff values for item fit values
 #'
 #' This function uses your response data to simulate datasets that fit the
 #' Rasch model to find a credible range of item fit values. The function
-#' outputs an object that is strongly recommended to save to a file, since it
+#' outputs an object that is strongly recommended to save to an object, since it
 #' takes some time to run this function when using many iterations/simulations.
 #'
 #' The output is a list object, which can in turn be used with two different
@@ -4100,6 +4180,9 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
 #'
 #' The function `RIgetfitPlot()` uses the package `ggdist` to plot the
 #' distribution of fit values from the simulation results.
+#'
+#' Uses multi-core processing. To find how many cores you have on your computer,
+#' use `parallel::detectCores()`. Remember to keep 1-2 cores free.
 #'
 #' @param data Dataframe with response data
 #' @param iterations Number of simulation iterations (use at least 1000)
@@ -4129,16 +4212,11 @@ RIgetfit <- function(data, iterations, cpu = 4) {
     # estimate theta values from data using WLE
     thetas <- RIestThetas(data, model = "RM")
 
-    # get sample theta properties for simulation input
-    sample_mean <- mean(thetas$WLE, na.rm = TRUE)
-    sample_sd <- sd(thetas$WLE, na.rm = TRUE)
-
     fitstats <- list()
     fitstats <- foreach(icount(iterations)) %dopar%
       {
-        inputThetas <- rnorm(n = sample_n,
-                             mean = sample_mean,
-                             sd = sample_sd)
+        # resampled vector of theta values (based on sample properties)
+        inputThetas <- sample(thetas$WLE, size = sample_n, replace = TRUE)
 
         # simulate response data based on thetas and items above
         testData <-
@@ -4164,25 +4242,29 @@ RIgetfit <- function(data, iterations, cpu = 4) {
       janitor::clean_names() %>%
       as.matrix()
 
+    n_items <- nrow(item_locations)
+
     # item threshold locations in list format for simulation function
     itemlist <- list()
-    for (i in 1:nrow(item_locations)) {
+    for (i in 1:n_items) {
       itemlist[[i]] <- list(na.omit(item_locations[i,]))
+    }
+
+    # get number of response categories for each item for later use in checking complete responses
+    itemlength <- list()
+    for (i in 1:n_items) {
+      itemlength[i] <- length(na.omit(item_locations[i,]))
+      names(itemlength)[i] <- names(data)[i]
     }
 
     # estimate theta values from data using WLE
     thetas <- RIestThetas(data)
 
-    # get sample theta properties for simulation input
-    sample_mean <- mean(thetas$WLE, na.rm = TRUE)
-    sample_sd <- sd(thetas$WLE, na.rm = TRUE)
-
     fitstats <- list()
     fitstats <- foreach(icount(iterations)) %dopar%
       {
-        inputThetas <- rnorm(n = sample_n,
-                             mean = sample_mean,
-                             sd = sample_sd)
+        # resampled vector of theta values (based on sample properties)
+        inputThetas <- sample(thetas$WLE, size = sample_n, replace = TRUE)
 
         # simulate response data based on thetas and items above
         testData <- SimPartialScore(
@@ -4192,6 +4274,33 @@ RIgetfit <- function(data, iterations, cpu = 4) {
           as.data.frame()
 
         names(testData) <- names(data)
+
+        # check that data has responses in all categories
+        data_check <- testData %>%
+          # make factor to not drop any consequtive response categories with 0 responses
+          mutate(across(everything(), ~ factor(.x, levels = c(0:itemlength[[as.character(expression(.x))]])
+          )
+          )
+          ) %>%
+          pivot_longer(everything()) %>% # screws up factor levels, which makes the next step necessary
+          count(name,value, .drop = FALSE) %>%
+          pivot_wider(names_from = "name",
+                      values_from = "n") %>%
+          select(!value) %>%
+          # mark missing cells with NA for later logical examination with if(is.na)
+          mutate(across(everything(), ~ car::recode(.x,"0=NA", as.factor = FALSE))) %>%
+          as.data.frame()
+
+        # match response data generated with itemlength
+        item_ccount <- list()
+        for (i in 1:n_items) {
+          item_ccount[i] <- list(data_check[c(1:itemlength[[i]]),i])
+        }
+
+        # check if any item has 0 responses in a response category that should have data
+        if (any(is.na(unlist(item_ccount)))) {
+          return("Missing cells in generated data.")
+        }
 
         # get conditional MSQ
         pcm_out <- psychotools::PCModel.fit(testData)
@@ -4206,8 +4315,7 @@ RIgetfit <- function(data, iterations, cpu = 4) {
   }
 
   fitstats$sample_n <- sample_n
-  fitstats$sample_mean <- sample_mean
-  fitstats$sample_sd <- sample_sd
+  fitstats$sample_summary <- summary(thetas$WLE)
 
   return(fitstats)
 }
@@ -4223,14 +4331,29 @@ RIgetfit <- function(data, iterations, cpu = 4) {
 RIgetfitPlot <- function(simcut, data) {
   require(ggdist)
 
-  iterations <- length(simcut) - 3
+  # get number of iterations used to get simulation based cutoff values
+  iterations <- length(simcut) - 2
+
+  nodata <- lapply(simcut, is.character) %>% unlist()
+  iterations_nodata <- which((nodata))
+
+  actual_iterations <- iterations - length(iterations_nodata)
 
   if (missing(data)) {
-    bind_rows(simcut[1:(length(simcut)-3)]) %>%
-      pivot_longer(contains("MSQ"),
-                   names_to = "statistic",
-                   values_to = "Value") %>%
-
+    # summarise simulation results
+    if (actual_iterations == iterations) {
+      results <- bind_rows(simcut[1:iterations]) %>%
+        pivot_longer(contains("MSQ"),
+                     names_to = "statistic",
+                     values_to = "Value")
+    } else {
+      results <- bind_rows(simcut[1:iterations][-iterations_nodata]) %>%
+        pivot_longer(contains("MSQ"),
+                     names_to = "statistic",
+                     values_to = "Value")
+    }
+    # plot
+    results %>%
       ggplot(aes(x = Value, y = factor(Item, levels = rev(simcut[[1]][["Item"]])), slab_fill = after_stat(level))) +
       stat_dotsinterval(quantiles = iterations, point_interval = median_qi,
                         layout = "weave", slab_color = NA,
@@ -4238,8 +4361,8 @@ RIgetfitPlot <- function(simcut, data) {
       labs(x = "Conditional MSQ",
            y = "Item") +
       scale_color_manual(values = scales::brewer_pal()(3)[-1], aesthetics = "slab_fill", guide = "none") +
-      labs(caption = str_wrap(paste0("Note: Results from ",iterations," simulated datasets with ",
-                                     simcut$sample_n," respondents\n(mean theta = ", round(simcut$sample_mean,2),", SD = ",round(simcut$sample_sd,2),")."))
+      labs(caption = str_wrap(paste0("Note: Results from ",actual_iterations," simulated datasets with ",
+                                     simcut$sample_n," respondents."))
       ) +
       facet_wrap(~statistic, ncol = 2) +
       scale_x_continuous(breaks = seq(0.5,1.5,0.1), minor_breaks = NULL) +
@@ -4277,13 +4400,27 @@ RIgetfitPlot <- function(simcut, data) {
                    values_to = "observed")
 
     # join simulated and observed MSQ
-    infit <- bind_rows(simcut[1:(length(simcut)-3)]) %>%
-      pivot_longer(contains("MSQ"),
-                   names_to = "statistic",
-                   values_to = "Value") %>%
-      left_join(observed, by = c("Item","statistic")) %>%
-      filter(statistic == "InfitMSQ") %>%
-      # and plot
+    if (actual_iterations == iterations) {
+      infit <-
+        bind_rows(simcut[1:iterations]) %>%
+        pivot_longer(contains("MSQ"),
+                     names_to = "statistic",
+                     values_to = "Value") %>%
+        left_join(observed, by = c("Item","statistic")) %>%
+        filter(statistic == "InfitMSQ")
+    } else {
+      infit <-
+        bind_rows(simcut[1:iterations][-iterations_nodata]) %>%
+        pivot_longer(contains("MSQ"),
+                     names_to = "statistic",
+                     values_to = "Value") %>%
+        left_join(observed, by = c("Item","statistic")) %>%
+        filter(statistic == "InfitMSQ")
+    }
+
+    # and plot
+    infit_p <-
+      infit %>%
       ggplot(aes(x = Value, y = factor(Item, levels = rev(simcut[[1]][["Item"]])))) +
       stat_dotsinterval(aes(slab_fill = after_stat(level)),
                         quantiles = iterations, point_interval = median_qi,
@@ -4305,14 +4442,26 @@ RIgetfitPlot <- function(simcut, data) {
       theme_minimal() +
       theme(panel.spacing = unit(0.7, "cm", data = NULL))
 
-    outfit <-
-      bind_rows(simcut[1:(length(simcut)-3)]) %>%
-      pivot_longer(contains("MSQ"),
-                   names_to = "statistic",
-                   values_to = "Value") %>%
-      left_join(observed, by = c("Item","statistic")) %>%
-      filter(statistic == "OutfitMSQ") %>%
-      # and plot
+    if (actual_iterations == iterations) {
+      outfit <-
+        bind_rows(simcut[1:iterations]) %>%
+        pivot_longer(contains("MSQ"),
+                     names_to = "statistic",
+                     values_to = "Value") %>%
+        left_join(observed, by = c("Item","statistic")) %>%
+        filter(statistic == "OutfitMSQ")
+    } else {
+      outfit <-
+        bind_rows(simcut[1:iterations][-iterations_nodata]) %>%
+        pivot_longer(contains("MSQ"),
+                     names_to = "statistic",
+                     values_to = "Value") %>%
+        left_join(observed, by = c("Item","statistic")) %>%
+        filter(statistic == "OutfitMSQ")
+    }
+    # and plot
+    outfit_p <-
+      outfit %>%
       ggplot(aes(x = Value, y = factor(Item, levels = rev(simcut[[1]][["Item"]])))) +
       stat_dotsinterval(aes(slab_fill = after_stat(level)),
                         quantiles = iterations, point_interval = median_qi,
@@ -4327,15 +4476,15 @@ RIgetfitPlot <- function(simcut, data) {
       labs(x = "Conditional Outfit MSQ",
            y = "Item") +
       scale_color_manual(values = scales::brewer_pal()(3)[-1], aesthetics = "slab_fill", guide = "none") +
-      labs(caption = str_wrap(paste0("Note: Results from ",iterations," simulated datasets with ",
-                                     simcut$sample_n," respondents\n(mean theta = ", round(simcut$sample_mean,2),", SD = ",round(simcut$sample_sd,2),").
+      labs(caption = str_wrap(paste0("Note: Results from ",actual_iterations," simulated datasets with ",
+                                     simcut$sample_n," respondents.\n
                                      Orange diamond shaped dots indicate observed conditional item fit.")) # Orange dots and lines are observed MSQ and 95% CI.
       ) +
       scale_x_continuous(breaks = seq(0.5,1.5,0.1), minor_breaks = NULL) +
       theme_minimal() +
       theme(panel.spacing = unit(0.7, "cm", data = NULL))
 
-    infit + outfit
+    infit_p + outfit_p
   }
 }
 
