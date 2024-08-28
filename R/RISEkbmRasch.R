@@ -3941,16 +3941,16 @@ RIgetResidCor <- function (data, iterations, cpu = 4) {
           as.data.frame()
 
         # check that all items have at least 4 "1" responses, otherwise eRm::RM() fails
-        n_4 <-
-          testData %>%
-          as.matrix() %>%
-          colSums2() %>%
-          t() %>%
-          as.vector()
-
-        if (min(n_4, na.rm = TRUE) < 5) {
-          return("Missing cells in generated data.")
-        }
+        # n_4 <-
+        #   testData %>%
+        #   as.matrix() %>%
+        #   colSums2() %>%
+        #   t() %>%
+        #   as.vector()
+        #
+        # if (min(n_4, na.rm = TRUE) < 5) {
+        #   return("Missing cells in generated data.")
+        # }
 
         # create Yen's Q3 residual correlation matrix
         sink(nullfile())
