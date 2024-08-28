@@ -2,7 +2,7 @@
 % Please edit documentation in R/RISEkbmRasch.R
 \name{RIestThetasOLD}
 \alias{RIestThetasOLD}
-\title{Person location estimation}
+\title{Person location estimation (old version)}
 \usage{
 RIestThetasOLD(
   dfin,
@@ -24,7 +24,7 @@ RIestThetasOLD(
 \item{theta_range}{Range of theta (person location) values}
 }
 \description{
-NOTE: Does not yet work with dichotomous data
+NOTE: Does not work with dichotomous data
 }
 \details{
 Outputs a vector of person locations, one for each row in the dataframe.

@@ -1,5 +1,9 @@
 ## Changelog
 
+### 0.2.4.1
+
+- fix for `RIgetfit()` and `RIgetResidCor()` to detect when simulated response data contains less than 5 positive responses for an item (which makes `eRm::RM()` not work). This is typically only relevant for very skewed data or difficult items.
+
 ### 0.2.4
 
 - `RIgetResidCor()` and `RIgetfit()` now replicate the sample theta distribution accurately using resampling with replacement (parametric bootstrapping based on estimated sample thetas/item thresholds).

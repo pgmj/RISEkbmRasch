@@ -16,7 +16,7 @@ RIgetfit(data, iterations, cpu = 4)
 \description{
 This function uses your response data to simulate datasets that fit the
 Rasch model to find a credible range of item fit values. The function
-outputs an object that is strongly recommended to save to a file, since it
+outputs an object that is strongly recommended to save to an object, since it
 takes some time to run this function when using many iterations/simulations.
 }
 \details{
@@ -27,4 +27,7 @@ item parameters. Each item gets its own cutoff thresholds.
 
 The function \code{RIgetfitPlot()} uses the package \code{ggdist} to plot the
 distribution of fit values from the simulation results.
+
+Uses multi-core processing. To find how many cores you have on your computer,
+use \code{parallel::detectCores()}. Remember to keep 1-2 cores free.
 }

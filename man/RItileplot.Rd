@@ -5,7 +5,13 @@
 \title{Create tile plot for all items, also showing the count of
 responses in each response category for each item}
 \usage{
-RItileplot(data, cutoff = 10, highlight = TRUE, percent = FALSE)
+RItileplot(
+  data,
+  cutoff = 10,
+  highlight = TRUE,
+  percent = FALSE,
+  text_color = "orange"
+)
 }
 \arguments{
 \item{data}{Dataframe with item data only}

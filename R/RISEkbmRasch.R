@@ -3940,6 +3940,18 @@ RIgetResidCor <- function (data, iterations, cpu = 4) {
           psychotools::rrm(inputThetas, item_locations, return_setting = FALSE) %>%
           as.data.frame()
 
+        # check that all items have at least 4 "1" responses, otherwise eRm::RM() fails
+        n_4 <-
+          testData %>%
+          as.matrix() %>%
+          colSums2() %>%
+          t() %>%
+          as.vector()
+
+        if (min(n_4, na.rm = TRUE) < 5) {
+          return("Missing cells in generated data.")
+        }
+
         # create Yen's Q3 residual correlation matrix
         sink(nullfile())
         mirt.rasch <- mirt(testData, model = 1, itemtype = "Rasch")
@@ -3956,7 +3968,7 @@ RIgetResidCor <- function (data, iterations, cpu = 4) {
 
   # identify datasets with inappropriate missingness
   nodata <- lapply(residcor, is.character) %>% unlist()
-  iterations_nodata <- which((nodata))
+  iterations_nodata <- which(nodata)
 
   actual_iterations = iterations - length(iterations_nodata)
 
@@ -4038,7 +4050,7 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
     iterations <- length(simcut) - 2
 
     nodata <- lapply(simcut, is.character) %>% unlist()
-    iterations_nodata <- which((nodata))
+    iterations_nodata <- which(nodata)
 
     actual_iterations <- iterations - length(iterations_nodata)
 
@@ -4212,7 +4224,7 @@ RIgetfit <- function(data, iterations, cpu = 4) {
     thetas <- RIestThetas(data, model = "RM")
 
     fitstats <- list()
-    fitstats <- foreach(icount(iterations)) %dopar% {
+    fitstats <- foreach(icount(100)) %dopar% {
       # resampled vector of theta values (based on sample properties)
       inputThetas <- sample(thetas$WLE, size = sample_n, replace = TRUE)
 
@@ -4220,6 +4232,18 @@ RIgetfit <- function(data, iterations, cpu = 4) {
       testData <-
         psychotools::rrm(inputThetas, item_locations, return_setting = FALSE) %>%
         as.data.frame()
+
+      # check that all items have at least 4 "1" responses, otherwise eRm::RM() fails
+      n_4 <-
+        testData %>%
+        as.matrix() %>%
+        colSums2() %>%
+        t() %>%
+        as.vector()
+
+      if (min(n_4, na.rm = TRUE) < 5) {
+        return("Missing cells in generated data.")
+      }
 
       # get conditional MSQ
       rm_out <- eRm::RM(testData)
@@ -4317,7 +4341,6 @@ RIgetfit <- function(data, iterations, cpu = 4) {
 
   return(fitstats)
 }
-
 
 #' Creates a plot with distribution of simulation based item fit values
 #'

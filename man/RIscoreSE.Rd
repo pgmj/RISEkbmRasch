@@ -31,6 +31,8 @@ By default displays a table with raw sum scores and their corresponding logit sc
 and logit standard error. Depends on functions from package \code{iarm}.
 }
 \details{
+Automatically chooses PCM or RM depending on data structure.
+
 Optional figure or dataframe output.
 
 NOTE: the figure uses \code{coord_flip()}, take this into account if you wish to add theming.

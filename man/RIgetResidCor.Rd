@@ -4,26 +4,27 @@
 \alias{RIgetResidCor}
 \title{Get simulation based cutoff values for Yen's Q3 residual correlations}
 \usage{
-RIgetResidCor(data, iterations = 500, sample, cpu = 4, model = "PCM")
+RIgetResidCor(data, iterations, cpu = 4)
 }
 \arguments{
 \item{data}{Dataframe with response data}
 
-\item{iterations}{Number of simulation iterations}
-
-\item{sample}{Optional sample properties (not functional yet)}
+\item{iterations}{Number of simulation iterations (needed)}
 
 \item{cpu}{Number of CPU cores to use}
-
-\item{model}{PCM or RM}
 }
 \description{
 Based on Christensen et al. (2017, DOI: 10.1177/0146621616677520).
 }
 \details{
-Uses a dataframe with response data to simulate residual correlation values.
+Uses a dataframe with response data to simulate residual correlation values
+across n simulations based on estimated item & person locations.
+
 Results include mean, max and difference between the mean and max for each
 iteration. Also, 95th and 99th percentile values are reported, and the latter is
 recommended for use with \code{RIresidcorr()} as cutoff value, since the max value
 seems spurious and reliant on number of iterations.
+
+Uses multi-core processing. To find how many cores you have on your computer,
+use \code{parallel::detectCores()}. Remember to keep 1-2 cores free.
 }

@@ -30,6 +30,10 @@ Cutoff threshold values from simulation data (using option \code{simcut}) are
 used with the \code{quantile()} function with .005 and .995 values to filter out
 extremes. Actual cutoff values are shown in the output.
 
+Simulated datasets that have zero responses in any response category that
+should have data will automatically be removed/skipped from analysis,
+which means that final set of iterations may be lower than specified by user.
+
 Optional sorting (only) for table output with conditional highlighting, by
 either \code{sort = "infit"} or \verb{sort = "outfit}.
 }

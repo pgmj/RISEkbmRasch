@@ -20,5 +20,12 @@ RIresidcorr(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_width = 70)
 \description{
 Mandatory option to set relative cutoff-value over the average of all
 item residual correlations. It is strongly recommended to use the function
-\code{RIgetResidCor()} to retrieve an appropriate cutoff value.
+\code{RIgetResidCor()} to retrieve an appropriate cutoff value for your data.
+}
+\details{
+Christensen et al. (2017, p.181) write:
+"under the null hypothesis, the average correlation of residuals is negative"
+
+Note that negative values are currently not highlighted with red text, even
+if they are above the cutoff value.
 }
