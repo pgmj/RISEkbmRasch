@@ -1,5 +1,9 @@
 ## Changelog
 
+### 0.2.4 known issue
+
+- `RIgetfit()` gets issues upstream with eRm::RM() when badly skewed dichotomous data is used as input. Fix is underway.
+
 ### 0.2.4
 
 - `RIgetResidCor()` and `RIgetfit()` now replicate the sample theta distribution accurately using resampling with replacement (parametric bootstrapping based on estimated sample thetas/item thresholds).
