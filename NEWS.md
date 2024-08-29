@@ -2,13 +2,15 @@
 
 ### 0.2.4.1
 
+New function - `RIpboot()` generates datasets using parametric bootstrapping.
+
 Bug fix:
 
 - `RIgetfitPlot()` fix for when/if the first iteration of simulations has missing data
 
 Known issue:
 
-- `RIgetfit()` gets issues upstream with eRm::RM() when badly skewed dichotomous data is used as input.
+- `RIgetfit()` and `RIgetResidCor()` gets issues upstream with eRm::RM() when badly skewed dichotomous data is used as input.
   - A temporary fix has been implemented, discarding simulated datasets with less than 8 positive responses for any item.
 
 ### 0.2.4

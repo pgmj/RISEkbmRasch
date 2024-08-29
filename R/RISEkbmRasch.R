@@ -3940,17 +3940,19 @@ RIgetResidCor <- function (data, iterations, cpu = 4) {
           psychotools::rrm(inputThetas, item_locations, return_setting = FALSE) %>%
           as.data.frame()
 
-        # check that all items have at least 4 "1" responses, otherwise eRm::RM() fails
-        # n_4 <-
-        #   testData %>%
-        #   as.matrix() %>%
-        #   colSums2() %>%
-        #   t() %>%
-        #   as.vector()
-        #
-        # if (min(n_4, na.rm = TRUE) < 5) {
-        #   return("Missing cells in generated data.")
-        # }
+        # TEMPORARY FIX START
+        # check that all items have at least 8 positive responses, otherwise eRm::RM() fails
+        n_resp <-
+          testData %>%
+          as.matrix() %>%
+          colSums2() %>%
+          t() %>%
+          as.vector()
+
+        if (min(n_resp, na.rm = TRUE) < 8) {
+          return("Missing cells in generated data.")
+        }
+        # END TEMP FIX
 
         # create Yen's Q3 residual correlation matrix
         sink(nullfile())
@@ -4514,7 +4516,78 @@ RIgetfitPlot <- function(simcut, data) {
   }
 }
 
+#' Parametric bootstrapping outputting simulated datasets
+#'
+#' For generic use. Outputs datasets in a list object.
+#'
+#' @param data A dataframe with response data
+#' @param iterations How many datasets to generate
+#' @param cpu Number of CPU cores to use
+#' @export
+RIpboot <- function(data, iterations, cpu) {
+  sample_n <- nrow(data)
 
+  require(doParallel)
+  registerDoParallel(cores = cpu)
+
+  if (missing(iterations)) {
+    stop("Please set a number of iterations.")
+  }
+
+  if (min(as.matrix(data), na.rm = T) > 0) {
+    stop("The lowest response category needs to coded as 0. Please recode your data.")
+  } else if (max(as.matrix(data), na.rm = T) == 1 && min(as.matrix(data), na.rm = T) == 0) {
+    # estimate item threshold locations from data
+    erm_out <- eRm::RM(data)
+    item_locations <- erm_out$betapar * -1
+    names(item_locations) <- names(data)
+
+    # estimate theta values from data using WLE
+    thetas <- RIestThetas(data, model = "RM")
+
+    datasets <- list()
+    datasets <- foreach(icount(iterations)) %dopar% {
+      # resampled vector of theta values (based on sample properties)
+      inputThetas <- sample(thetas$WLE, size = sample_n, replace = TRUE)
+
+      # simulate response data based on thetas and items above
+      psychotools::rrm(inputThetas, item_locations, return_setting = FALSE) %>%
+        as.data.frame()
+    }
+  } else if (max(as.matrix(data), na.rm = T) > 1 && min(as.matrix(data), na.rm = T) == 0) {
+    # estimate item threshold locations from data
+    item_locations <- RIitemparams(data, output = "dataframe") %>%
+      dplyr::select(!Location) %>%
+      janitor::clean_names() %>%
+      as.matrix()
+
+    n_items <- nrow(item_locations)
+
+    # item threshold locations in list format for simulation function
+    itemlist <- list()
+    for (i in 1:n_items) {
+      itemlist[[i]] <- list(na.omit(item_locations[i, ]))
+    }
+
+    # estimate theta values from data using WLE
+    thetas <- RIestThetas(data)
+
+    datasets <- list()
+    datasets <- foreach(icount(iterations)) %dopar% {
+      # resampled vector of theta values (based on sample properties)
+      inputThetas <- sample(thetas$WLE, size = sample_n, replace = TRUE)
+
+      # simulate response data based on thetas and items above
+      testData <- SimPartialScore(
+        deltaslist = itemlist,
+        thetavec = inputThetas
+      ) %>%
+        as.data.frame()
+      names(testData) <- names(data)
+      testData
+    }
+  }
+}
 
 #' Temporary fix for upstream bug in `iarm::person_estimates()`
 #'
