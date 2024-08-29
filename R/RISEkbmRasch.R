@@ -4362,10 +4362,13 @@ RIgetfitPlot <- function(simcut, data) {
   # check which iterations have incomplete data
   nodata <- lapply(simcut, is.character) %>% unlist()
   iterations_nodata <- which(nodata)
-  # in case the first iteration does not have complete data
-  first_iteration <- c(1:iterations)[-iterations_nodata][1]
-
   actual_iterations <- iterations - length(iterations_nodata)
+  # in case the first iteration does not have complete data
+  if (actual_iterations == iterations) {
+    first_iteration <- 1
+  } else {
+    first_iteration <- c(1:iterations)[-iterations_nodata][1]
+  }
 
   if (missing(data)) {
     # summarise simulation results
