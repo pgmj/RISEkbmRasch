@@ -4223,7 +4223,7 @@ RIgetfit <- function(data, iterations, cpu = 4) {
     thetas <- RIestThetas(data, model = "RM")
 
     fitstats <- list()
-    fitstats <- foreach(icount(100)) %dopar% {
+    fitstats <- foreach(icount(iterations)) %dopar% {
       # resampled vector of theta values (based on sample properties)
       inputThetas <- sample(thetas$WLE, size = sample_n, replace = TRUE)
 
@@ -4232,17 +4232,19 @@ RIgetfit <- function(data, iterations, cpu = 4) {
         psychotools::rrm(inputThetas, item_locations, return_setting = FALSE) %>%
         as.data.frame()
 
-      # check that all items have at least 4 "1" responses, otherwise eRm::RM() fails
-      # n_4 <-
-      #   testData %>%
-      #   as.matrix() %>%
-      #   colSums2() %>%
-      #   t() %>%
-      #   as.vector()
-      #
-      # if (min(n_4, na.rm = TRUE) < 5) {
-      #   return("Missing cells in generated data.")
-      # }
+      # TEMPORARY FIX START
+      # check that all items have at least 8 positive responses, otherwise eRm::RM() fails
+      n_resp <-
+        testData %>%
+        as.matrix() %>%
+        colSums2() %>%
+        t() %>%
+        as.vector()
+
+      if (min(n_resp, na.rm = TRUE) < 8) {
+        return("Missing cells in generated data.")
+      }
+      # END TEMP FIX
 
       # get conditional MSQ
       rm_out <- eRm::RM(testData)
@@ -4355,8 +4357,11 @@ RIgetfitPlot <- function(simcut, data) {
   # get number of iterations used to get simulation based cutoff values
   iterations <- length(simcut) - 2
 
+  # check which iterations have incomplete data
   nodata <- lapply(simcut, is.character) %>% unlist()
-  iterations_nodata <- which((nodata))
+  iterations_nodata <- which(nodata)
+  # in case the first iteration does not have complete data
+  first_iteration <- c(1:iterations)[-iterations_nodata][1]
 
   actual_iterations <- iterations - length(iterations_nodata)
 
@@ -4375,7 +4380,7 @@ RIgetfitPlot <- function(simcut, data) {
     }
     # plot
     results %>%
-      ggplot(aes(x = Value, y = factor(Item, levels = rev(simcut[[1]][["Item"]])), slab_fill = after_stat(level))) +
+      ggplot(aes(x = Value, y = factor(Item, levels = rev(simcut[[first_iteration]][["Item"]])), slab_fill = after_stat(level))) +
       stat_dotsinterval(quantiles = iterations, point_interval = median_qi,
                         layout = "weave", slab_color = NA,
                         .width = c(0.66, 0.99)) +
@@ -4442,7 +4447,7 @@ RIgetfitPlot <- function(simcut, data) {
     # and plot
     infit_p <-
       infit %>%
-      ggplot(aes(x = Value, y = factor(Item, levels = rev(simcut[[1]][["Item"]])))) +
+      ggplot(aes(x = Value, y = factor(Item, levels = rev(simcut[[first_iteration]][["Item"]])))) +
       stat_dotsinterval(aes(slab_fill = after_stat(level)),
                         quantiles = iterations, point_interval = median_qi,
                         layout = "weave", slab_color = NA,
@@ -4483,7 +4488,7 @@ RIgetfitPlot <- function(simcut, data) {
     # and plot
     outfit_p <-
       outfit %>%
-      ggplot(aes(x = Value, y = factor(Item, levels = rev(simcut[[1]][["Item"]])))) +
+      ggplot(aes(x = Value, y = factor(Item, levels = rev(simcut[[first_iteration]][["Item"]])))) +
       stat_dotsinterval(aes(slab_fill = after_stat(level)),
                         quantiles = iterations, point_interval = median_qi,
                         layout = "weave", slab_color = NA,
@@ -4508,6 +4513,8 @@ RIgetfitPlot <- function(simcut, data) {
     infit_p + outfit_p
   }
 }
+
+
 
 #' Temporary fix for upstream bug in `iarm::person_estimates()`
 #'

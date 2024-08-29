@@ -1,8 +1,15 @@
 ## Changelog
 
-### 0.2.4 known issue
+### 0.2.4.1
 
-- `RIgetfit()` gets issues upstream with eRm::RM() when badly skewed dichotomous data is used as input. Fix is underway.
+Bug fix:
+
+- `RIgetfitPlot()` fix for when/if the first iteration of simulations has missing data
+
+Known issue:
+
+- `RIgetfit()` gets issues upstream with eRm::RM() when badly skewed dichotomous data is used as input.
+  - A temporary fix has been implemented, discarding simulated datasets with less than 8 positive responses for any item.
 
 ### 0.2.4
 
@@ -23,7 +30,7 @@
 - `RIitemfit()` now uses conditional highlighting with individual cutoff values for each item.
 - `RIitemfit()` outputs two new variables indicating the differences between observed infit/outfit and cutoff threshold values.
 - `RIitemfit()` optionally sorts the table output based on misfit per item, using either "infit" or "outfit".
-- `RIgetfitPlot()`optionally shows observed item fit in the plot. Ideally, 95% CI would be shown, but the SE output from iarm::out_infit is not reliable according to the author (Müller, 2020), and iarm::boot_fit() does not output SE, only p-values.
+- `RIgetfitPlot()` optionally shows observed item fit in the plot. Ideally, 95% CI would be shown, but the SE output from iarm::out_infit is not reliable according to the author (Müller, 2020), and iarm::boot_fit() does not output SE, only p-values.
 
 ### 0.2.2.1
 
