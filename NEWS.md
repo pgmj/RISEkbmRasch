@@ -1,5 +1,11 @@
 ## Changelog
 
+### 0.2.4.2
+
+- `RIitemfit()` now consistently states that conditional item fit is based on complete cases only in the automatic caption text.
+- `RIitemfit()` has a new option for conditional highlighting of misfit based on rule-of-thumb values for infit MSQ according to Smith et al. (1998), since Müller (2020) showed that these can be fairly accurate for conditional infit and thus useful for a quick look at item fit.
+- `RIgetfit()` now defaults to use the same sample size that the conditional item fit function uses, which means only complete cases. There is an option to change this behavior in the simulation function.
+
 ### 0.2.4.1
 
 New function - `RIpboot()` generates datasets using parametric bootstrapping.

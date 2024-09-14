@@ -4,7 +4,7 @@
 \alias{RIitemfit}
 \title{Calculate conditional outfit & infit MSQ statistics}
 \usage{
-RIitemfit(data, simcut, output = "table", sort = "items", ...)
+RIitemfit(data, simcut, output = "table", sort = "items", cutoff, ...)
 }
 \arguments{
 \item{data}{Dataframe with response data}
@@ -15,6 +15,8 @@ RIitemfit(data, simcut, output = "table", sort = "items", ...)
 
 \item{sort}{Optional "infit" or "outfit"}
 
+\item{cutoff}{Optional "Smith98" for infit rule-of-thumb}
+
 \item{...}{Options passed on to \code{kbl_rise()} for table creation}
 }
 \description{
@@ -24,7 +26,8 @@ on data structure.
 \details{
 Uses \code{iarm::out_infit()} to calculate conditional mean square fit statistics
 for all items. See Müller (2020, DOI: 10.1186/s40488-020-00108-7) for details.
-Only uses complete cases.
+Note: only uses complete cases! This is explicitly mentioned in the automatic
+table caption text.
 
 Cutoff threshold values from simulation data (using option \code{simcut}) are
 used with the \code{quantile()} function with .005 and .995 values to filter out
@@ -34,6 +37,11 @@ Simulated datasets that have zero responses in any response category that
 should have data will automatically be removed/skipped from analysis,
 which means that final set of iterations may be lower than specified by user.
 
-Optional sorting (only) for table output with conditional highlighting, by
-either \code{sort = "infit"} or \verb{sort = "outfit}.
+Optional sorting (only) for table output with conditional highlighting based
+on simulation cutoff values, either \code{sort = "infit"} or \verb{sort = "outfit}.
+
+Optional conditional highlighting of misfit based on rule-of-thumb values for
+infit MSQ according to Smith et al. (1998), since Müller (2020) showed that
+these can be fairly accurate for conditional infit and thus useful for a
+quick look at item fit.
 }

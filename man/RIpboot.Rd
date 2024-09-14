@@ -2,9 +2,9 @@
 % Please edit documentation in R/RISEkbmRasch.R
 \name{RIpboot}
 \alias{RIpboot}
-\title{Parametric bootstrapping outputting simulated datasets}
+\title{Parametric bootstrapping function that outputs simulated datasets}
 \usage{
-RIpboot(data, iterations, cpu)
+RIpboot(data, iterations, cpu = 4)
 }
 \arguments{
 \item{data}{A dataframe with response data}
@@ -14,5 +14,5 @@ RIpboot(data, iterations, cpu)
 \item{cpu}{Number of CPU cores to use}
 }
 \description{
-For generic use. Outputs datasets in a list object.
+For generic use. Outputs datasets to a list object.
 }

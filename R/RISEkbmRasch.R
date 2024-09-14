@@ -4007,7 +4007,8 @@ RIgetResidCor <- function (data, iterations, cpu = 4) {
 #'
 #' Uses `iarm::out_infit()` to calculate conditional mean square fit statistics
 #' for all items. See Müller (2020, DOI: 10.1186/s40488-020-00108-7) for details.
-#' Only uses complete cases.
+#' Note: only uses complete cases! This is explicitly mentioned in the automatic
+#' table caption text.
 #'
 #' Cutoff threshold values from simulation data (using option `simcut`) are
 #' used with the `quantile()` function with .005 and .995 values to filter out
@@ -4017,16 +4018,22 @@ RIgetResidCor <- function (data, iterations, cpu = 4) {
 #' should have data will automatically be removed/skipped from analysis,
 #' which means that final set of iterations may be lower than specified by user.
 #'
-#' Optional sorting (only) for table output with conditional highlighting, by
-#' either `sort = "infit"` or `sort = "outfit`.
+#' Optional sorting (only) for table output with conditional highlighting based
+#' on simulation cutoff values, either `sort = "infit"` or `sort = "outfit`.
+#'
+#' Optional conditional highlighting of misfit based on rule-of-thumb values for
+#' infit MSQ according to Smith et al. (1998), since Müller (2020) showed that
+#' these can be fairly accurate for conditional infit and thus useful for a
+#' quick look at item fit.
 #'
 #' @param data Dataframe with response data
 #' @param simcut Object output from `RIgetfit()`
 #' @param output Optional "dataframe" or "quarto"
 #' @param sort Optional "infit" or "outfit"
+#' @param cutoff Optional "Smith98" for infit rule-of-thumb
 #' @param ... Options passed on to `kbl_rise()` for table creation
 #' @export
-RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
+RIitemfit <- function(data, simcut, output = "table", sort = "items", cutoff, ...) {
 
   if(min(as.matrix(data), na.rm = T) > 0) {
     stop("The lowest response category needs to coded as 0. Please recode your data.")
@@ -4038,6 +4045,8 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
 
   # get conditional MSQ
   cfit <- iarm::out_infit(erm_out)
+  # get count of complete cases
+  n_complete <- nrow(na.omit(data))
 
   # create dataframe
   item.fit.table <- data.frame(InfitMSQ = cfit$Infit,
@@ -4125,8 +4134,8 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
       # output table
       item.fit.table %>%
         kbl_rise(...) %>%
-        footnote(general = paste0("MSQ values based on conditional calculations (n = ", nrow(data),").
-                                Simulation based thresholds based on ", actual_iterations," simulated datasets."))
+        footnote(general = paste0("MSQ values based on conditional calculations (n = ", n_complete," complete cases).
+                                Simulation based thresholds from ", actual_iterations," simulated datasets."))
 
     } else if (output == "table" & sort == "infit") {
       for (i in 1:nrow(lo_hi)) {
@@ -4141,8 +4150,8 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
       item.fit.table %>%
         arrange(desc(`Infit diff`)) %>%
         kbl_rise(...) %>%
-        footnote(general = paste0("MSQ values based on conditional calculations (n = ", nrow(data),").
-                                Simulation based thresholds based on ", actual_iterations," simulated datasets."))
+        footnote(general = paste0("MSQ values based on conditional calculations (n = ", n_complete," complete cases).
+                                Simulation based thresholds from ", actual_iterations," simulated datasets."))
 
     } else if (output == "table" & sort == "outfit") {
       for (i in 1:nrow(lo_hi)) {
@@ -4156,8 +4165,8 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
       item.fit.table %>%
         arrange(desc(`Outfit diff`)) %>%
         kbl_rise(...) %>%
-        footnote(general = paste0("MSQ values based on conditional calculations and complete cases (n = ", nrow(na.omit(data)),").
-                                Simulation based thresholds based on ", actual_iterations," simulated datasets."))
+        footnote(general = paste0("MSQ values based on conditional calculations (n = ", n_complete," complete cases).
+                                Simulation based thresholds from ", actual_iterations," simulated datasets."))
 
     }
 
@@ -4168,18 +4177,31 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
       knitr::kable(item.fit.table)
     }
   } else if (missing(simcut)) {
-    if (output == "table") {
-      kbl_rise(item.fit.table) %>%
-        footnote(general = paste0("MSQ values based on conditional estimation and complete cases (n = ", nrow(na.omit(data)),")."))
+    if (output == "table" & missing(cutoff)) {
+      kbl_rise(item.fit.table, ...) %>%
+        footnote(general = paste0("MSQ values based on conditional estimation (n = ", n_complete," complete cases)."))
 
-    } else if (output == "dataframe") {
+    } else if (output == "table" & cutoff == "Smith98") {
+      # calculate cutoff values for conditional highlighting based on Smith et al, 1998.
+      msq_infit_lo <- round(1 - 2/sqrt(n_complete),3)
+      msq_infit_hi <- round(1 + 2/sqrt(n_complete),3)
+
+      item.fit.table %>%
+        select(!OutfitMSQ) %>%
+        mutate(InfitMSQ = cell_spec(InfitMSQ, color = ifelse(InfitMSQ < msq_infit_lo, "red",
+                                                             ifelse(InfitMSQ > msq_infit_hi, "red", "black")
+        ))) %>%
+        add_column(!! paste0("1 ","\u00b1"," 2 / ","\u221A","n") := paste0("[",msq_infit_lo,", ", msq_infit_hi,"]")) %>%
+        kbl_rise() %>%
+        footnote(general = paste0("MSQ values based on conditional estimation (n = ", n_complete," complete cases)."))
+    }
+    else if (output == "dataframe") {
       return(janitor::clean_names(item.fit.table))
     } else if (output == "quarto") {
       knitr::kable(item.fit.table)
     }
   }
 }
-
 
 #' Get simulation based cutoff values for item fit values
 #'
@@ -4199,18 +4221,28 @@ RIitemfit <- function(data, simcut, output = "table", sort = "items", ...) {
 #' Uses multi-core processing. To find how many cores you have on your computer,
 #' use `parallel::detectCores()`. Remember to keep 1-2 cores free.
 #'
+#' Since version 0.2.4.2, the default is to only use complete cases in the
+#' simulations, since this is what the conditional item fit function uses and
+#' numbers should be more comparable using this method.
+#'
 #' @param data Dataframe with response data
 #' @param iterations Number of simulation iterations (use at least 1000)
 #' @param cpu Number of CPU cores to use
+#' @param na.omit Defaults to TRUE to produce conditional fit comparable values
 #' @export
-RIgetfit <- function(data, iterations, cpu = 4) {
+RIgetfit <- function(data, iterations, cpu = 4, na.omit = TRUE) {
+  # since we want comparable values to conditional item fit, which only uses
+  # complete cases, we remove any missing responses by default
+  if (na.omit == TRUE) {
+  data <- na.omit(data)
+  }
   sample_n <- nrow(data)
 
   require(doParallel)
   registerDoParallel(cores = cpu)
 
   if (missing(iterations)) {
-    stop("Please set a number of iterations (at least 1000 is recommended).")
+    stop("Please set a number of iterations (at least 500-1000 is recommended).")
   }
 
   if (min(as.matrix(data), na.rm = T) > 0) {
@@ -4519,15 +4551,15 @@ RIgetfitPlot <- function(simcut, data) {
   }
 }
 
-#' Parametric bootstrapping outputting simulated datasets
+#' Parametric bootstrapping function that outputs simulated datasets
 #'
-#' For generic use. Outputs datasets in a list object.
+#' For generic use. Outputs datasets to a list object.
 #'
 #' @param data A dataframe with response data
 #' @param iterations How many datasets to generate
 #' @param cpu Number of CPU cores to use
 #' @export
-RIpboot <- function(data, iterations, cpu) {
+RIpboot <- function(data, iterations, cpu = 4) {
   sample_n <- nrow(data)
 
   require(doParallel)

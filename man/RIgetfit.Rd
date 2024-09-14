@@ -4,7 +4,7 @@
 \alias{RIgetfit}
 \title{Get simulation based cutoff values for item fit values}
 \usage{
-RIgetfit(data, iterations, cpu = 4)
+RIgetfit(data, iterations, cpu = 4, na.omit = TRUE)
 }
 \arguments{
 \item{data}{Dataframe with response data}
@@ -12,6 +12,8 @@ RIgetfit(data, iterations, cpu = 4)
 \item{iterations}{Number of simulation iterations (use at least 1000)}
 
 \item{cpu}{Number of CPU cores to use}
+
+\item{na.omit}{Defaults to TRUE to produce conditional fit comparable values}
 }
 \description{
 This function uses your response data to simulate datasets that fit the
@@ -30,4 +32,8 @@ distribution of fit values from the simulation results.
 
 Uses multi-core processing. To find how many cores you have on your computer,
 use \code{parallel::detectCores()}. Remember to keep 1-2 cores free.
+
+Since version 0.2.4.2, the default is to only use complete cases in the
+simulations, since this is what the conditional item fit function uses and
+numbers should be more comparable using this method.
 }
