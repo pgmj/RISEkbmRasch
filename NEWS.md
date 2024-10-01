@@ -2,6 +2,7 @@
 
 ### 0.2.4.3
 
+- New function `RIrestscore()`, a wrapper function to simplify output from `iarm::item_restscore()`.
 - Fix for `RIitemhierarchy()`, where `na.rm = TRUE` was omitted from `rowMeans()` leading to no mean location for items with less thresholds than others.
 - Fix for `RIresidcorr()` to make conditional highlighting work for any values. 
   - Added option `output = "quarto"` for output of a `knitr::kable()` table (without conditional highlighting).

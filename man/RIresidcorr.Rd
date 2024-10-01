@@ -11,7 +11,7 @@ RIresidcorr(data, cutoff, output = "table", ...)
 
 \item{cutoff}{Relative value above the average of all item residual correlations}
 
-\item{output}{Default HTML table, optional "quarto"}
+\item{output}{Default HTML table, optional "quarto" or "dataframe"}
 
 \item{...}{Options sent to \code{kbl_rise()}}
 }

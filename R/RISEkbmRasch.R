@@ -1377,7 +1377,7 @@ RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -1.96, zstd_max =
 #'
 #' @param data Dataframe with item data only
 #' @param cutoff Relative value above the average of all item residual correlations
-#' @param output Default HTML table, optional "quarto"
+#' @param output Default HTML table, optional "quarto" or "dataframe"
 #' @param ... Options sent to `kbl_rise()`
 #' @export
 RIresidcorr <- function(data, cutoff, output = "table", ...) {
@@ -1427,6 +1427,14 @@ RIresidcorr <- function(data, cutoff, output = "table", ...) {
     diag(resid) <- "" # same for diagonal
 
     knitr::kable(resid)
+  } else if (output == "dataframe") {
+    resid <- resid %>%
+      mutate_if(is.character,as.numeric) %>%
+      mutate(across(where(is.numeric), ~ round(.x, 2)))
+
+    resid[upper.tri(resid)] <- "" # remove values in upper right triangle to clean up table
+    diag(resid) <- "" # same for diagonal
+    return(resid)
   }
 }
 
@@ -4602,6 +4610,61 @@ RIpboot <- function(data, iterations, cpu = 4) {
       names(testData) <- names(data)
       testData
     }
+  }
+}
+
+#' Item-restscore
+#'
+#' A simple wrapper for `iarm::item_restscore()`
+#'
+#' @param data A dataframe with response data
+#' @param output Defaults to a HTML table, optional "quarto" and "dataframe"
+#' @param sort Optional sorting on absolute difference (descending)
+#' @param p.adj See `?item_restscore()` for options (BH is default)
+#' @export
+RIrestscore <- function(data, output = "table", sort, p.adj = "BH") {
+
+  if(min(as.matrix(data), na.rm = T) > 0) {
+    stop("The lowest response category needs to coded as 0. Please recode your data.")
+  } else if(na.omit(data) %>% nrow() == 0) {
+    stop("No complete cases in data.")
+  } else if(max(as.matrix(data), na.rm = T) == 1 && min(as.matrix(data), na.rm = T) == 0) {
+    erm_out <- eRm::RM(data)
+  } else if(max(as.matrix(data), na.rm = T) > 1 && min(as.matrix(data), na.rm = T) == 0) {
+    erm_out <- eRm::PCM(data)
+  }
+
+  i1 <- item_restscore(erm_out, p.adj = p.adj)
+  i1 <- as.data.frame(i1)
+
+  i2 <- data.frame("Observed" = as.numeric(i1[[1]][1:ncol(data),1]) %>% round(2),
+                   "Expected" = as.numeric(i1[[1]][1:ncol(data),2]) %>% round(2),
+                   #"se" = as.numeric(i1[[1]][1:ncol(data),3]),
+                   #"p.value" = as.numeric(i1[[1]][1:ncol(data),4]),
+                   "p_adj" = as.numeric(i1[[1]][1:ncol(data),5]) %>% round(3),
+                   "sig" = as.character(i1[[1]][1:ncol(data),6])
+  ) %>%
+    mutate("Absolute difference" = abs(Expected - Observed), .before = "p_adj") %>%
+    add_column(Item = names(data), .before = "Observed") %>%
+    dplyr::rename(!!paste0("Adjusted p-value (",p.adj,")") := p_adj,
+                  `Significance level` = sig,
+                  `Observed value` = Observed,
+                  `Model expected value` = Expected)
+
+  if (output == "table" & missing(sort)) {
+    kbl_rise(i2)
+  } else if (output == "table" & sort == "diff") {
+    i2 %>%
+      arrange(desc(`Absolute difference`)) %>%
+      kbl_rise()
+  } else if (output == "quarto" & sort == "diff") {
+    i2 %>%
+      arrange(desc(`Absolute difference`)) %>%
+      knitr::kable()
+  } else if (output == "quarto" & missing(sort)) {
+    knitr::kable(i2)
+  } else if (output == "dataframe") {
+    return(i2)
   }
 }
 
