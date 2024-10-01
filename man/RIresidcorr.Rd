@@ -4,18 +4,16 @@
 \alias{RIresidcorr}
 \title{Correlation matrix of Rasch residuals}
 \usage{
-RIresidcorr(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_width = 70)
+RIresidcorr(data, cutoff, output = "table", ...)
 }
 \arguments{
-\item{dfin}{Dataframe with item data only}
-
 \item{cutoff}{Relative value above the average of all item residual correlations}
 
-\item{fontsize}{Set font size for table}
+\item{output}{Default HTML table, optional "quarto"}
 
-\item{fontfamily}{Set font family for table}
+\item{...}{Options sent to \code{kbl_rise()}}
 
-\item{tbl_width}{Set table width in percent}
+\item{dfin}{Dataframe with item data only}
 }
 \description{
 Mandatory option to set relative cutoff-value over the average of all
@@ -25,7 +23,4 @@ item residual correlations. It is strongly recommended to use the function
 \details{
 Christensen et al. (2017, p.181) write:
 "under the null hypothesis, the average correlation of residuals is negative"
-
-Note that negative values are currently not highlighted with red text, even
-if they are above the cutoff value.
 }

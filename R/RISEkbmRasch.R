@@ -1375,78 +1375,59 @@ RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -1.96, zstd_max =
 #' Christensen et al. (2017, p.181) write:
 #' "under the null hypothesis, the average correlation of residuals is negative"
 #'
-#' Note that negative values are currently not highlighted with red text, even
-#' if they are above the cutoff value.
-#'
 #' @param dfin Dataframe with item data only
 #' @param cutoff Relative value above the average of all item residual correlations
-#' @param fontsize Set font size for table
-#' @param fontfamily Set font family for table
-#' @param tbl_width Set table width in percent
+#' @param output Default HTML table, optional "quarto"
+#' @param ... Options sent to `kbl_rise()`
 #' @export
-RIresidcorr <- function(dfin, cutoff, fontsize = 15, fontfamily = "Lato", tbl_width = 70) {
+RIresidcorr <- function(data, cutoff, output = "table", ...) {
+
+  if (missing(cutoff)) {
+    stop("Please set a cutoff value, ideally using `RIgetResidCor()`")
+  }
 
   sink(nullfile()) # suppress output from the rows below
 
-  mirt.rasch <- mirt(dfin, model = 1, itemtype = 'Rasch') # unidimensional Rasch model
-  resid = residuals(mirt.rasch, type = "Q3", digits = 2) # get residuals
+  mirt.rasch <- mirt(data, model = 1, itemtype = 'Rasch') # unidimensional Rasch model
+  resid <- residuals(mirt.rasch, type = "Q3", digits = 2) # get residuals
 
   sink() # disable suppress output
 
   diag(resid) <- NA # make the diagonal of correlation matrix NA instead of 1
   resid <- as.data.frame(resid)
+
   mean.resid <- resid %>%
-    dplyr::select_if(is.numeric) %>%
-    apply(2, mean, na.rm=T) %>%
-    mean()
+    as.matrix() %>%
+    mean(na.rm = TRUE)
+
   dyn.cutoff <- mean.resid + cutoff # create variable indicating dynamic cutoff above average correlation
 
-  # table
-  resid <- resid %>%
-    mutate_if(is.character,as.numeric) %>%
-    mutate(across(where(is.numeric), ~ round(.x, 2)))
-  resid[upper.tri(resid)] <- "" # remove values in upper right triangle to clean up table
-  diag(resid) <- "" # same for diagonal
+  if (output == "table") {
+    diag(resid) <- 1
 
-  if(dyn.cutoff > 0) {
-    resid %>%
-      mutate(across(everything(), ~ cell_spec(.x, color = case_when(.x > dyn.cutoff ~ "red", TRUE ~ "black")))) %>%
-      kbl(booktabs = T, escape = F,
-          table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
-      # bootstrap options are for HTML output
-      kable_styling(bootstrap_options = c("striped", "hover"),
-                    position = "left",
-                    full_width = F,
-                    font_size = fontsize,
-                    fixed_thead = T) %>% # when there is a long list in the table
-      column_spec(1, bold = T) %>%
-      row_spec(0, bold = T) %>%
-      kable_classic(html_font = fontfamily) %>%
-      # latex_options are for PDF output
-      kable_styling(latex_options = c("striped","scale_down")) %>%
+    resid <- resid %>%
+      mutate_if(is.character,as.numeric) %>%
+      mutate(across(everything(), ~ round(.x, 2))) %>%
+      mutate(across(everything(), ~ cell_spec(.x, color = ifelse(.x > dyn.cutoff, "red", "black"))))
+
+    resid[upper.tri(resid)] <- "" # remove values in upper right triangle to clean up table
+    diag(resid) <- "" # same for diagonal
+
+    kbl_rise(resid, ...) %>%
       footnote(general = paste0("Relative cut-off value (highlighted in red) is ",
                                 round(dyn.cutoff,3), ", which is ", round(cutoff,3),
                                 " above the average correlation (",round(mean.resid,3),")."))
-  } else {
-    resid %>%
-      mutate(across(everything(), ~ cell_spec(.x, color = case_when(.x > -dyn.cutoff ~ "red", TRUE ~ "black")))) %>%
-      kbl(booktabs = T, escape = F,
-          table.attr = glue("data-quarto-disable-processing='true' style='width:{tbl_width}%;'")) %>%
-      # bootstrap options are for HTML output
-      kable_styling(bootstrap_options = c("striped", "hover"),
-                    position = "left",
-                    full_width = F,
-                    font_size = fontsize,
-                    fixed_thead = T) %>% # when there is a long list in the table
-      column_spec(1, bold = T) %>%
-      kable_classic(html_font = fontfamily) %>%
-      # latex_options are for PDF output
-      kable_styling(latex_options = c("striped","scale_down")) %>%
-      footnote(general = paste0("Relative cut-off value (highlighted in red) is ",
-                                round(dyn.cutoff,3), ", which is ", round(cutoff,3),
-                                " above the average correlation (",round(mean.resid,3),")."))
+
+  } else if (output == "quarto") {
+    resid <- resid %>%
+      mutate_if(is.character,as.numeric) %>%
+      mutate(across(where(is.numeric), ~ round(.x, 2)))
+
+    resid[upper.tri(resid)] <- "" # remove values in upper right triangle to clean up table
+    diag(resid) <- "" # same for diagonal
+
+    knitr::kable(resid)
   }
-
 }
 
 #' Targeting, Wright map derivative.
@@ -2104,7 +2085,7 @@ RIitemparams <- function(dfin, fontsize = 15, output = "table",
   item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
 
   item_difficulty <- item.locations %>%
-    mutate(Location = rowMeans(.), .before = `Threshold 1`) %>%
+    mutate(Location = rowMeans(., na.rm = TRUE), .before = `Threshold 1`) %>%
     mutate(across(where(is.numeric), ~ round(.x, 3)))
 
   # detailed df
@@ -2533,7 +2514,7 @@ RIdifTable <- function(dfin, dif.var, cutoff = 0.5, table = TRUE) {
       as.data.frame() %>%
       t() %>%
       as.data.frame() %>%
-      mutate('Mean location' = rowMeans(.),
+      mutate('Mean location' = rowMeans(., na.rm = TRUE),
              StDev = rowSds(as.matrix(.))) %>%
       rowwise() %>%
       mutate(MaxDiff = (max(c_across(c(1:(ncol(.)-2))))) - min(c_across(c(1:(ncol(.)-2))))) %>%
@@ -2589,7 +2570,7 @@ RIdifTable2 <- function(dfin, dif.var1, dif.var2, cutoff = 0.5) {
       as.data.frame() %>%
       t() %>%
       as.data.frame() %>%
-      mutate('Mean location' = rowMeans(.), StDev = rowSds(as.matrix(.))) %>%
+      mutate('Mean location' = rowMeans(., na.rm = TRUE), StDev = rowSds(as.matrix(.))) %>%
       rowwise() %>%
       mutate(MaxDiff = (max(c_across(c(1:(ncol(.)-2))))) - min(c_across(c(1:(ncol(.)-2))))) %>%
       ungroup() %>%
@@ -2768,7 +2749,7 @@ RIdifTableRM <- function(dfin, dif.var, cutoff = 0.5) {
       as.data.frame() %>%
       t() %>%
       as.data.frame() %>%
-      mutate('Mean location' = rowMeans(.), StDev = rowSds(as.matrix(.))) %>%
+      mutate('Mean location' = rowMeans(., na.rm = TRUE), StDev = rowSds(as.matrix(.))) %>%
       rowwise() %>%
       mutate(MaxDiff = (max(c_across(c(1:(ncol(.)-2))))) - min(c_across(c(1:(ncol(.)-2))))) %>%
       ungroup() %>%
@@ -2843,7 +2824,7 @@ RIitemHierarchy <- function(dfin, numbers = TRUE, sem_multiplier = 1.405){
     erm_out <- PCM(dfin)
     item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
     item_difficulty <- item.locations %>%
-      mutate(Location = rowMeans(.), .before = `Threshold 1`) %>%
+      mutate(Location = rowMeans(.,na.rm = TRUE), .before = `Threshold 1`) %>%
       mutate(across(where(is.numeric), ~ round(.x, 3)))
 
     names(item.locations) <- paste0("T", c(1:ncol(item.locations)))

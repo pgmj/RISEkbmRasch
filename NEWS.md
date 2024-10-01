@@ -1,5 +1,11 @@
 ## Changelog
 
+### 0.2.4.3
+
+- Fix for `RIitemhierarchy()`, where `na.rm = TRUE` was omitted from `rowMeans()` leading to no mean location for items with less thresholds than others.
+- Fix for `RIresidcorr()` to make conditional highlighting work for any values. 
+  - Added option `output = "quarto"` for output of a `knitr::kable()` table (without conditional highlighting).
+
 ### 0.2.4.2
 
 - `RIitemfit()` now consistently states that conditional item fit is based on complete cases only in the automatic caption text.
