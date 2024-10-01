@@ -7,13 +7,13 @@
 RIresidcorr(data, cutoff, output = "table", ...)
 }
 \arguments{
+\item{data}{Dataframe with item data only}
+
 \item{cutoff}{Relative value above the average of all item residual correlations}
 
 \item{output}{Default HTML table, optional "quarto"}
 
 \item{...}{Options sent to \code{kbl_rise()}}
-
-\item{dfin}{Dataframe with item data only}
 }
 \description{
 Mandatory option to set relative cutoff-value over the average of all

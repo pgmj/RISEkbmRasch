@@ -1375,7 +1375,7 @@ RIitemfitRM <- function(dfin, samplesize, nsamples, zstd_min = -1.96, zstd_max =
 #' Christensen et al. (2017, p.181) write:
 #' "under the null hypothesis, the average correlation of residuals is negative"
 #'
-#' @param dfin Dataframe with item data only
+#' @param data Dataframe with item data only
 #' @param cutoff Relative value above the average of all item residual correlations
 #' @param output Default HTML table, optional "quarto"
 #' @param ... Options sent to `kbl_rise()`
