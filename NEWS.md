@@ -1,5 +1,12 @@
 ## Changelog
 
+### 0.2.4.4
+
+- New data pre-analysis check `RIcheckdata()` to determine whether there are at least 3 responses in each cell (item response category) 
+  - implemented for `RItargeting()` and `RIitemparams()`
+  - if there are fewer than 3 responses in any cell `mirt` will be used to estimate item threshold locations, since it is less prone to extreme values under these conditions than `eRm`.
+  - if there are fewer than 3 responses in any cell a warning message will appear
+  
 ### 0.2.4.3
 
 - New function `RIrestscore()`, a wrapper function to simplify output from `iarm::item_restscore()`.

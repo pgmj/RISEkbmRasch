@@ -1461,13 +1461,42 @@ RIresidcorr <- function(data, cutoff, output = "table", ...) {
 #' @param bins Optionally, set number of bins for histograms
 #' @export
 RItargeting <- function(dfin, model = "PCM", xlim = c(-4,4), output = "figure", bins = 30) {
+  if(RIcheckdata(dfin) == TRUE) {
+    warning("Warning! Your data has less than 3 responses in some response categories. Results may not be reliable.")
+  }
+
   if(model == "PCM") {
     if(max(as.matrix(dfin), na.rm = TRUE) == 1) {
       stop("Use `model = 'RM'` for dichotomous data.")
     } else {
-      erm_out <- PCM(dfin) # run PCM model
-      item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
-      #item_difficulty <- item.locations
+      if(RIcheckdata(dfin) == TRUE) {
+        # mirt is less unreliable than eRm in this situation
+        mirt_out <- mirt(dfin, model=1, itemtype='Rasch', verbose = FALSE)
+        item.locations <- coef(mirt_out, simplify = TRUE, IRTpars = TRUE)$items %>%
+          as.data.frame() %>%
+          select(!a) %>%
+          as.matrix()
+        item.locations <- item.locations - mean(item.locations, na.rm = TRUE)
+        maxcat <- dfin %>%
+          pivot_longer(everything()) %>%
+          dplyr::count(name,value) %>%
+          pull(value) %>%
+          max()
+        item.locations <- item.locations %>%
+          as.data.frame() %>%
+          set_names(paste0("Threshold ", 1:maxcat))
+        # person locations
+        pthetas <- RIestThetasOLD(dfin, itemParams = as.matrix(item.locations))
+
+      } else if (RIcheckdata(dfin) == FALSE) {
+
+        erm_out <- PCM(dfin) # run PCM model
+        item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
+        # person locations
+        pthetas <- iarm::person_estimates(erm_out, allperson = TRUE) %>%
+          as.data.frame() %>%
+          pull(WLE)
+      }
 
       names(item.locations) <- paste0("t", c(1:ncol(item.locations))) # re-label variables
       itemloc.long <- item.locations %>%
@@ -1480,10 +1509,6 @@ RItargeting <- function(dfin, model = "PCM", xlim = c(-4,4), output = "figure", 
           values_to = "par_values"
         )
       ### create df for ggplot histograms
-      # person locations
-      pthetas <- iarm::person_estimates(erm_out, allperson = TRUE) %>%
-        as.data.frame() %>%
-        pull(WLE)
 
       # check if xlim upper is below the highest person locations/thetas
       # and adjust if needed
@@ -1589,6 +1614,10 @@ RItargeting <- function(dfin, model = "PCM", xlim = c(-4,4), output = "figure", 
 
     erm_out <- RM(dfin) # run RM model
     item.estimates <- coef(erm_out, "beta")*-1 # item coefficients
+    # person locations
+    pthetas <- iarm::person_estimates(erm_out, allperson = TRUE) %>%
+      as.data.frame() %>%
+      pull(WLE)
 
     item.locations <- as.data.frame(item.estimates)
     itemloc.long <- item.locations %>%
@@ -1596,10 +1625,7 @@ RItargeting <- function(dfin, model = "PCM", xlim = c(-4,4), output = "figure", 
       tidyr::separate(rowname, c(NA, "names"), sep = " ")
 
     ### create df for ggplot histograms
-    # person locations
-    pthetas <- iarm::person_estimates(erm_out, allperson = TRUE) %>%
-      as.data.frame() %>%
-      pull(WLE)
+
     # item locations
     thresholds <- itemloc.long$item.estimates
     ### items and persons in the same variable
@@ -1648,7 +1674,7 @@ RItargeting <- function(dfin, model = "PCM", xlim = c(-4,4), output = "figure", 
       geom_histogram(data=subset(df.locations, type=="Persons"),
                      aes(locations, fill="Persons"),
                      bins = bins
-                     ) +
+      ) +
       xlab('') +
       ylab('Persons') +
       scale_x_continuous(limits = xlim, breaks = scales::breaks_extended(n = 10)) +
@@ -2079,6 +2105,8 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
 #' Displays a table with item threshold locations. Can also output a dataframe or
 #' a CSV file. Set `detail = "all"` to get more detailed output.
 #'
+#' Currently only works with the Partial Credit Model (polytomous data).
+#'
 #' @param dfin Dataframe with item data only
 #' @param fontsize Option to set font size for table
 #' @param output Defaults to "table, can be set to "dataframe" or "file"
@@ -2089,8 +2117,29 @@ RIpfit <- function(dfin, model = "PCM", pointsize = 2.5, alpha = 0.5, bins = 30,
 RIitemparams <- function(dfin, fontsize = 15, output = "table",
                          detail = "thresholds", filename = "item_params.csv",
                          tbl_width = 90) {
-  erm_out <- PCM(dfin)
-  item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
+
+  if(RIcheckdata(dfin) == TRUE) {
+    warning("Warning! Your data has less than 3 responses in some response categories. Results may not be reliable.")
+    # mirt is less unreliable than eRm in this situation
+    mirt_out <- mirt(dfin, model=1, itemtype='Rasch', verbose = FALSE)
+    item.locations <- coef(mirt_out, simplify = TRUE, IRTpars = TRUE)$items %>%
+      as.data.frame() %>%
+      select(!a) %>%
+      as.matrix()
+    item.locations <- item.locations - mean(item.locations, na.rm = TRUE)
+    maxcat <- dfin %>%
+      pivot_longer(everything()) %>%
+      dplyr::count(name,value) %>%
+      pull(value) %>%
+      max()
+    item.locations <- item.locations %>%
+      as.data.frame() %>%
+      set_names(paste0("Threshold ", 1:maxcat))
+
+  } else if(RIcheckdata(dfin) == FALSE) {
+    erm_out <- PCM(dfin)
+    item.locations <- as.data.frame(thresholds(erm_out)[[3]][[1]][, -1] - mean(thresholds(erm_out)[[3]][[1]][, -1], na.rm=T))
+  }
 
   item_difficulty <- item.locations %>%
     mutate(Location = rowMeans(., na.rm = TRUE), .before = `Threshold 1`) %>%
