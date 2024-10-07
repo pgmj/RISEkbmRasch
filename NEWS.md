@@ -1,5 +1,10 @@
 ## Changelog
 
+### 0.2.4.5
+
+- Changed caption text in `RIresidcorr()` to be more grammatically correct.
+- Bug fix for `RItargeting()` and `RIitemparams()` to use `max(na.rm = TRUE)`.
+
 ### 0.2.4.4
 
 - New data pre-analysis check `RIcheckdata()` to determine whether there are at least 3 responses in each cell (item response category) 

@@ -1414,9 +1414,10 @@ RIresidcorr <- function(data, cutoff, output = "table", ...) {
     diag(resid) <- "" # same for diagonal
 
     kbl_rise(resid, ...) %>%
-      footnote(general = paste0("Relative cut-off value (highlighted in red) is ",
+      footnote(general = paste0("Relative cut-off value is ",
                                 round(dyn.cutoff,3), ", which is ", round(cutoff,3),
-                                " above the average correlation (",round(mean.resid,3),")."))
+                                " above the average correlation (",round(mean.resid,3),").
+                                Correlations above the cut-off are highlighted in red text."))
 
   } else if (output == "quarto") {
     resid <- resid %>%
@@ -1481,7 +1482,7 @@ RItargeting <- function(dfin, model = "PCM", xlim = c(-4,4), output = "figure", 
           pivot_longer(everything()) %>%
           dplyr::count(name,value) %>%
           pull(value) %>%
-          max()
+          max(na.rm = TRUE)
         item.locations <- item.locations %>%
           as.data.frame() %>%
           set_names(paste0("Threshold ", 1:maxcat))
@@ -2131,7 +2132,7 @@ RIitemparams <- function(dfin, fontsize = 15, output = "table",
       pivot_longer(everything()) %>%
       dplyr::count(name,value) %>%
       pull(value) %>%
-      max()
+      max(na.rm = TRUE)
     item.locations <- item.locations %>%
       as.data.frame() %>%
       set_names(paste0("Threshold ", 1:maxcat))
