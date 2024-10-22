@@ -2620,7 +2620,7 @@ RIdifTable <- function(dfin, dif.var, cutoff = 0.5, table = TRUE) {
     }
 
   } else {
-    print("No significant DIF found.")
+    print("No statistically significant DIF found.")
   }
 }
 
@@ -2668,7 +2668,7 @@ RIdifTable2 <- function(dfin, dif.var1, dif.var2, cutoff = 0.5) {
         table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato"')
 
   } else {
-    print("No significant DIF found.")
+    print("No statistically significant DIF found.")
   }
 }
 
@@ -2701,7 +2701,7 @@ RIdifFigure <- function(dfin, dif.var) {
     geom_line(linewidth = 1.3) +
     geom_point(size = 2.5)
   } else {
-    print("No significant DIF found.")
+    print("No statistically significant DIF found.")
   }
 }
 
@@ -2739,7 +2739,7 @@ RIdifFigTime <- function(dfin, dif.var) {
       geom_point(size = 3) +
       xlab("DIF node/Time point (see DIF table)")
   } else {
-    print("No significant DIF found.")
+    print("No statistically significant DIF found.")
   }
 }
 
@@ -2799,7 +2799,7 @@ RIdifFigThresh <- function(dfin, dif.var) {
       xlab("DIF node") +
       facet_wrap(~Item)
   } else {
-    print("No significant DIF found.")
+    print("No statistically significant DIF found.")
   }
 }
 
@@ -2847,7 +2847,7 @@ RIdifTableRM <- function(dfin, dif.var, cutoff = 0.5) {
         table.attr = 'class=\"table table-striped\" style="font-size: 15px; font-family: Lato"')
 
   } else {
-    print("No significant DIF found.")
+    print("No statistically significant DIF found.")
   }
 }
 
@@ -2880,7 +2880,7 @@ RIdifFigureRM <- function(dfin, dif.var) {
       geom_line(linewidth = 1.5) +
       geom_point(size = 2.5)
   } else {
-    print("No significant DIF found.")
+    print("No statistically significant DIF found.")
   }
 }
 
@@ -4767,6 +4767,16 @@ RIpartgamLD <- function(data, output = "table") {
   ld <- iarm::partgam_LD(as.data.frame(data))
   sink() # disable suppress output
 
+  test <- ld %>%
+    bind_rows() %>%
+    clean_names() %>%
+    mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+    dplyr::filter(str_detect(sig,"\\*"))
+
+  if (nrow(test) == 0) {
+    return("No statistically significant local dependency found.")
+  }
+
   ld2 <- ld %>%
     bind_rows() %>%
     clean_names() %>%
@@ -4828,6 +4838,16 @@ RIpartgamDIF <- function(data, dif.var, output = "table") {
   sink(nullfile()) # suppress output from the rows below
   ld <- iarm::partgam_DIF(as.data.frame(data), dif.var)
   sink() # disable suppress output
+
+  test <- ld %>%
+    bind_rows() %>%
+    clean_names() %>%
+    mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+    dplyr::filter(str_detect(sig,"\\*"))
+
+  if (nrow(test) == 0) {
+    return("No statistically significant DIF found.")
+  }
 
   ld2 <- ld %>%
     bind_rows() %>%
