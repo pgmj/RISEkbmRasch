@@ -4861,7 +4861,7 @@ RIpartgamDIF <- function(data, dif.var, output = "table") {
   if (output == "table") {
     ld2 %>%
       mutate(gamma = cell_spec(gamma, color = ifelse(abs(gamma) > 0.21, "red", "black"))) %>%
-      rename(Item = item,
+      dplyr::rename(Item = item,
              `Partial gamma` = gamma,
              SE = se,
              `Lower CI` = lower,
@@ -4871,7 +4871,7 @@ RIpartgamDIF <- function(data, dif.var, output = "table") {
 
   } else if (output == "quarto") {
     ld2 %>%
-      rename(Item = item,
+      dplyr::rename(Item = item,
              `Partial gamma` = gamma,
              SE = se,
              `Lower CI` = lower,
