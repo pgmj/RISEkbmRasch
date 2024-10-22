@@ -1,5 +1,11 @@
 ## Changelog
 
+### 0.2.4.6
+
+- `RIpartgamDIF()` added for convenient use of `iarm::partgam_DIF()` to assess DIF.
+- `RIpartgamLD()` added for convenient use of `iarm::partgam_LD()` to assess local dependence.
+- `RImissing()` and `RImissingP()` now return a message (not a plot) if no data is missing.
+
 ### 0.2.4.5
 
 - Changed caption text in `RIresidcorr()` to be more grammatically correct.

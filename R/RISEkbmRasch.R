@@ -95,7 +95,8 @@ kbl_rise <- function(data, tbl_width = 65, fontsize = 14, fontfamily = "Arial",
 RImissing <- function(data, itemStart) {
 
   if (missing(itemStart)) {
-    data %>%
+    m <-
+      data %>%
       t() %>%
       as.data.frame() %>%
       mutate(Missing = rowSums(is.na(.))) %>%
@@ -103,8 +104,13 @@ RImissing <- function(data, itemStart) {
       arrange(desc(Missing)) %>%
       rownames_to_column(var = "Item") %>%
       mutate(Percentage = Missing / nrow(data) * 100) %>%
-      mutate(Item = factor(Item, levels = rev(Item))) %>%
-      ggplot(aes(x = Item, y = Percentage)) +
+      mutate(Item = factor(Item, levels = rev(Item)))
+
+    if (max(m$Missing) == 0) {
+      return("No missing data.")
+    }
+
+    ggplot(aes(x = Item, y = Percentage)) +
       geom_col(fill = "#009ca6") +
       geom_text(aes(label = paste0(round(Percentage,1),"%")),
                 hjust = 1.5, vjust = 0.5,
@@ -118,27 +124,34 @@ RImissing <- function(data, itemStart) {
 
   } else {
 
-  data %>%
-    dplyr::select(starts_with({{ itemStart }})) %>%
-    t() %>%
-    as.data.frame() %>%
-    mutate(Missing = rowSums(is.na(.))) %>%
-    dplyr::select(Missing) %>%
-    arrange(desc(Missing)) %>%
-    rownames_to_column(var = "Item") %>%
-    mutate(Percentage = Missing / nrow(data) * 100) %>%
-    mutate(Item = factor(Item, levels = rev(Item))) %>%
-    ggplot(aes(x = Item, y = Percentage)) +
-    geom_col(fill = "#009ca6") +
-    geom_text(aes(label = paste0(round(Percentage,1),"%")),
-      hjust = 1.5, vjust = 0.5,
-      color = "white"
-    ) +
-    coord_flip() +
-    ggtitle("Missing data per item") +
-    xlab("Items") +
-    ylab("Percentage of responses missing") +
-    theme_minimal()
+    m <-
+      data %>%
+      dplyr::select(starts_with({{ itemStart }})) %>%
+      t() %>%
+      as.data.frame() %>%
+      mutate(Missing = rowSums(is.na(.))) %>%
+      dplyr::select(Missing) %>%
+      arrange(desc(Missing)) %>%
+      rownames_to_column(var = "Item") %>%
+      mutate(Percentage = Missing / nrow(data) * 100) %>%
+      mutate(Item = factor(Item, levels = rev(Item)))
+
+    if (max(m$Missing) == 0) {
+      return("No missing data.")
+    }
+
+    m %>%
+      ggplot(aes(x = Item, y = Percentage)) +
+      geom_col(fill = "#009ca6") +
+      geom_text(aes(label = paste0(round(Percentage,1),"%")),
+                hjust = 1.5, vjust = 0.5,
+                color = "white"
+      ) +
+      coord_flip() +
+      ggtitle("Missing data per item") +
+      xlab("Items") +
+      ylab("Percentage of responses missing") +
+      theme_minimal()
   }
 }
 
@@ -154,7 +167,6 @@ RImissing <- function(data, itemStart) {
 #' @param n For large samples, show n participants with most missing data
 #' @export
 RImissingP <- function(data, itemStart, output, n = 10) {
-
   if (missing(itemStart)) {
     order <- data %>%
       mutate(Missing = rowSums(is.na(.))) %>%
@@ -165,6 +177,10 @@ RImissingP <- function(data, itemStart, output, n = 10) {
       arrange(desc(Missing)) %>%
       pull(Participant)
 
+    if (length(order) < 1) {
+      return("No missing data.")
+    }
+
     data %>%
       mutate(Missing = rowSums(is.na(.))) %>%
       dplyr::select(Missing) %>%
@@ -175,29 +191,30 @@ RImissingP <- function(data, itemStart, output, n = 10) {
       head(n) %>%
       mutate(Participant = as.factor(Participant)) %>%
       mutate(Participant = fct_relevel(Participant, rev(order))) %>%
-      {
-
-        ggplot(.,aes(x = Participant, y = Missing)) +
-          geom_col(fill = "#009ca6") +
-          geom_text(aes(label = paste0(round(Missing*100/ncol(data),1),"%")),
-                    hjust = 1.1, vjust = 0.5,
-                    color = "white"
-          ) +
-          scale_y_continuous(breaks = seq(from = 0,
-                                          to = max(.$Missing),
-                                          by = 1),
-                             labels = scales::number_format(accuracy = 1),
-                             minor_breaks = NULL) +
-          coord_flip() +
-          labs(title = "Missing data per participant",
-               x = "Participant rownumber",
-               y = "Number of responses missing",
-               caption = paste0("Note. Total number of items is ", ncol(data),".")) +
-          theme_minimal()
-      }
-
+      ggplot(., aes(x = Participant, y = Missing)) +
+      geom_col(fill = "#009ca6") +
+      geom_text(aes(label = paste0(round(Missing * 100 / ncol(data), 1), "%")),
+                hjust = 1.1, vjust = 0.5,
+                color = "white"
+      ) +
+      scale_y_continuous(
+        breaks = seq(
+          from = 0,
+          to = max(.$Missing),
+          by = 1
+        ),
+        labels = scales::number_format(accuracy = 1),
+        minor_breaks = NULL
+      ) +
+      coord_flip() +
+      labs(
+        title = "Missing data per participant",
+        x = "Participant rownumber",
+        y = "Number of responses missing",
+        caption = paste0("Note. Total number of items is ", ncol(data), ".")
+      ) +
+      theme_minimal()
   } else {
-
     order <- data %>%
       dplyr::select(starts_with({{ itemStart }})) %>%
       mutate(Missing = rowSums(is.na(.))) %>%
@@ -208,6 +225,10 @@ RImissingP <- function(data, itemStart, output, n = 10) {
       arrange(desc(Missing)) %>%
       pull(Participant)
 
+    if (length(order) < 1) {
+      return("No missing data.")
+    }
+
     data %>%
       dplyr::select(starts_with({{ itemStart }})) %>%
       mutate(Missing = rowSums(is.na(.))) %>%
@@ -219,29 +240,33 @@ RImissingP <- function(data, itemStart, output, n = 10) {
       head(n) %>%
       mutate(Participant = as.factor(Participant)) %>%
       mutate(Participant = fct_relevel(Participant, rev(order))) %>%
-      {
 
-        ggplot(.,aes(x = Participant, y = Missing)) +
-          geom_col(fill = "#009ca6") +
-          geom_text(aes(label = paste0(round(Missing*100/ncol(data),1),"%")),
-                    hjust = 1.1, vjust = 0.5,
-                    color = "white"
-          ) +
-          scale_y_continuous(breaks = seq(from = 0,
-                                          to = max(.$Missing),
-                                          by = 1),
-                             labels = scales::number_format(accuracy = 1),
-                             minor_breaks = NULL) +
-          coord_flip() +
-          labs(title = "Missing data per participant",
-               x = "Participant rownumber",
-               y = "Number of responses missing",
-               caption = paste0("Note. Total number of items is ", ncol(data),".")) +
-          theme_minimal()
-      }
+      ggplot(., aes(x = Participant, y = Missing)) +
+      geom_col(fill = "#009ca6") +
+      geom_text(aes(label = paste0(round(Missing * 100 / ncol(data), 1), "%")),
+                hjust = 1.1, vjust = 0.5,
+                color = "white"
+      ) +
+      scale_y_continuous(
+        breaks = seq(
+          from = 0,
+          to = max(.$Missing),
+          by = 1
+        ),
+        labels = scales::number_format(accuracy = 1),
+        minor_breaks = NULL
+      ) +
+      coord_flip() +
+      labs(
+        title = "Missing data per participant",
+        x = "Participant rownumber",
+        y = "Number of responses missing",
+        caption = paste0("Note. Total number of items is ", ncol(data), ".")
+      ) +
+      theme_minimal()
+
   }
 }
-
 
 #' Show items based on itemlabels file
 #'
@@ -4717,6 +4742,128 @@ RIrestscore <- function(data, output = "table", sort, p.adj = "BH") {
     return(i2)
   }
 }
+
+
+#' Partial gamma analysis of local dependence
+#'
+#' A simple wrapper for `iarm::partgam_LD()`. Filters results to only show
+#' statistically significant relationships and sorts the table on the absolute
+#' value of partial gamma.
+#'
+#' Conditional highlighting in HTML table output set to partial gamma > +/-0.21.
+#'
+#' @param data A dataframe with response data
+#' @param output Defaults to a HTML table, optional "quarto" and "dataframe"
+#' @export
+RIpartgamLD <- function(data, output = "table") {
+
+  if(min(as.matrix(data), na.rm = T) > 0) {
+    stop("The lowest response category needs to coded as 0. Please recode your data.")
+  } else if(na.omit(data) %>% nrow() == 0) {
+    stop("No complete cases in data.")
+  }
+
+  sink(nullfile()) # suppress output from the rows below
+  ld <- iarm::partgam_LD(as.data.frame(data))
+  sink() # disable suppress output
+
+  ld2 <- ld %>%
+    bind_rows() %>%
+    clean_names() %>%
+    mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+    dplyr::filter(str_detect(sig,"\\*")) %>%
+    arrange(desc(abs(gamma))) %>%
+    dplyr::select(!c(pvalue,sig)) %>%
+    relocate(padj_bh, .after = "upper")
+
+  if (output == "table") {
+    ld2 %>%
+      mutate(gamma = cell_spec(gamma, color = ifelse(abs(gamma) > 0.21, "red", "black"))) %>%
+      rename(`Item 1` = item1,
+             `Item 2` = item2,
+             `Partial gamma` = gamma,
+             SE = se,
+             `Lower CI` = lower,
+             `Upper CI` = upper,
+             `Adjusted p-value (BH)` = padj_bh) %>%
+      kbl_rise()
+
+  } else if (output == "quarto") {
+    ld2 %>%
+      rename(`Item 1` = item1,
+             `Item 2` = item2,
+             `Partial gamma` = gamma,
+             SE = se,
+             `Lower CI` = lower,
+             `Upper CI` = upper,
+             `Adjusted p-value (BH)` = padj_bh) %>%
+      knitr::kable()
+  } else if (output == "dataframe") {
+
+    return(as.data.frame(ld2))
+  }
+}
+
+
+#' Partial gamma analysis of Differential Item Functioning
+#'
+#' A simple wrapper for `iarm::partgam_DIF()`. Filters results to only show
+#' statistically significant relationships and sorts the table on the absolute
+#' value of partial gamma.
+#'
+#' Conditional highlighting in HTML table output set to partial gamma > +/-0.21.
+#'
+#' @param data A dataframe with response data
+#' @param dif.var A vector with a DIF variable
+#' @param output Defaults to a HTML table, optional "quarto" and "dataframe"
+#' @export
+RIpartgamDIF <- function(data, dif.var, output = "table") {
+
+  if(min(as.matrix(data), na.rm = T) > 0) {
+    stop("The lowest response category needs to coded as 0. Please recode your data.")
+  } else if(na.omit(data) %>% nrow() == 0) {
+    stop("No complete cases in data.")
+  }
+
+  sink(nullfile()) # suppress output from the rows below
+  ld <- iarm::partgam_DIF(as.data.frame(data), dif.var)
+  sink() # disable suppress output
+
+  ld2 <- ld %>%
+    bind_rows() %>%
+    clean_names() %>%
+    mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+    dplyr::filter(str_detect(sig,"\\*")) %>%
+    arrange(desc(abs(gamma))) %>%
+    dplyr::select(!c(pvalue,sig,var)) %>%
+    relocate(padj_bh, .after = "upper")
+
+  if (output == "table") {
+    ld2 %>%
+      mutate(gamma = cell_spec(gamma, color = ifelse(abs(gamma) > 0.21, "red", "black"))) %>%
+      rename(Item = item,
+             `Partial gamma` = gamma,
+             SE = se,
+             `Lower CI` = lower,
+             `Upper CI` = upper,
+             `Adjusted p-value (BH)` = padj_bh) %>%
+      kbl_rise()
+
+  } else if (output == "quarto") {
+    ld2 %>%
+      rename(Item = item,
+             `Partial gamma` = gamma,
+             SE = se,
+             `Lower CI` = lower,
+             `Upper CI` = upper,
+             `Adjusted p-value (BH)` = padj_bh) %>%
+      knitr::kable()
+  } else if (output == "dataframe") {
+
+    return(as.data.frame(ld2))
+  }
+}
+
 
 #' Temporary fix for upstream bug in `iarm::person_estimates()`
 #'
