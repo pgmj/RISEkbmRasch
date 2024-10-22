@@ -4789,7 +4789,7 @@ RIpartgamLD <- function(data, output = "table") {
   if (output == "table") {
     ld2 %>%
       mutate(gamma = cell_spec(gamma, color = ifelse(abs(gamma) > 0.21, "red", "black"))) %>%
-      rename(`Item 1` = item1,
+      dplyr::rename(`Item 1` = item1,
              `Item 2` = item2,
              `Partial gamma` = gamma,
              SE = se,
@@ -4800,7 +4800,7 @@ RIpartgamLD <- function(data, output = "table") {
 
   } else if (output == "quarto") {
     ld2 %>%
-      rename(`Item 1` = item1,
+      dplyr::rename(`Item 1` = item1,
              `Item 2` = item2,
              `Partial gamma` = gamma,
              SE = se,
