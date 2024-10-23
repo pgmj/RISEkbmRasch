@@ -110,7 +110,8 @@ RImissing <- function(data, itemStart) {
       return("No missing data.")
     }
 
-    ggplot(aes(x = Item, y = Percentage)) +
+    m %>%
+      ggplot(aes(x = Item, y = Percentage)) +
       geom_col(fill = "#009ca6") +
       geom_text(aes(label = paste0(round(Percentage,1),"%")),
                 hjust = 1.5, vjust = 0.5,
