@@ -1,5 +1,9 @@
 ## Changelog
 
+### Name changew
+
+- This package is now known as `easyRasch` and has a new website/repo: <https://pgmj.github.io/easyRasch/>
+
 ### 0.2.4.6
 
 - `RIpartgamDIF()` added for convenient use of `iarm::partgam_DIF()` to assess DIF.
